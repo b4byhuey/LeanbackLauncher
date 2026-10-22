@@ -78,7 +78,7 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
                 }
                 1 -> {
                     value = try {
-                        action.description.toString().toInt()
+                        action.description?.toString().orEmpty().toInt()
                     } catch (nfe: NumberFormatException) {
                         1
                     }
@@ -93,7 +93,7 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
                 }
                 1 -> {
                     value = try {
-                        action.description.toString().toInt()
+                        action.description?.toString().orEmpty().toInt()
                     } catch (nfe: NumberFormatException) {
                         1
                     }
@@ -108,7 +108,7 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
                 }
                 1 -> {
                     value = try {
-                        action.description.toString().toInt()
+                        action.description?.toString().orEmpty().toInt()
                     } catch (nfe: NumberFormatException) {
                         1
                     }
@@ -123,7 +123,7 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
                 }
                 1 -> {
                     value = try {
-                        action.description.toString().toInt()
+                        action.description?.toString().orEmpty().toInt()
                     } catch (nfe: NumberFormatException) {
                         1
                     }
@@ -132,14 +132,14 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
             }
         } else if (id == ACTION_ID_APPS_MAX.toLong()) {
             value = try {
-                action.description.toString().toInt()
+                action.description?.toString().orEmpty().toInt()
             } catch (nfe: NumberFormatException) {
                 1
             }
             setRowMax(AppCategory.OTHER, activity, value)
         } else if (id == ACTION_ID_APPS_COL.toLong()) {
             value = try {
-                action.description.toString().toInt()
+                action.description?.toString().orEmpty().toInt()
             } catch (nfe: NumberFormatException) {
                 1
             }
