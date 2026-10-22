@@ -70,11 +70,8 @@ class AppsRanker internal constructor(ctx: Context, dbHelper: AppsDbHelper?) :
         var action: Int
     )
 
-    private inner class LaunchPointInstallComparator : Comparator<LaunchPoint?> {
-        override fun compare(lhs: LaunchPoint?, rhs: LaunchPoint?): Int {
-            if (lhs == null || rhs == null) {
-                return 0
-            }
+    private inner class LaunchPointInstallComparator : Comparator<LaunchPoint> {
+        override fun compare(lhs: LaunchPoint, rhs: LaunchPoint): Int {
             val lhsOrder = getEntityOrder(lhs)
             val rhsOrder = getEntityOrder(rhs)
             return if (lhsOrder == rhsOrder) {
@@ -102,11 +99,9 @@ class AppsRanker internal constructor(ctx: Context, dbHelper: AppsDbHelper?) :
         }
     }
 
-    private inner class LaunchPointRecencyComparator : Comparator<LaunchPoint?> {
-        override fun compare(lhs: LaunchPoint?, rhs: LaunchPoint?): Int {
-            return if (lhs == null || rhs == null) {
-                0
-            } else getLastOpened(rhs).coerceAtLeast(rhs.firstInstallTime)
+    private inner class LaunchPointRecencyComparator : Comparator<LaunchPoint> {
+        override fun compare(lhs: LaunchPoint, rhs: LaunchPoint): Int {
+            return getLastOpened(rhs).coerceAtLeast(rhs.firstInstallTime)
                 .compareTo(getLastOpened(lhs).coerceAtLeast(lhs.firstInstallTime))
         }
     }
