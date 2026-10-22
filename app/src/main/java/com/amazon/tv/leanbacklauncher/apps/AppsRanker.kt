@@ -231,9 +231,9 @@ class AppsRanker internal constructor(ctx: Context, dbHelper: AppsDbHelper?) :
         get() {
             if (mLaunchPointComparator == null) {
                 mLaunchPointComparator = if (sortingMode === SortingMode.RECENCY)
-                    LaunchPointRecencyComparator() as Comparator<LaunchPoint>
+                    LaunchPointRecencyComparator()
                 else
-                    LaunchPointInstallComparator() as Comparator<LaunchPoint>
+                    LaunchPointInstallComparator()
             }
             return mLaunchPointComparator
         }
