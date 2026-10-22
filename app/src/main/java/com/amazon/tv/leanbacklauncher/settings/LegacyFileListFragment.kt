@@ -97,15 +97,15 @@ class LegacyFileListFragment : GuidedStepSupportFragment() {
         val fm = fragmentManager
         when (action.id.toInt()) {
             ACTION_DIR -> {
-                rootPath = File(rootPath, action.title.toString()).absolutePath
-                dirName = action.title.toString()
+                rootPath = File(rootPath, action.title?.toString().orEmpty()).absolutePath
+                dirName = action.title?.toString().orEmpty()
                 if (fm != null) {
                     add(fm, LegacyFileListFragment())
                 }
             }
             ACTION_SELECT -> {
                 val name = action.title
-                val file = File(rootPath, name.toString())
+                val file = File(rootPath, name?.toString().orEmpty())
                 if (file.canRead())
                     setWallpaper(ctx, file.path.toString())
                 else
