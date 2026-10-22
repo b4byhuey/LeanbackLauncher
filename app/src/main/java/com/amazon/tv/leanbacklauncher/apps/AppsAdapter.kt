@@ -246,13 +246,9 @@ open class AppsAdapter(
         }
 
         init {
-            if (v != null) {
-                mBannerView = v.findViewById(R.id.app_banner)
-                mBackground =
-                    ResourcesCompat.getDrawable(v.resources, R.drawable.banner_background, null)
-            } else {
-                mBannerView = null
-            }
+            mBannerView = v.findViewById(R.id.app_banner)
+            mBackground =
+                ResourcesCompat.getDrawable(v.resources, R.drawable.banner_background, null)
         }
     }
 
