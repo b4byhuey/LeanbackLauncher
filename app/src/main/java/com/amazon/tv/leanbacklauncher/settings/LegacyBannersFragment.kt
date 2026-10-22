@@ -105,7 +105,7 @@ class LegacyBannersFragment : GuidedStepSupportFragment() {
         when (action.id.toInt()) {
             ACTION_SZ -> {
                 value = try {
-                    action.description.toString().toInt()
+                    action.description?.toString().orEmpty().toInt()
                 } catch (nfe: NumberFormatException) {
                     getBannersSize(activity)
                 }
@@ -114,7 +114,7 @@ class LegacyBannersFragment : GuidedStepSupportFragment() {
             }
             ACTION_RAD -> {
                 value = try {
-                    action.description.toString().toInt()
+                    action.description?.toString().orEmpty().toInt()
                 } catch (nfe: NumberFormatException) {
                     getCorners(activity)
                 }
@@ -123,7 +123,7 @@ class LegacyBannersFragment : GuidedStepSupportFragment() {
             }
             ACTION_FWD -> {
                 value = try {
-                    action.description.toString().toInt()
+                    action.description?.toString().orEmpty().toInt()
                 } catch (nfe: NumberFormatException) {
                     getFrameWidth(activity)
                 }
@@ -132,7 +132,7 @@ class LegacyBannersFragment : GuidedStepSupportFragment() {
             }
             ACTION_FCL -> {
                 value = try {
-                    Color.parseColor(action.description.toString())
+                    Color.parseColor(action.description?.toString().orEmpty())
                 } catch (nfe: IllegalArgumentException) {
                     getFrameColor(activity)
                 }
