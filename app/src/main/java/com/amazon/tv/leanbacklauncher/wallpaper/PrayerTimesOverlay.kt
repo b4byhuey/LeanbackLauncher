@@ -114,7 +114,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                         val remainingMinutes = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)
                         val hours = remainingMinutes / 60
                         val minutes = remainingMinutes % 60
-                        "$prayerLine\\nNext: ${next.first} in %02d:%02d".format(hours, minutes)
+                        "$prayerLine\nNext: ${next.first} in %02d:%02d".format(hours, minutes)
                     }
                 } finally {
                     connection.disconnect()
