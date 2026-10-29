@@ -28,7 +28,7 @@
 ## Known limitations / follow-up
 
 - The animated mode is an in-launcher renderer, not an Android `WallpaperService`; the separate system live-wallpaper chooser opens device-provided live wallpaper options. This avoids implying that a system wallpaper automatically embeds into an app view.
-- Prayer times currently come from the Aladhan API using calculation method 20 (Indonesia). It displays the five daily prayers, but does not yet highlight the next prayer or show a countdown, and the calculation method is not yet configurable.
+- Prayer times currently come from the Aladhan API using calculation method 20 (Indonesia). The panel displays the five daily prayers plus a next-prayer countdown. The calculation method is not yet configurable, and the countdown uses the device's local clock, so devices set to a different time zone than the selected city need on-device verification.
 - The gallery image decode currently follows the launcher's existing wallpaper bitmap path; large images and low-memory TV devices still need performance testing/downsampling.
 - A provider may revoke a selected URI or remove the image; fallback behavior should be tested on-device.
 - A full visual replacement of the existing app rows/cards has not been attempted. This pass adds the tvOS-inspired background, prayer panel, and a matching customization screen while preserving existing launcher navigation.
