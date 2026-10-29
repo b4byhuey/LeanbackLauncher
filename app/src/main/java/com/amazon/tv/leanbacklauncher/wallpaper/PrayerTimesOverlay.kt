@@ -86,7 +86,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                     val data = json.getJSONObject("data")
                     val timing = data.getJSONObject("timings")
                     val names = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
-                    names.joinToString("     ") { name -> "$name\n${timing.optString(name, "--:--").substringBefore(" ")}" }
+                    names.joinToString("     •     ") { name -> "$name  ${timing.optString(name, "--:--").substringBefore(" ")}" }
                 } finally {
                     connection.disconnect()
                 }
