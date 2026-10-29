@@ -120,6 +120,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     OnEditModeUninstallPressedListener {
 
