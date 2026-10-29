@@ -66,6 +66,7 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             requireActivity().classLoader, pref.fragment
         )
         f.arguments = args
+        @Suppress("DEPRECATION")
         f.setTargetFragment(caller, 0)
         if (f is PreferenceFragmentCompat
             || f is PreferenceDialogFragmentCompat
@@ -485,7 +486,7 @@ class WallpaperFragment : LeanbackPreferenceFragmentCompat() {
         return when (preference?.key) {
             "reset_wallpaper" -> {
                 resetWallpaper()
-                fragmentManager?.popBackStack()
+                parentFragmentManager?.popBackStack()
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
@@ -543,7 +544,7 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
 
     override fun onResume() {
         super.onResume()
-        if (fragmentManager?.backStackEntryCount == 3) // 3 on root dir
+        if (parentFragmentManager?.backStackEntryCount == 3) // 3 on root dir
             rootPath = Environment.getExternalStorageDirectory().absolutePath
     }
 
@@ -561,7 +562,7 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
         val ctx = requireContext()
-        val fm = fragmentManager
+        val fm = parentFragmentManager
 
         when (preference?.key) {
             KEY_BACK.toString() -> {
