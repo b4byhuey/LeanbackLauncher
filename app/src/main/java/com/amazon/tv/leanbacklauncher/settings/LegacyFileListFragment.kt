@@ -43,7 +43,7 @@ class LegacyFileListFragment : GuidedStepSupportFragment() {
 
     override fun onResume() {
         super.onResume()
-        val fm = fragmentManager
+        val fm = parentFragmentManager
         if (rootPath.isNullOrEmpty() || fm?.backStackEntryCount == 3) // 3 on root dir
             rootPath = Environment.getExternalStorageDirectory().absolutePath
         val ctx = requireContext()
@@ -94,7 +94,7 @@ class LegacyFileListFragment : GuidedStepSupportFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         val ctx = requireContext()
-        val fm = fragmentManager
+        val fm = parentFragmentManager
         when (action.id.toInt()) {
             ACTION_DIR -> {
                 rootPath = File(rootPath, action.title?.toString().orEmpty()).absolutePath
