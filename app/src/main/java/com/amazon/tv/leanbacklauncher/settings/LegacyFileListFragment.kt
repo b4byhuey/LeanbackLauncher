@@ -99,9 +99,7 @@ class LegacyFileListFragment : GuidedStepSupportFragment() {
             ACTION_DIR -> {
                 rootPath = File(rootPath, action.title?.toString().orEmpty()).absolutePath
                 dirName = action.title?.toString().orEmpty()
-                if (fm != null) {
-                    add(fm, LegacyFileListFragment())
-                }
+                add(fm, LegacyFileListFragment())
             }
             ACTION_SELECT -> {
                 val name = action.title
