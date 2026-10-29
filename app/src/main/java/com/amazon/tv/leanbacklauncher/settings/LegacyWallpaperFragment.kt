@@ -47,7 +47,7 @@ class LegacyWallpaperFragment : GuidedStepSupportFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id.toInt()) {
-            ACTION_CONTINUE -> fragmentManager?.let { add(it, LegacyFileListFragment()) }
+            ACTION_CONTINUE -> parentFragmentManager?.let { add(it, LegacyFileListFragment()) }
             ACTION_RESET -> {
                 resetWallpaper()
                 requireFragmentManager().popBackStack()
