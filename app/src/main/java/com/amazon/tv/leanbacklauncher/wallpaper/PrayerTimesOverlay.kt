@@ -16,6 +16,7 @@ import java.net.URL
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Calendar
 import java.util.Locale
 import java.util.concurrent.Executors
 
@@ -86,7 +87,35 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                     val data = json.getJSONObject("data")
                     val timing = data.getJSONObject("timings")
                     val names = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
-                    names.joinToString("     •     ") { name -> "$name  ${timing.optString(name, "--:--").substringBefore(" ")}" }
+                    val dailyTimes = names.associateWith { name ->
+                        timing.optString(name, "--:--").substringBefore(" ")
+                    }
+                    val now = Calendar.getInstance()
+                    val next = names.mapNotNull { name ->
+                        val raw = dailyTimes[name] ?: return@mapNotNull null
+                        val parsed = try { SimpleDateFormat("HH:mm", Locale.US).parse(raw) } catch (_: Exception) { null }
+                            ?: return@mapNotNull null
+                        val prayerCalendar = Calendar.getInstance().apply {
+                            time = parsed
+                            set(Calendar.YEAR, now.get(Calendar.YEAR))
+                            set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR))
+                            set(Calendar.HOUR_OF_DAY, parsed.hours)
+                            set(Calendar.MINUTE, parsed.minutes)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        if (prayerCalendar.timeInMillis <= now.timeInMillis) {
+                            prayerCalendar.add(Calendar.DAY_OF_YEAR, 1)
+                        }
+                        Triple(name, prayerCalendar.timeInMillis, raw)
+                    }.minByOrNull { it.second }
+                    val prayerLine = names.joinToString("     •     ") { name -> "$name  ${dailyTimes[name]}" }
+                    if (next == null) prayerLine else {
+                        val remainingMinutes = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)
+                        val hours = remainingMinutes / 60
+                        val minutes = remainingMinutes % 60
+                        "$prayerLine\\nNext: ${next.first} in %02d:%02d".format(hours, minutes)
+                    }
                 } finally {
                     connection.disconnect()
                 }
