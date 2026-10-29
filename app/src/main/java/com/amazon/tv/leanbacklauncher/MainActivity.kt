@@ -26,6 +26,7 @@ import android.media.tv.TvContract
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.os.Message
 import android.os.SystemClock
 import android.provider.Settings
@@ -253,7 +254,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         override fun onSelectedRecommendationChanged(position: Int) {
             if (mKeepUiReset && mAccessibilityManager?.isEnabled != true && position > FIRST_POSITION) {
-                mHandler = mHandler ?: Handler()
+                mHandler = mHandler ?: Handler(Looper.getMainLooper())
                 mHandler?.post(mSelectFirstRecommendationRunnable)
             }
         }
@@ -279,7 +280,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
     }
 
-    private class MainActivityMessageHandler(activity: MainActivity) : Handler() {
+    private class MainActivityMessageHandler(activity: MainActivity) : Handler(Looper.getMainLooper()) {
         private val activityRef = WeakReference(activity)
         override fun handleMessage(msg: Message) {
             activityRef.get()?.let { activity ->
