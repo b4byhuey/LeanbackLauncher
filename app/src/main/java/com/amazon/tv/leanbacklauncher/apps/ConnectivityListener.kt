@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import com.amazon.tv.leanbacklauncher.BuildConfig
 import java.lang.ref.WeakReference
 
+@Suppress("DEPRECATION")
 class ConnectivityListener(private val mContext: Context, listener: Listener) {
     private val mConnectivityManager: ConnectivityManager =
         mContext.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
