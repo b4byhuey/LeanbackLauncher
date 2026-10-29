@@ -28,22 +28,14 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Debug and Release APKs
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:assembleRelease -x processDebugGoogleServices -x processReleaseGoogleServices
+        run: ./gradlew --no-daemon --stacktrace :app:assembleRelease -x processDebugGoogleServices -x processReleaseGoogleServices
 
       - name: Prepare release files
         shell: bash
         run: |
           mkdir -p release-files
           find app/build/outputs/apk -type f -name '*.apk' -print -exec cp {} release-files/ \;
-          test -n "$(find release-files -maxdepth 1 -type f -name '*.apk' -print -quit)"
-
-      - name: Upload Debug APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
+          test -n "$(find release-files -maxdepth 1 -type f -name '*.apk' -print -quit)"      
 
       - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
