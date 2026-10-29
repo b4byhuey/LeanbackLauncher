@@ -77,9 +77,19 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             startActivityForResult(intent, PICK_WALLPAPER)
         }
         actionButton(root, "Use default wallpaper", "Remove the selected photo") {
-            prefs.edit().remove(KEY_WALLPAPER_URI).remove("wallpaper_image").apply()
+            prefs.edit().remove(KEY_WALLPAPER_URI).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
             refreshLauncher()
             Toast.makeText(this, "Default wallpaper restored", Toast.LENGTH_SHORT).show()
+        }
+        actionButton(root, "Animated tvOS ambience", "Use a slow-moving blue, teal and violet background") {
+            prefs.edit().putBoolean("launcher_live_background", true).remove(KEY_WALLPAPER_URI).remove("wallpaper_image").apply()
+            refreshLauncher()
+            Toast.makeText(this, "Animated background enabled", Toast.LENGTH_SHORT).show()
+        }
+        actionButton(root, "Use photo wallpaper", "Show the saved gallery photo instead of motion background") {
+            prefs.edit().putBoolean("launcher_live_background", false).apply()
+            refreshLauncher()
+            Toast.makeText(this, "Photo wallpaper mode enabled", Toast.LENGTH_SHORT).show()
         }
         actionButton(root, "Live wallpaper settings", "Open Android's live-wallpaper chooser") {
             val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
@@ -144,7 +154,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         } catch (_: Exception) {
             // Some document providers return a transient grant; we still save the URI.
         }
-        prefs.edit().putString(KEY_WALLPAPER_URI, uri.toString()).remove("wallpaper_image").apply()
+        prefs.edit().putString(KEY_WALLPAPER_URI, uri.toString()).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
         refreshLauncher()
         Toast.makeText(this, "Wallpaper saved", Toast.LENGTH_SHORT).show()
     }
