@@ -75,7 +75,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         executor.execute {
             val result = try {
                 val encoded = URLEncoder.encode(location, "UTF-8")
-                val connection = (URL("https://api.aladhan.com/v1/timingsByAddress?address=$encoded&method=11").openConnection() as HttpURLConnection).apply {
+                val connection = (URL("https://api.aladhan.com/v1/timingsByAddress?address=$encoded&method=20").openConnection() as HttpURLConnection).apply {
                     connectTimeout = 7000
                     readTimeout = 7000
                     requestMethod = "GET"
