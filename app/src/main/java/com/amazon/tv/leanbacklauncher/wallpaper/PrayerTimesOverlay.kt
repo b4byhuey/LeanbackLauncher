@@ -99,8 +99,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                             time = parsed
                             set(Calendar.YEAR, now.get(Calendar.YEAR))
                             set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR))
-                            set(Calendar.HOUR_OF_DAY, parsed.hours)
-                            set(Calendar.MINUTE, parsed.minutes)
+                            val parsedTime = Calendar.getInstance().apply { time = parsed }
+                            set(Calendar.HOUR_OF_DAY, parsedTime.get(Calendar.HOUR_OF_DAY))
+                            set(Calendar.MINUTE, parsedTime.get(Calendar.MINUTE))
                             set(Calendar.SECOND, 0)
                             set(Calendar.MILLISECOND, 0)
                         }
