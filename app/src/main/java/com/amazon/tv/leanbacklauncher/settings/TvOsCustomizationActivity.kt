@@ -140,7 +140,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             setPadding(0, dp(16), 0, dp(16))
         })
         actionButton(root, "Back to launcher", "Return to the home screen") { finish() }
-        root.post { root.getChildAt(3)?.requestFocus() }
+        root.post { root.getChildAt(4)?.requestFocus() }
     }
 
     @Deprecated("Deprecated in Android API, retained for minSdk 22")
