@@ -25,6 +25,7 @@ class SettingsActivity : FragmentActivity(),
             pref.fragment
         )
         fragment.arguments = args
+        @Suppress("DEPRECATION")
         fragment.setTargetFragment(caller, 0)
         // Replace the existing Fragment with the new Fragment
         supportFragmentManager.beginTransaction()
