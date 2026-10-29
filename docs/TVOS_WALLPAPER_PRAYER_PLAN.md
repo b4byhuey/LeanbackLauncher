@@ -1,70 +1,35 @@
-# tvOS-Inspired Launcher, Wallpaper, and Prayer Times Plan
+# tvOS-Inspired Launcher, Wallpaper, and Prayer Times
 
-## Audit baseline
+## Repository baseline
 
-Repository: `b4byhuey/LeanbackLauncher`
-Base branch: `main`
-Baseline commit: `762df7622ea0f8bb5e4684514b478c5cf5e23f42`
-Application module: `app`
-Application ID: `com.amazon.tv.leanbacklauncher`
-Current version: `1.63`
-Minimum SDK: 22
-Target SDK: 29
-Compile SDK: 35
+- Repository: `b4byhuey/LeanbackLauncher`
+- Base branch: `main`
+- Application ID: `com.amazon.tv.leanbacklauncher`
+- Version: `1.63`
+- Min SDK 22; target SDK 29; compile SDK 35
 
-The project is an existing Android TV / Fire TV launcher, not a new launcher scaffold. Its manifest declares `MainActivity` as the HOME activity, has settings activities, and already declares a wallpaper-changed receiver. The app uses AndroidX Leanback, AppCompat, Glide, Material Components, Kotlin coroutines, and a local-weather library.
+## Implemented on `feature/tvos-wallpaper-prayer-widget`
 
-## Goals
+- Added a D-pad-friendly TV customization activity with a dark, rounded-card visual treatment.
+- Added gallery image selection through `ACTION_OPEN_DOCUMENT`, persisted URI permission when supported, and saved the URI in preferences.
+- Updated the existing launcher wallpaper loader to read the selected content URI and retain legacy/default wallpaper fallback.
+- Added an animated tvOS-inspired ambient background rendered inside the launcher, selectable from the customization activity.
+- Added a prayer-times card to the home screen. It loads Fajr, Dhuhr, Asr, Maghrib, and Isha from the Aladhan address API using the saved city and refreshes periodically.
+- Registered the customization activity with the Android TV `LEANBACK_LAUNCHER` category so it can be opened from the TV app launcher.
+- Kept the work on a feature branch; `main` has not been changed.
 
-1. Introduce an Apple tvOS-inspired home screen while retaining Android TV remote navigation and existing launcher behavior.
-2. Let users choose a static wallpaper from the system photo picker / gallery.
-3. Support live wallpaper where Android and the device's launcher rendering model allow it.
-4. Add a prayer-times panel with the next prayer and countdown.
+## How to use
 
-## UI direction
+1. Install the built APK and open **TV Home Customization** from the TV app list.
+2. Choose **Choose photo from gallery** to save a photo background.
+3. Choose **Animated tvOS ambience** to enable the animated background inside the launcher, or **Use photo wallpaper** to turn that mode off.
+4. Enter the city/area and select **Save prayer-time location**. The prayer panel appears on the launcher home screen.
 
-- Full-screen scenic background with a configurable dim/gradient overlay for legibility.
-- A compact top information area for date/time and optional network/weather information.
-- Large, clearly focused app cards with scale/elevation feedback and generous spacing.
-- Horizontal content rows with D-pad focus, predictable focus restoration, and no touch-only interactions.
-- A settings entry for wallpaper mode, image selection, background dimming, and prayer location/calculation preferences.
+## Known limitations / follow-up
 
-Keep this as a visual direction rather than copying Apple assets or branding.
-
-## Wallpaper design
-
-### Static image
-- Prefer Android's system Photo Picker on supported versions, with a compatible fallback for older devices.
-- Persist the selected URI permission when the provider supports it.
-- Store the URI and display preferences in app preferences.
-- Load images asynchronously and downsample to the display size; do not decode full-resolution images on the UI thread.
-- Provide a fallback background if the URI is revoked or the media is removed.
-
-### Live wallpaper
-- First determine whether the existing launcher draws its own background or delegates to Android's system wallpaper.
-- If the launcher can display the system wallpaper, use that integration rather than implementing a second wallpaper engine.
-- If it cannot, add a controlled renderer/preview path and make the limitation explicit. A normal `WallpaperService` is not automatically a view that can be embedded inside another activity.
-- Pause or reduce animation work while the launcher is not visible and test on low-memory TV devices.
-
-## Prayer-times design
-
-- Show Subuh, Syuruq (optional), Zuhur, Asar, Magrib, and Isya.
-- Highlight the next prayer and show a countdown using the device's local time.
-- Let users select city/location manually; avoid requiring continuous location access for a fixed city.
-- Make calculation method, Asar juristic method, time zone, and per-prayer minute adjustments configurable.
-- Cache the current schedule and handle date/time-zone changes.
-- Clearly label the calculation source/method. Do not hardcode example times as real prayer schedules.
-- Keep calculations behind a repository/interface so a tested calculation library or trusted API can be integrated without coupling the UI to network calls.
-
-## Suggested implementation sequence
-
-1. **UI audit:** identify the actual home-screen view hierarchy, focus/card adapters, background rendering path, and settings preference structure.
-2. **Visual foundation:** add theme/background overlay and tvOS-style focus states without replacing app discovery or launch logic.
-3. **Static wallpaper:** add picker, persisted URI/preferences, async loading, and fallback handling.
-4. **Live wallpaper:** implement only after confirming the current background rendering path and device constraints.
-5. **Prayer panel:** add data model, calculation/provider abstraction, settings, next-prayer calculation, and D-pad-accessible presentation.
-6. **Validation:** build debug APK; verify D-pad navigation, process restart, picker URI persistence, missing media, time-zone changes, and slow/low-memory TV hardware.
-
-## Current limitations of this audit
-
-The repository connector successfully reads the manifest and Gradle configuration, but its file search did not return the home-screen implementation, and several guessed source paths returned 404. Therefore this document intentionally does not claim that the features have been implemented or prescribe edits to unverified classes. Before modifying production UI, inspect the actual source tree and trace the existing home-screen and wallpaper code.
+- The animated mode is an in-launcher renderer, not an Android `WallpaperService`; the separate system live-wallpaper chooser opens device-provided live wallpaper options. This avoids implying that a system wallpaper automatically embeds into an app view.
+- Prayer times currently come from the Aladhan API using calculation method 20 (Indonesia). It displays the five daily prayers, but does not yet highlight the next prayer or show a countdown, and the calculation method is not yet configurable.
+- The gallery image decode currently follows the launcher's existing wallpaper bitmap path; large images and low-memory TV devices still need performance testing/downsampling.
+- A provider may revoke a selected URI or remove the image; fallback behavior should be tested on-device.
+- A full visual replacement of the existing app rows/cards has not been attempted. This pass adds the tvOS-inspired background, prayer panel, and a matching customization screen while preserving existing launcher navigation.
+- Build and on-device tests have not been run in this environment. Please build the branch and verify D-pad navigation, gallery persistence after reboot, the prayer API/network failure state, and behavior on the target TV device.
