@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   build:
-    name: Build APKs and publish GitHub Release
+    name: Build APK and publish GitHub Release
     runs-on: ubuntu-latest
 
     steps:
@@ -27,8 +27,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build Debug and Release APKs
-        run: ./gradlew --no-daemon --stacktrace :app:assembleRelease -x processDebugGoogleServices -x processReleaseGoogleServices
+      - name: Build APK
+        run: ./gradlew --no-daemon --stacktrace :app:assembleRelease -x processReleaseGoogleServices
 
       - name: Prepare release files
         shell: bash
