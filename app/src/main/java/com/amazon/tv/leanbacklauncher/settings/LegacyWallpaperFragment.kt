@@ -50,7 +50,7 @@ class LegacyWallpaperFragment : GuidedStepSupportFragment() {
             ACTION_CONTINUE -> parentFragmentManager?.let { add(it, LegacyFileListFragment()) }
             ACTION_RESET -> {
                 resetWallpaper()
-                requireFragmentManager().popBackStack()
+                parentFragmentManager.popBackStack()
             }
             else -> return
         }
