@@ -8,6 +8,15 @@
 
     <include layout="@layout/wallpaper" />
 
+    <com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay
+        android:id="@+id/prayer_times_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="36dp"
+        android:maxWidth="560dp" />
+
     <ImageView
         android:id="@id/click_circle_layer"
         android:layout_width="fill_parent"
