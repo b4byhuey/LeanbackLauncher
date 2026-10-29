@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
@@ -433,10 +434,16 @@ class EditableAppsRowView @JvmOverloads constructor(
             if (position != -1) {
                 var drawable = adapter.getDrawableFromLaunchPoint(position)
                 if (drawable == null) {
-                    lastFocusedViewHolder.itemView.isDrawingCacheEnabled = true
-                    val tmpBitmap = Bitmap.createBitmap(lastFocusedViewHolder.itemView.drawingCache)
-                    lastFocusedViewHolder.itemView.isDrawingCacheEnabled = false
-                    drawable = BitmapDrawable(resources, tmpBitmap)
+                    val itemView = lastFocusedViewHolder.itemView
+                    if (itemView.width > 0 && itemView.height > 0) {
+                        val tmpBitmap = Bitmap.createBitmap(
+                            itemView.width,
+                            itemView.height,
+                            Bitmap.Config.ARGB_8888
+                        )
+                        itemView.draw(Canvas(tmpBitmap))
+                        drawable = BitmapDrawable(resources, tmpBitmap)
+                    }
                 }
                 return drawable
             }
