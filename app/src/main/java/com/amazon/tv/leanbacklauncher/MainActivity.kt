@@ -1731,10 +1731,10 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private fun checkFirstRunAfterBoot(): Boolean {
         val dummyIntent = Intent("android.intent.category.LEANBACK_LAUNCHER")
         dummyIntent.setClass(this, DummyActivity::class.java)
-        val firstRun = PendingIntent.getActivity(this, 0, dummyIntent, FLAG_NO_CREATE) == null
+        val firstRun = PendingIntent.getActivity(this, 0, dummyIntent, FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE) == null
         if (firstRun) {
             (getSystemService(ALARM_SERVICE) as AlarmManager)[AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + 864000000000L] =
-                PendingIntent.getActivity(this, 0, dummyIntent, 0)
+                PendingIntent.getActivity(this, 0, dummyIntent, PendingIntent.FLAG_IMMUTABLE)
         }
         return firstRun
     }
