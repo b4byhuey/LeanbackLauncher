@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.amazon.tv.leanbacklauncher.apps
 
 import android.Manifest
