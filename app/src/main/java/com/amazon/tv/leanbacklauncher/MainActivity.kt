@@ -596,6 +596,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         listener.onIdleStateChange(mIsIdle)
     }
 
+    @Deprecated("Use OnBackPressedDispatcher")
     override fun onBackPressed() {
         super.onBackPressed()
         when {
