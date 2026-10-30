@@ -28,6 +28,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private val executor = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val clock = TextView(context)
+    private val weather = TextView(context)
     private val city = TextView(context)
     private val date = TextView(context)
     private val times = TextView(context)
@@ -50,7 +51,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         }
         isFocusable = false
         isClickable = false
-        clock.textSize = 30f
+        clock.textSize = 27f
         clock.typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
         clock.setTextColor(Color.WHITE)
         city.textSize = 12f
@@ -62,10 +63,18 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         times.setTextColor(Color.WHITE)
         times.maxLines = 2
         times.gravity = Gravity.END
-        addView(clock)
+        val top = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        clock.textSize = 27f
+        top.addView(clock, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        weather.textSize = 13f
+        weather.typeface = Typeface.DEFAULT_BOLD
+        weather.setTextColor(Color.WHITE)
+        top.addView(weather, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        addView(top)
         addView(city)
         addView(date)
         addView(times)
+        updateWeatherSummary()
         clockTick.run()
         loadTimes()
     }
@@ -76,6 +85,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         main.postDelayed(refresh, REFRESH_INTERVAL)
         main.removeCallbacks(clockTick)
         clockTick.run()
+        updateWeatherSummary()
     }
 
     override fun onDetachedFromWindow() {
@@ -86,9 +96,17 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private fun loadTimes() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        val location = prefs.getString("launcher_prayer_city", "Sidoarjo, Indonesia")
-            ?: "Sidoarjo, Indonesia"
+        val automatic = prefs.getBoolean(KEY_AUTO_LOCATION, true)
+        val weatherData = readWeather()
+        val location = if (automatic) {
+            weatherData?.optString("name")?.takeIf { it.isNotBlank() }
+                ?: prefs.getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
+                ?: prefs.getString(KEY_PRAYER_CITY, DEFAULT_CITY) ?: DEFAULT_CITY
+        } else {
+            prefs.getString(KEY_PRAYER_CITY, DEFAULT_CITY)?.takeIf { it.isNotBlank() } ?: DEFAULT_CITY
+        }
         city.text = location
+        updateWeatherSummary()
         date.text = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
         times.text = context.getString(R.string.prayer_loading)
         executor.execute {
@@ -156,9 +174,33 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         main.postDelayed(refresh, REFRESH_INTERVAL)
     }
 
+    private fun readWeather(): JSONObject? = try {
+        val file = java.io.File(context.cacheDir, "weather.json")
+        if (file.exists()) JSONObject(file.readText()) else null
+    } catch (_: Exception) { null }
+
+    private fun updateWeatherSummary() {
+        val data = readWeather()
+        val temperature = data?.optDouble("temperature", Double.NaN) ?: Double.NaN
+        val description = data?.optJSONArray("descriptions")?.optString(0).orEmpty().lowercase(Locale.ROOT)
+        val icon = when {
+            "thunder" in description -> "⛈"
+            "rain" in description || "drizzle" in description -> "🌧"
+            "snow" in description -> "❄"
+            "cloud" in description || "overcast" in description -> "☁"
+            "clear" in description || "sun" in description -> "☀"
+            else -> "🌤"
+        }
+        weather.text = if (!temperature.isNaN()) "$icon ${temperature.toInt()}°" else ""
+    }
+
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     companion object {
+        private const val KEY_AUTO_LOCATION = "launcher_prayer_use_weather_location"
+        private const val KEY_PRAYER_CITY = "launcher_prayer_city"
+        private const val KEY_DETECTED_CITY = "launcher_detected_city"
+        private const val DEFAULT_CITY = "Sidoarjo, Indonesia"
         private const val REFRESH_INTERVAL = 6 * 60 * 60 * 1000L
     }
 }

@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +29,7 @@ import com.amazon.tv.leanbacklauncher.R
  */
 class TvOsCustomizationActivity : AppCompatActivity() {
     private lateinit var cityInput: EditText
+    private lateinit var autoPrayerLocation: Switch
     private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,6 +112,15 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             setTextColor(Color.WHITE)
             setPadding(0, dp(4), 0, dp(8))
         })
+        autoPrayerLocation = Switch(this).apply {
+            text = getString(R.string.use_current_location_title)
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            isChecked = prefs.getBoolean(KEY_PRAYER_AUTO_LOCATION, true)
+            setPadding(0, 0, 0, dp(10))
+        }
+        root.addView(autoPrayerLocation)
+
         cityInput = EditText(this).apply {
             setSingleLine(true)
             textSize = 18f
@@ -127,10 +138,15 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         root.addView(cityInput, LinearLayout.LayoutParams(-1, dp(56)))
         actionButton(root, getString(R.string.tv_save_prayer_location), getString(R.string.tv_save_prayer_desc)) {
             val city = cityInput.text.toString().trim()
-            if (city.isBlank()) {
+            if (!autoPrayerLocation.isChecked && city.isBlank()) {
                 cityInput.error = getString(R.string.tv_enter_city)
             } else {
-                prefs.edit().putString(KEY_PRAYER_CITY, city).apply()
+                prefs.edit()
+                    .putBoolean(KEY_PRAYER_AUTO_LOCATION, autoPrayerLocation.isChecked)
+                    .apply {
+                        if (city.isNotBlank()) putString(KEY_PRAYER_CITY, city)
+                    }
+                    .apply()
                 refreshLauncher()
                 Toast.makeText(this, getString(R.string.tv_prayer_saved), Toast.LENGTH_SHORT).show()
             }
@@ -219,6 +235,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
     companion object {
         const val KEY_WALLPAPER_URI = "launcher_wallpaper_uri"
         const val KEY_PRAYER_CITY = "launcher_prayer_city"
+        private const val KEY_PRAYER_AUTO_LOCATION = "launcher_prayer_use_weather_location"
         private const val PICK_WALLPAPER = 4107
     }
 }

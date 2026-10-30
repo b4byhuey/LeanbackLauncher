@@ -854,6 +854,10 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         lw.weatherCallback = object : LocalWeather.WeatherCallback {
             override fun onSuccess(weather: Weather) {
                 writeJsonWeather(weather)
+                if (weather.name.isNotBlank()) {
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
+                        .edit().putString("launcher_detected_city", weather.name).apply()
+                }
                 readJsonWeather(JSONFILE)
             }
 
