@@ -824,7 +824,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
             override fun onFailure(exception: Throwable?) {
                 Log.e(TAG, "Weather fetching failed: ${exception?.message}")
-                LauncherApp.toast("Weather error: ${exception?.message}", true)
+                LauncherApp.toast(getString(R.string.weather_error, exception?.message ?: ""), true)
             }
         }
 
