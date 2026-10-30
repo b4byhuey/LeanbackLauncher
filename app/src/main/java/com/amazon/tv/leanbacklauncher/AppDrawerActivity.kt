@@ -20,6 +20,7 @@ class AppDrawerActivity : AppCompatActivity() {
 
     private data class AppEntry(val label: String, val icon: android.graphics.drawable.Drawable, val intent: Intent)
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(12, 17, 27)
