@@ -3,6 +3,7 @@ package com.amazon.tv.leanbacklauncher.wallpaper
 import android.content.Context
 import android.graphics.Color
 import android.view.Gravity
+import androidx.preference.PreferenceManager
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
@@ -77,7 +78,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         val weatherData = readWeather()
         val location = if (automatic) {
             weatherData?.optString("name")?.takeIf { it.isNotBlank() }
-                ?: context.getSharedPreferences("launcher_weather", Context.MODE_PRIVATE)
+                ?: PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
         } else {
             RowPreferences.getUserLocation(context)?.takeIf { it.isNotBlank() }
