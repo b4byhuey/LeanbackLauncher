@@ -117,7 +117,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                         val remainingMinutes = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)
                         val hours = remainingMinutes / 60
                         val minutes = remainingMinutes % 60
-                        "$prayerLine\n"+ context.getString(R.string.prayer_next, labels[next.first], hours, minutes) + "
+                        "$prayerLine\n"+ context.getString(R.string.prayer_next, labels[next.first], hours, minutes)
                     }
                 } finally {
                     connection.disconnect()
