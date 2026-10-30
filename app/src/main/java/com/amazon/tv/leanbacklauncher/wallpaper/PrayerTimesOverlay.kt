@@ -128,7 +128,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                         if (prayerCalendar.timeInMillis <= now.timeInMillis) {
                             prayerCalendar.add(Calendar.DAY_OF_YEAR, 1)
                         }
-                        Triple(name, prayerCalendar.timeInMillis)
+                        name to prayerCalendar.timeInMillis
                     }.minByOrNull { it.second }
                     val upcoming = if (next == null) "" else {
                         val remaining = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)

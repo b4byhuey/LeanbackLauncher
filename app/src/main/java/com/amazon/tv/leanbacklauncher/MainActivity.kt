@@ -1634,7 +1634,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
     }
 
-    private fun addPrayerTimesSummary(container: LinearLayout) {
+    private fun addPrayerTimesSummary(container: ViewGroup) {
         if (container.findViewById<View>(R.id.prayer_times_overlay) != null) return
         container.addView(
             com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay(this),
