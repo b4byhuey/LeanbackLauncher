@@ -328,4 +328,5 @@ or recommendations will not work properly."</string>
     <string name="prayer_asr">Asr</string>
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
+    <string name="weather_error">Weather error: %1$s</string>
 </resources>
