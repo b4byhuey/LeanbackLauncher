@@ -49,27 +49,27 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         setContentView(scroll)
 
         root.addView(TextView(this).apply {
-            text = "HOME EXPERIENCE"
+            text = getString(R.string.tv_customization_eyebrow)
             textSize = 13f
             letterSpacing = .22f
             setTextColor(Color.rgb(115, 190, 255))
         })
         root.addView(TextView(this).apply {
-            text = "Customize your TV"
+            text = getString(R.string.tv_customization_title)
             textSize = 34f
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             setTextColor(Color.WHITE)
             setPadding(0, dp(6), 0, dp(8))
         })
         root.addView(TextView(this).apply {
-            text = "Wallpaper, motion and daily prayer times"
+            text = getString(R.string.tv_customization_subtitle)
             textSize = 17f
             setTextColor(Color.rgb(188, 204, 229))
             setPadding(0, 0, 0, dp(22))
         })
 
-        section(root, "WALLPAPER")
-        actionButton(root, "Choose photo from gallery", "Select an image and keep it as the launcher background") {
+        section(root, getString(R.string.tv_section_wallpaper))
+        actionButton(root, getString(R.string.tv_choose_gallery), getString(R.string.tv_choose_gallery_desc)) {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "image/*"
@@ -78,34 +78,34 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             startActivityForResult(intent, PICK_WALLPAPER)
         }
-        actionButton(root, "Use default wallpaper", "Remove the selected photo") {
+        actionButton(root, getString(R.string.tv_default_wallpaper), getString(R.string.tv_default_wallpaper_desc)) {
             prefs.edit().remove(KEY_WALLPAPER_URI).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
             refreshLauncher()
-            Toast.makeText(this, "Default wallpaper restored", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.tv_default_wallpaper_saved), Toast.LENGTH_SHORT).show()
         }
-        actionButton(root, "Animated tvOS ambience", "Use a slow-moving blue, teal and violet background") {
+        actionButton(root, getString(R.string.tv_animated_ambience), getString(R.string.tv_animated_ambience_desc)) {
             prefs.edit().putBoolean("launcher_live_background", true).remove(KEY_WALLPAPER_URI).remove("wallpaper_image").apply()
             refreshLauncher()
-            Toast.makeText(this, "Animated background enabled", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.tv_animated_enabled), Toast.LENGTH_SHORT).show()
         }
-        actionButton(root, "Use photo wallpaper", "Show the saved gallery photo instead of motion background") {
+        actionButton(root, getString(R.string.tv_photo_wallpaper), getString(R.string.tv_photo_wallpaper_desc)) {
             prefs.edit().putBoolean("launcher_live_background", false).apply()
             refreshLauncher()
-            Toast.makeText(this, "Photo wallpaper mode enabled", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.tv_photo_mode_enabled), Toast.LENGTH_SHORT).show()
         }
-        actionButton(root, "Live wallpaper settings", "Open Android's live-wallpaper chooser") {
+        actionButton(root, getString(R.string.tv_live_wallpaper), getString(R.string.tv_live_wallpaper_desc)) {
             val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
             try {
                 startActivity(intent)
             } catch (_: Exception) {
                 try { startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)) }
-                catch (_: Exception) { Toast.makeText(this, "Live wallpapers are not supported by this device", Toast.LENGTH_LONG).show() }
+                catch (_: Exception) { Toast.makeText(this, getString(R.string.tv_live_unsupported), Toast.LENGTH_LONG).show() }
             }
         }
 
-        section(root, "PRAYER TIMES")
+        section(root, getString(R.string.tv_section_prayer))
         root.addView(TextView(this).apply {
-            text = "City or area"
+            text = getString(R.string.tv_city_area)
             textSize = 16f
             setTextColor(Color.WHITE)
             setPadding(0, dp(4), 0, dp(8))
@@ -113,7 +113,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         cityInput = EditText(this).apply {
             setSingleLine(true)
             textSize = 18f
-            hint = "e.g. Sidoarjo, Indonesia"
+            hint = getString(R.string.tv_city_hint)
             setHintTextColor(Color.rgb(132, 149, 178))
             setTextColor(Color.WHITE)
             setPadding(dp(14), dp(10), dp(14), dp(10))
@@ -125,23 +125,23 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             setText(prefs.getString(KEY_PRAYER_CITY, "Sidoarjo, Indonesia"))
         }
         root.addView(cityInput, LinearLayout.LayoutParams(-1, dp(56)))
-        actionButton(root, "Save prayer-time location", "Prayer times are loaded online for this location") {
+        actionButton(root, getString(R.string.tv_save_prayer_location), getString(R.string.tv_save_prayer_desc)) {
             val city = cityInput.text.toString().trim()
             if (city.isBlank()) {
-                cityInput.error = "Enter a city or area"
+                cityInput.error = getString(R.string.tv_enter_city)
             } else {
                 prefs.edit().putString(KEY_PRAYER_CITY, city).apply()
                 refreshLauncher()
-                Toast.makeText(this, "Prayer location saved", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.tv_prayer_saved), Toast.LENGTH_SHORT).show()
             }
         }
         root.addView(TextView(this).apply {
-            text = "Prayer times require an internet connection. Times are calculated for the saved city; verify local settings with your mosque if needed."
+            text = getString(R.string.tv_prayer_note)
             textSize = 13f
             setTextColor(Color.rgb(153, 174, 205))
             setPadding(0, dp(16), 0, dp(16))
         })
-        actionButton(root, "Back to launcher", "Return to the home screen") { finish() }
+        actionButton(root, getString(R.string.tv_back_launcher), getString(R.string.tv_back_launcher_desc)) { finish() }
         root.post { root.getChildAt(4)?.requestFocus() }
     }
 
@@ -158,7 +158,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         }
         prefs.edit().putString(KEY_WALLPAPER_URI, uri.toString()).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
         refreshLauncher()
-        Toast.makeText(this, "Wallpaper saved", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.tv_wallpaper_saved), Toast.LENGTH_SHORT).show()
     }
 
     private fun refreshLauncher() {

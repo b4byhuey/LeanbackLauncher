@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.preference.PreferenceManager
+import com.amazon.tv.leanbacklauncher.R
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -70,9 +71,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private fun loadTimes() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val location = prefs.getString("launcher_prayer_city", "Sidoarjo, Indonesia") ?: "Sidoarjo, Indonesia"
-        city.text = "PRAYER TIMES · $location"
+        city.text = context.getString(R.string.prayer_heading, location)
         date.text = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
-        times.text = "Loading prayer times…"
+        times.text = context.getString(R.string.prayer_loading)
         executor.execute {
             val result = try {
                 val encoded = URLEncoder.encode(location, "UTF-8")
@@ -87,6 +88,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                     val data = json.getJSONObject("data")
                     val timing = data.getJSONObject("timings")
                     val names = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
+                    val labels = mapOf("Fajr" to context.getString(R.string.prayer_fajr), "Dhuhr" to context.getString(R.string.prayer_dhuhr), "Asr" to context.getString(R.string.prayer_asr), "Maghrib" to context.getString(R.string.prayer_maghrib), "Isha" to context.getString(R.string.prayer_isha))
                     val dailyTimes = names.associateWith { name ->
                         timing.optString(name, "--:--").substringBefore(" ")
                     }
@@ -110,7 +112,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                         }
                         Triple(name, prayerCalendar.timeInMillis, raw)
                     }.minByOrNull { it.second }
-                    val prayerLine = names.joinToString("     •     ") { name -> "$name  ${dailyTimes[name]}" }
+                    val prayerLine = names.joinToString("     •     ") { name -> "${labels[name]}  ${dailyTimes[name]}" }
                     if (next == null) prayerLine else {
                         val remainingMinutes = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)
                         val hours = remainingMinutes / 60
