@@ -38,4 +38,5 @@
     <string name="prayer_asr">Asar</string>
     <string name="prayer_maghrib">Magrib</string>
     <string name="prayer_isha">Isya</string>
+    <string name="weather_error">Kesalahan cuaca: %1$s</string>
 </resources>
