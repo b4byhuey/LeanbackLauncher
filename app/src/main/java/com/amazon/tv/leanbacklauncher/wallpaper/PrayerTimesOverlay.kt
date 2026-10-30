@@ -2,13 +2,14 @@ package com.amazon.tv.leanbacklauncher.wallpaper
 
 import android.content.Context
 import android.graphics.Color
+import android.view.Gravity
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.preference.PreferenceManager
+import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences
 import com.amazon.tv.leanbacklauncher.R
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -39,11 +40,14 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         isClickable = false
 
         city.textSize = 13f
+        city.gravity = Gravity.END
         city.typeface = Typeface.DEFAULT_BOLD
         city.setTextColor(Color.WHITE)
         date.textSize = 10f
+        date.gravity = Gravity.END
         date.setTextColor(Color.rgb(195, 205, 220))
         times.textSize = 11f
+        times.gravity = Gravity.END
         times.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         times.setTextColor(Color.WHITE)
         times.maxLines = 2
@@ -51,13 +55,12 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         addView(city, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         addView(date, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         addView(times, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        loadTimes()
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         main.removeCallbacks(refresh)
-        main.postDelayed(refresh, REFRESH_INTERVAL)
+        loadTimes()
     }
 
     override fun onDetachedFromWindow() {
@@ -70,14 +73,14 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     }
 
     private fun loadTimes() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        val automatic = prefs.getBoolean(KEY_AUTO_LOCATION, true)
+        val automatic = RowPreferences.isUseLocationEnabled(context)
         val weatherData = readWeather()
         val location = if (automatic) {
             weatherData?.optString("name")?.takeIf { it.isNotBlank() }
-                ?: prefs.getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
+                ?: context.getSharedPreferences("launcher_weather", Context.MODE_PRIVATE)
+                    .getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
         } else {
-            prefs.getString(KEY_PRAYER_CITY, null)?.takeIf { it.isNotBlank() }
+            RowPreferences.getUserLocation(context)?.takeIf { it.isNotBlank() }
         }
         city.text = location ?: if (automatic) "Mendeteksi lokasi..." else "Atur kota di pengaturan"
         date.text = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
@@ -163,8 +166,6 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     companion object {
-        private const val KEY_AUTO_LOCATION = "launcher_prayer_use_weather_location"
-        private const val KEY_PRAYER_CITY = "launcher_prayer_city"
         private const val KEY_DETECTED_CITY = "launcher_detected_city"
         private const val REFRESH_INTERVAL = 6 * 60 * 60 * 1000L
     }

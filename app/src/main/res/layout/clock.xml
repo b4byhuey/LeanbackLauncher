@@ -247,9 +247,12 @@
 
     </FrameLayout>
 
+    <!-- Prayer schedule belongs to the native clock/weather header, not activity_main. -->
     <com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay
         android:id="@+id/prayer_times_overlay"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:gravity="end" />
 
 </LinearLayout>
