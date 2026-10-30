@@ -123,7 +123,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                     connection.disconnect()
                 }
             } catch (_: Exception) {
-                "Prayer times unavailable\nCheck internet or saved city"
+                context.getString(R.string.prayer_unavailable)
             }
             main.post {
                 if (isAttachedToWindow) {
