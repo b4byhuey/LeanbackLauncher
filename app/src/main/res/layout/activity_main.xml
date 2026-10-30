@@ -28,9 +28,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
-        android:layout_marginTop="28dp"
-        android:layout_marginEnd="36dp"
-        android:maxWidth="560dp" />
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="32dp"
+        android:maxWidth="390dp" />
 
     <include layout="@layout/edit_mode_layer" />
 </FrameLayout>
