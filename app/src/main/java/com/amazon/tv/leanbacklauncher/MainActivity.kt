@@ -161,39 +161,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
 
-    private fun installAppDrawerButton() {
-        val root = findViewById<android.view.ViewGroup>(android.R.id.content)
-            .getChildAt(0) as? android.widget.FrameLayout ?: return
-        val button = TextView(this).apply {
-            text = "All Apps"
-            textSize = 18f
-            setTextColor(android.graphics.Color.WHITE)
-            gravity = android.view.Gravity.CENTER
-            isFocusable = true
-            isClickable = true
-            contentDescription = "Show all installed apps"
-            setPadding(24, 14, 24, 14)
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(android.graphics.Color.argb(210, 32, 42, 58))
-                cornerRadius = 12f * resources.displayMetrics.density
-                setStroke((1.5f * resources.displayMetrics.density).toInt(), android.graphics.Color.WHITE)
-            }
-            setOnClickListener {
-                startActivity(Intent(this@MainActivity, AppDrawerActivity::class.java))
-            }
-        }
-        val margin = (28 * resources.displayMetrics.density).toInt()
-        root.addView(button, android.widget.FrameLayout.LayoutParams(
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-            android.view.Gravity.BOTTOM or android.view.Gravity.END
-        ).apply {
-            bottomMargin = margin
-            marginEnd = margin
-        })
-    }
-
-
     // Weather
     private var localWeather: LocalWeather? = null
 
@@ -416,7 +383,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
         val appContext = applicationContext
         setContentView(R.layout.activity_main)
-        installAppDrawerButton()
 
         if (Partner.get(this).showLiveTvOnStartUp() && checkFirstRunAfterBoot()) {
             val tvIntent = Intent("android.intent.action.VIEW", TvContract.buildChannelUri(0))
