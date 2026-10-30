@@ -21,7 +21,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 
-/** Small, non-focusable time and prayer summary for the top-right corner. */
+/** Native, non-focusable information header that is part of the launcher layout. */
 class PrayerTimesOverlay @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : LinearLayout(context, attrs) {
@@ -42,13 +42,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     init {
         orientation = VERTICAL
-        gravity = Gravity.END
-        setPadding(dp(16), dp(10), dp(16), dp(10))
-        background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = dp(16).toFloat()
-            setColor(Color.argb(175, 12, 20, 32))
-            setStroke(dp(1), Color.argb(65, 180, 210, 255))
-        }
+        gravity = Gravity.START
+        setPadding(dp(48), dp(18), dp(48), dp(12))
+        setBackgroundColor(Color.TRANSPARENT)
         isFocusable = false
         isClickable = false
         clock.textSize = 27f
@@ -62,17 +58,29 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         times.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         times.setTextColor(Color.WHITE)
         times.maxLines = 2
-        times.gravity = Gravity.END
-        val top = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        clock.textSize = 27f
-        top.addView(clock, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
-        weather.textSize = 13f
+        times.gravity = Gravity.START
+        times.maxLines = 2
+        val top = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        clock.textSize = 34f
+        top.addView(clock, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        val locationBlock = LinearLayout(context).apply {
+            orientation = VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(18), 0, dp(18), 0)
+        }
+        city.textSize = 15f
+        city.typeface = Typeface.DEFAULT_BOLD
+        locationBlock.addView(city)
+        locationBlock.addView(date)
+        top.addView(locationBlock, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        weather.textSize = 20f
         weather.typeface = Typeface.DEFAULT_BOLD
         weather.setTextColor(Color.WHITE)
         top.addView(weather, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
         addView(top)
-        addView(city)
-        addView(date)
         addView(times)
         updateWeatherSummary()
         clockTick.run()
@@ -101,13 +109,18 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         val location = if (automatic) {
             weatherData?.optString("name")?.takeIf { it.isNotBlank() }
                 ?: prefs.getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
-                ?: prefs.getString(KEY_PRAYER_CITY, DEFAULT_CITY) ?: DEFAULT_CITY
         } else {
-            prefs.getString(KEY_PRAYER_CITY, DEFAULT_CITY)?.takeIf { it.isNotBlank() } ?: DEFAULT_CITY
+            prefs.getString(KEY_PRAYER_CITY, null)?.takeIf { it.isNotBlank() }
         }
-        city.text = location
+        city.text = location ?: if (automatic) "Mendeteksi lokasi..." else "Atur kota di pengaturan"
         updateWeatherSummary()
         date.text = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
+        if (location == null) {
+            times.text = if (automatic) "Menunggu lokasi perangkat..." else "Lokasi belum diatur"
+            main.removeCallbacks(refresh)
+            main.postDelayed(refresh, 2 * 60 * 1000L)
+            return
+        }
         times.text = context.getString(R.string.prayer_loading)
         executor.execute {
             val result = try {
@@ -174,6 +187,11 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         main.postDelayed(refresh, REFRESH_INTERVAL)
     }
 
+    fun refreshForWeatherUpdate() {
+        updateWeatherSummary()
+        loadTimes()
+    }
+
     private fun readWeather(): JSONObject? = try {
         val file = java.io.File(context.cacheDir, "weather.json")
         if (file.exists()) JSONObject(file.readText()) else null
@@ -200,7 +218,6 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         private const val KEY_AUTO_LOCATION = "launcher_prayer_use_weather_location"
         private const val KEY_PRAYER_CITY = "launcher_prayer_city"
         private const val KEY_DETECTED_CITY = "launcher_detected_city"
-        private const val DEFAULT_CITY = "Sidoarjo, Indonesia"
         private const val REFRESH_INTERVAL = 6 * 60 * 60 * 1000L
     }
 }

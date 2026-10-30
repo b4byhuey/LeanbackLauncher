@@ -133,7 +133,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
                 setColor(Color.rgb(29, 46, 76))
                 setStroke(dp(1), Color.rgb(66, 100, 148))
             }
-            setText(prefs.getString(KEY_PRAYER_CITY, "Sidoarjo, Indonesia"))
+            setText(prefs.getString(KEY_PRAYER_CITY, ""))
         }
         root.addView(cityInput, LinearLayout.LayoutParams(-1, dp(56)))
         actionButton(root, getString(R.string.tv_save_prayer_location), getString(R.string.tv_save_prayer_desc)) {

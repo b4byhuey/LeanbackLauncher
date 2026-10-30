@@ -396,19 +396,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         if (Build.VERSION.SDK_INT != Build.VERSION_CODES.O) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
-        // overlay permissions request on M+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    "package:$packageName".toUri()
-                )
-                try {
-                    startActivityForResult(intent, 0)
-                } catch (_: Exception) {
-                }
-            }
-        }
         // network monitor (request from HomeScreenAdapter)
         Permission.isLocationPermissionGranted(this)
 
@@ -784,34 +771,16 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private fun fetchGeoIPFallback(lw: LocalWeather) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val geoJson = URL("http://api.sypexgeo.net").readText()
-                if (geoJson.isNotEmpty()) {
-                    val mJsonResponse = JSONObject(geoJson)
-                    val mCityObj = mJsonResponse.getJSONObject("city")
-
-                    when {
-                        mCityObj.has("id") && !mCityObj.isNull("id") -> {
-                            val mCode = mCityObj.getInt("id").toString()
-                            if (isWeatherCacheValid) {
-                                withContext(Dispatchers.Main) { readJsonWeather(JSONFILE) }
-                            } else {
-                                lw.fetchCurrentWeatherByCityId(mCode)
-                            }
-                        }
-
-                        mCityObj.has("lat") && mCityObj.has("lon") -> {
-                            val lat = mCityObj.getDouble("lat")
-                            val lon = mCityObj.getDouble("lon")
-                            if (isWeatherCacheValid) {
-                                withContext(Dispatchers.Main) { readJsonWeather(JSONFILE) }
-                            } else {
-                                lw.fetchCurrentWeatherByLocation(lat, lon)
-                            }
-                        }
-                    }
-                }
+                val response = URL("https://ipwho.is/").readText()
+                val geo = JSONObject(response)
+                if (!geo.optBoolean("success", false)) error("IP location lookup failed")
+                val lat = geo.optDouble("latitude", Double.NaN)
+                val lon = geo.optDouble("longitude", Double.NaN)
+                if (lat.isNaN() || lon.isNaN()) error("IP location coordinates unavailable")
+                lw.fetchCurrentWeatherByLocation(lat, lon)
             } catch (e: Exception) {
                 Log.e(TAG, "GeoIP fallback failed", e)
+                if (isWeatherCacheValid) withContext(Dispatchers.Main) { readJsonWeather(JSONFILE) }
             }
         }
     }
@@ -825,6 +794,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                         .edit().putString("launcher_detected_city", weather.name).apply()
                 }
                 readJsonWeather(JSONFILE)
+                findViewById<com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay>(R.id.prayer_times_overlay)
+                    ?.refreshForWeatherUpdate()
             }
 
             override fun onFailure(exception: Throwable?) {
@@ -835,11 +806,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         lw.fetchCurrentLocation(object : LocalWeather.CurrentLocationCallback {
             override fun onSuccess(location: Location) {
-                if (isWeatherCacheValid) {
-                    readJsonWeather(JSONFILE)
-                } else {
-                    lw.fetchCurrentWeatherByLocation(location)
-                }
+                // The device location is newer and more accurate than the cached weather city.
+                lw.fetchCurrentWeatherByLocation(location)
             }
 
             override fun onFailure(failed: LocationFailedEnum) {
