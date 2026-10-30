@@ -1569,6 +1569,9 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                         }
                     }
                 }
+                if (success) {
+                    addPrayerTimesSummary(wrap)
+                }
                 if (!success) {
                     clearWidget(appWidgetId)
                     // clock
@@ -1626,8 +1629,20 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                 parent.removeView(mAppWidgetHostView)
                 wrap.removeAllViews()
                 wrap.addView(mAppWidgetHostView)
+                addPrayerTimesSummary(wrap)
             }
         }
+    }
+
+    private fun addPrayerTimesSummary(container: LinearLayout) {
+        if (container.findViewById<View>(R.id.prayer_times_overlay) != null) return
+        container.addView(
+            com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay(this),
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
     }
 
     private fun startSettings() {

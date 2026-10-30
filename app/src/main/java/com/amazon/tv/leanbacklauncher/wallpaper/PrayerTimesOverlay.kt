@@ -6,7 +6,6 @@ import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
-import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.preference.PreferenceManager
@@ -21,69 +20,37 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 
-/** Native, non-focusable information header that is part of the launcher layout. */
+/** Compact prayer-time row embedded in the launcher's clock/weather area. */
 class PrayerTimesOverlay @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : LinearLayout(context, attrs) {
     private val executor = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    private val clock = TextView(context)
-    private val weather = TextView(context)
     private val city = TextView(context)
     private val date = TextView(context)
     private val times = TextView(context)
     private val refresh = Runnable { loadTimes() }
-    private val clockTick = object : Runnable {
-        override fun run() {
-            clock.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-            main.postDelayed(this, 30_000L)
-        }
-    }
 
     init {
         orientation = VERTICAL
-        gravity = Gravity.START
-        setPadding(dp(48), dp(18), dp(48), dp(12))
+        setPadding(0, dp(4), 0, dp(2))
         setBackgroundColor(Color.TRANSPARENT)
         isFocusable = false
         isClickable = false
-        clock.textSize = 27f
-        clock.typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
-        clock.setTextColor(Color.WHITE)
-        city.textSize = 12f
-        city.setTextColor(Color.rgb(155, 202, 255))
+
+        city.textSize = 13f
+        city.typeface = Typeface.DEFAULT_BOLD
+        city.setTextColor(Color.WHITE)
         date.textSize = 10f
         date.setTextColor(Color.rgb(195, 205, 220))
         times.textSize = 11f
         times.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         times.setTextColor(Color.WHITE)
         times.maxLines = 2
-        times.gravity = Gravity.START
-        times.maxLines = 2
-        val top = LinearLayout(context).apply {
-            orientation = HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        clock.textSize = 34f
-        top.addView(clock, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
-        val locationBlock = LinearLayout(context).apply {
-            orientation = VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(18), 0, dp(18), 0)
-        }
-        city.textSize = 15f
-        city.typeface = Typeface.DEFAULT_BOLD
-        locationBlock.addView(city)
-        locationBlock.addView(date)
-        top.addView(locationBlock, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
-        weather.textSize = 20f
-        weather.typeface = Typeface.DEFAULT_BOLD
-        weather.setTextColor(Color.WHITE)
-        top.addView(weather, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
-        addView(top)
-        addView(times)
-        updateWeatherSummary()
-        clockTick.run()
+
+        addView(city, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        addView(date, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        addView(times, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         loadTimes()
     }
 
@@ -91,15 +58,15 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         super.onAttachedToWindow()
         main.removeCallbacks(refresh)
         main.postDelayed(refresh, REFRESH_INTERVAL)
-        main.removeCallbacks(clockTick)
-        clockTick.run()
-        updateWeatherSummary()
     }
 
     override fun onDetachedFromWindow() {
         main.removeCallbacks(refresh)
-        main.removeCallbacks(clockTick)
         super.onDetachedFromWindow()
+    }
+
+    fun refreshForWeatherUpdate() {
+        loadTimes()
     }
 
     private fun loadTimes() {
@@ -113,14 +80,15 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             prefs.getString(KEY_PRAYER_CITY, null)?.takeIf { it.isNotBlank() }
         }
         city.text = location ?: if (automatic) "Mendeteksi lokasi..." else "Atur kota di pengaturan"
-        updateWeatherSummary()
         date.text = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
+
         if (location == null) {
             times.text = if (automatic) "Menunggu lokasi perangkat..." else "Lokasi belum diatur"
             main.removeCallbacks(refresh)
             main.postDelayed(refresh, 2 * 60 * 1000L)
             return
         }
+
         times.text = context.getString(R.string.prayer_loading)
         executor.execute {
             val result = try {
@@ -160,13 +128,13 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                         if (prayerCalendar.timeInMillis <= now.timeInMillis) {
                             prayerCalendar.add(Calendar.DAY_OF_YEAR, 1)
                         }
-                        Triple(name, prayerCalendar.timeInMillis, raw)
+                        Triple(name, prayerCalendar.timeInMillis)
                     }.minByOrNull { it.second }
                     val upcoming = if (next == null) "" else {
                         val remaining = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)
                         val label = labels[next.first] ?: next.first
                         val timeLeft = if (remaining >= 60) "${remaining / 60}h ${remaining % 60}m" else "${remaining}m"
-                        "Next: $label · $timeLeft"
+                        "Berikutnya: $label · $timeLeft"
                     }
                     names.joinToString("   •   ") { name -> "${labels[name]} ${dailyTimes[name]}" } +
                         if (upcoming.isNotEmpty()) "\n$upcoming" else ""
@@ -187,30 +155,10 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         main.postDelayed(refresh, REFRESH_INTERVAL)
     }
 
-    fun refreshForWeatherUpdate() {
-        updateWeatherSummary()
-        loadTimes()
-    }
-
     private fun readWeather(): JSONObject? = try {
         val file = java.io.File(context.cacheDir, "weather.json")
         if (file.exists()) JSONObject(file.readText()) else null
     } catch (_: Exception) { null }
-
-    private fun updateWeatherSummary() {
-        val data = readWeather()
-        val temperature = data?.optDouble("temperature", Double.NaN) ?: Double.NaN
-        val description = data?.optJSONArray("descriptions")?.optString(0).orEmpty().lowercase(Locale.ROOT)
-        val icon = when {
-            "thunder" in description -> "⛈"
-            "rain" in description || "drizzle" in description -> "🌧"
-            "snow" in description -> "❄"
-            "cloud" in description || "overcast" in description -> "☁"
-            "clear" in description || "sun" in description -> "☀"
-            else -> "🌤"
-        }
-        weather.text = if (!temperature.isNaN()) "$icon ${temperature.toInt()}°" else ""
-    }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
