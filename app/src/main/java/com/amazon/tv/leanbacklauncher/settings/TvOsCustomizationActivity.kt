@@ -116,7 +116,10 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             text = getString(R.string.use_current_location_title)
             setTextColor(Color.WHITE)
             textSize = 16f
-            isChecked = prefs.getBoolean(KEY_PRAYER_AUTO_LOCATION, true)
+            isChecked = prefs.getBoolean(
+                KEY_PRAYER_AUTO_LOCATION,
+                prefs.getBoolean(getString(R.string.pref_use_current_location), true)
+            )
             setPadding(0, 0, 0, dp(10))
         }
         root.addView(autoPrayerLocation)
@@ -143,8 +146,12 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             } else {
                 prefs.edit()
                     .putBoolean(KEY_PRAYER_AUTO_LOCATION, autoPrayerLocation.isChecked)
+                    .putBoolean(getString(R.string.pref_use_current_location), autoPrayerLocation.isChecked)
                     .apply {
-                        if (city.isNotBlank()) putString(KEY_PRAYER_CITY, city)
+                        if (city.isNotBlank()) {
+                            putString(KEY_PRAYER_CITY, city)
+                            putString(getString(R.string.pref_user_location), city)
+                        }
                     }
                     .apply()
                 refreshLauncher()

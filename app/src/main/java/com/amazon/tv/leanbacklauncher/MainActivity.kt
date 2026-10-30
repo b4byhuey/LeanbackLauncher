@@ -541,14 +541,12 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         // fix int options migrate
         RowPreferences.fixRowPrefs()
 
-        // LocalWeather https://github.com/interaapps/LocalWeather-Android
-        if (RowPreferences.isWeatherEnabled(this)) {
-            localWeather = LocalWeather(
-                this@MainActivity,
-                getWeatherApiKey(this)
-            )
-            // initializeWeather() // already in addWidget()
-        }
+        // Weather data also powers the native launcher header, independently of the legacy widget.
+        localWeather = LocalWeather(
+            this@MainActivity,
+            getWeatherApiKey(this)
+        )
+        initializeWeather()
     }
 
     public override fun onDestroy() {
@@ -637,8 +635,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (RowPreferences.isWeatherEnabled(this))
-            localWeather?.onActivityResult(requestCode, resultCode, data)
+        localWeather?.onActivityResult(requestCode, resultCode, data)
         if (requestCode == UNINSTALL_CODE && resultCode != 0) {
             if (resultCode == -1) {
                 editModeView?.uninstallComplete()
@@ -654,8 +651,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (RowPreferences.isWeatherEnabled(this))
-            localWeather?.onRequestPermissionResult(requestCode, permissions, grantResults)
+        localWeather?.onRequestPermissionResult(requestCode, permissions, grantResults)
         when (requestCode) {
             PERMISSIONS_REQUEST_LOCATION -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -1620,8 +1616,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                             start()
                         }
                     }
-                    // weather widget update
-                    initializeWeather()
+                    // Weather/location is initialized once for the native launcher header.
                     return
                 }
                 return
