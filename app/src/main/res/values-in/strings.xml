@@ -25,7 +25,7 @@
     <string name="category_label_apps">Aplikasi</string>
     <string name="category_label_games">Game</string>
     <string name="category_label_inputs">Masukan</string>
-    <string name="category_label_settings">
+    <string name="category_label_settings">Pengaturan</string>
     <string name="common_google_play_services_enable_button">Aktifkan</string>
     <string name="common_google_play_services_enable_text">%1$s tidak akan berfungsi jika layanan Google Play tidak diaktifkan.</string>
     <string name="common_google_play_services_enable_title">Aktifkan layanan Google Play</string>
