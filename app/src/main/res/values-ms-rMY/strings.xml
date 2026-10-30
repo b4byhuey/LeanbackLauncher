@@ -25,7 +25,7 @@
     <string name="category_label_apps">Apl</string>
     <string name="category_label_games">Permainan</string>
     <string name="category_label_inputs">Input</string>
-    <string name="category_label_settings">
+    <string name="category_label_settings">Tetapan</string>
     <string name="customize_app_order_action_title">Susun semula baris apl</string>
     <string name="customize_game_order_action_title">Susun semula baris permainan</string>
     <string name="downloading">Memuat turun…</string>
