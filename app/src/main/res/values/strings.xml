@@ -306,7 +306,7 @@ or recommendations will not work properly."</string>
     <string name="tv_photo_wallpaper_desc">Show the saved gallery photo instead of motion background</string>
     <string name="tv_photo_mode_enabled">Photo wallpaper mode enabled</string>
     <string name="tv_live_wallpaper">Live wallpaper settings</string>
-    <string name="tv_live_wallpaper_desc">Open Android's live-wallpaper chooser</string>
+    <string name="tv_live_wallpaper_desc">Open Android\'s live-wallpaper chooser</string>
     <string name="tv_live_unsupported">Live wallpapers are not supported by this device</string>
     <string name="tv_section_prayer">PRAYER TIMES</string>
     <string name="tv_city_area">City or area</string>
