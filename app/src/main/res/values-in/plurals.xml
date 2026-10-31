@@ -4,4 +4,7 @@
         <item quantity="other">%d sumber disembunyikan</item>
         <item quantity="one">%d sumber disembunyikan</item>
     </plurals>
+    <plurals name="channels_sources_programs">
+        <item quantity="other">%d item</item>
+    </plurals>
 </resources>

@@ -4,4 +4,8 @@
         <item quantity="other">%d sources are hidden</item>
         <item quantity="one">%d source is hidden</item>
     </plurals>
+    <plurals name="channels_sources_programs">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
 </resources>

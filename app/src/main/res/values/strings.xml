@@ -333,4 +333,9 @@ or recommendations will not work properly."</string>
     <string name="weather_error">Weather error: %1$s</string>
     <string name="prayer_detecting">Detecting location…</string>
     <string name="prayer_city_not_set">Set a city in settings</string>
+    <string name="category_label_channels">Recommended</string>
+    <string name="channels_sources_title">Channel sources</string>
+    <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
+    <string name="channels_sources_empty">No apps are sharing channels</string>
+    <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
 </resources>

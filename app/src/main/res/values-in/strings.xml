@@ -181,4 +181,9 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="weather_error">Kesalahan cuaca: %1$s</string>
     <string name="prayer_detecting">Mendeteksi lokasi…</string>
     <string name="prayer_city_not_set">Atur kota di pengaturan</string>
+    <string name="category_label_channels">Rekomendasi</string>
+    <string name="channels_sources_title">Sumber channel</string>
+    <string name="channels_sources_desc">Pilih aplikasi yang channel-nya tampil di layar utama</string>
+    <string name="channels_sources_empty">Tidak ada aplikasi yang membagikan channel</string>
+    <string name="channels_sources_no_permission">Izin membaca channel TV belum diberikan, sehingga channel aplikasi lain mungkin tidak terbaca.</string>
 </resources>

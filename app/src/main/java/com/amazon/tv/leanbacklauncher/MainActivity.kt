@@ -644,6 +644,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         localWeather?.onRequestPermissionResult(requestCode, permissions, grantResults)
         when (requestCode) {
+            com.amazon.tv.leanbacklauncher.channels.ChannelsAdapter.REQUEST_CODE -> homeAdapter?.refreshChannels()
             PERMISSIONS_REQUEST_LOCATION -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "Agree location permission")
@@ -936,6 +937,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         if (mShyMode != shy) {
             mShyMode = shy
             changed = true
+            findViewById<View>(R.id.home_scrim)?.animate()?.alpha(if (shy) 0f else 1f)?.setDuration(300)?.start()
             if (mShyMode) {
                 //if (BuildConfig.DEBUG) Log.d(TAG, "setShyMode(shy:$shy,changeWallpaper:$changeWallpaper) -> convertFromTranslucent() [mShyMode=$mShyMode]")
                 convertFromTranslucent()

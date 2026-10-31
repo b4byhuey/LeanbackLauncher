@@ -3,7 +3,7 @@
     <color name="app_launch_ripple_default_color">#ffeeeeee</color>
     <color name="banner_background">#ff455a64</color>
     <color name="banner_label_text_color">#ffeeeeee</color>
-    <color name="banner_focus_frame_color">#40eeeeee</color>
+    <color name="banner_focus_frame_color">#00ffffff</color>
     <color name="clock_text_color">#ffeeeeee</color>
     <color name="edit_finish_button_color">#ffeeeeee</color>
     <color name="edit_mode_background_color">#ff263238</color>
