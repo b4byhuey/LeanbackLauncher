@@ -186,4 +186,22 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="channels_sources_desc">Pilih aplikasi yang channel-nya tampil di layar utama</string>
     <string name="channels_sources_empty">Tidak ada aplikasi yang membagikan channel</string>
     <string name="channels_sources_no_permission">Izin membaca channel TV belum diberikan, sehingga channel aplikasi lain mungkin tidak terbaca.</string>
+    <string name="prayer_settings_title">Pengaturan waktu salat</string>
+    <string name="prayer_settings_desc">Pilih metode perhitungan dan sesuaikan waktu setiap salat</string>
+    <string name="prayer_method_category">Metode perhitungan</string>
+    <string name="prayer_method_title">Metode perhitungan</string>
+    <string name="prayer_method_desc">Pilih metode yang disediakan AlAdhan</string>
+    <string name="prayer_method_custom">Metode kustom</string>
+    <string name="prayer_method_kemenag_fallback">KEMENAG (Indonesia)</string>
+    <string name="prayer_custom_fajr">Sudut Subuh kustom (derajat)</string>
+    <string name="prayer_custom_maghrib">Sudut Magrib kustom atau menit setelah matahari terbenam</string>
+    <string name="prayer_custom_isha">Sudut Isya kustom atau menit setelah Magrib</string>
+    <string name="prayer_offset_category">Penyesuaian waktu salat</string>
+    <string name="prayer_offset_desc">Menit untuk menambah atau mengurangi (−180 hingga 180)</string>
+    <string name="prayer_offset_fajr">Penyesuaian Subuh (menit)</string>
+    <string name="prayer_offset_dhuhr">Penyesuaian Zuhur (menit)</string>
+    <string name="prayer_offset_asr">Penyesuaian Asar (menit)</string>
+    <string name="prayer_offset_maghrib">Penyesuaian Magrib (menit)</string>
+    <string name="prayer_offset_isha">Penyesuaian Isya (menit)</string>
+    <string name="prayer_settings_loading">Memuat metode…</string>
 </resources>

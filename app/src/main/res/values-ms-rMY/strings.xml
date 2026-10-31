@@ -167,4 +167,22 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="channels_sources_desc">Pilih aplikasi yang salurannya dipaparkan pada skrin utama</string>
     <string name="channels_sources_empty">Tiada aplikasi yang berkongsi saluran</string>
     <string name="channels_sources_no_permission">Kebenaran untuk membaca saluran TV belum diberikan, jadi saluran daripada aplikasi lain mungkin tidak dipaparkan.</string>
+    <string name="prayer_settings_title">Tetapan waktu solat</string>
+    <string name="prayer_settings_desc">Pilih kaedah pengiraan dan laraskan waktu setiap solat</string>
+    <string name="prayer_method_category">Kaedah pengiraan</string>
+    <string name="prayer_method_title">Kaedah pengiraan</string>
+    <string name="prayer_method_desc">Pilih kaedah yang disediakan oleh AlAdhan</string>
+    <string name="prayer_method_custom">Kaedah tersuai</string>
+    <string name="prayer_method_kemenag_fallback">KEMENAG (Indonesia)</string>
+    <string name="prayer_custom_fajr">Sudut Subuh tersuai (darjah)</string>
+    <string name="prayer_custom_maghrib">Sudut Maghrib tersuai atau minit selepas matahari terbenam</string>
+    <string name="prayer_custom_isha">Sudut Isyak tersuai atau minit selepas Maghrib</string>
+    <string name="prayer_offset_category">Pelarasan waktu solat</string>
+    <string name="prayer_offset_desc">Minit untuk ditambah atau ditolak (−180 hingga 180)</string>
+    <string name="prayer_offset_fajr">Pelarasan Subuh (minit)</string>
+    <string name="prayer_offset_dhuhr">Pelarasan Zuhur (minit)</string>
+    <string name="prayer_offset_asr">Pelarasan Asar (minit)</string>
+    <string name="prayer_offset_maghrib">Pelarasan Maghrib (minit)</string>
+    <string name="prayer_offset_isha">Pelarasan Isyak (minit)</string>
+    <string name="prayer_settings_loading">Memuatkan kaedah…</string>
 </resources>

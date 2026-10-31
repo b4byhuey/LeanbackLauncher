@@ -338,4 +338,22 @@ or recommendations will not work properly."</string>
     <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>
     <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
+    <string name="prayer_settings_title">Prayer time settings</string>
+    <string name="prayer_settings_desc">Choose a calculation method and adjust each prayer time</string>
+    <string name="prayer_method_category">Calculation method</string>
+    <string name="prayer_method_title">Calculation method</string>
+    <string name="prayer_method_desc">Select a method provided by AlAdhan</string>
+    <string name="prayer_method_custom">Custom method</string>
+    <string name="prayer_method_kemenag_fallback">KEMENAG (Indonesia)</string>
+    <string name="prayer_custom_fajr">Custom Fajr angle (degrees)</string>
+    <string name="prayer_custom_maghrib">Custom Maghrib angle or minutes after sunset</string>
+    <string name="prayer_custom_isha">Custom Isha angle or minutes after Maghrib</string>
+    <string name="prayer_offset_category">Prayer time adjustments</string>
+    <string name="prayer_offset_desc">Minutes to add or subtract (−180 to 180)</string>
+    <string name="prayer_offset_fajr">Fajr adjustment (minutes)</string>
+    <string name="prayer_offset_dhuhr">Dhuhr adjustment (minutes)</string>
+    <string name="prayer_offset_asr">Asr adjustment (minutes)</string>
+    <string name="prayer_offset_maghrib">Maghrib adjustment (minutes)</string>
+    <string name="prayer_offset_isha">Isha adjustment (minutes)</string>
+    <string name="prayer_settings_loading">Loading methods…</string>
 </resources>

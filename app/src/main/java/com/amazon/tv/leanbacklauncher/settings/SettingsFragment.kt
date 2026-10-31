@@ -725,3 +725,156 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         return super.onPreferenceTreeClick(preference)
     }
 }
+
+/** Prayer calculation settings backed by AlAdhan's live methods endpoint. */
+class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
+    private var root: PreferenceScreen? = null
+    private var method: ListPreference? = null
+    private var executor: java.util.concurrent.ExecutorService? = null
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val ctx = preferenceManager.context
+        root = preferenceManager.createPreferenceScreen(ctx).also {
+            it.title = getString(R.string.prayer_settings_title)
+        }
+        preferenceScreen = root
+        val methodCategory = PreferenceCategory(ctx).apply {
+            title = getString(R.string.prayer_method_category)
+        }
+        root?.addPreference(methodCategory)
+        method = ListPreference(ctx).apply {
+            key = KEY_METHOD
+            title = getString(R.string.prayer_method_title)
+            summary = getString(R.string.prayer_method_desc)
+            setDefaultValue(DEFAULT_METHOD)
+            entries = arrayOf(getString(R.string.prayer_settings_loading))
+            entryValues = arrayOf(DEFAULT_METHOD)
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                showCustom(value.toString() == CUSTOM_METHOD)
+                true
+            }
+        }
+        methodCategory.addPreference(method!!)
+        addDecimal(methodCategory, KEY_CUSTOM_FAJR, R.string.prayer_custom_fajr, "18")
+        addDecimal(methodCategory, KEY_CUSTOM_MAGHRIB, R.string.prayer_custom_maghrib, "")
+        addDecimal(methodCategory, KEY_CUSTOM_ISHA, R.string.prayer_custom_isha, "18")
+
+        val offsets = PreferenceCategory(ctx).apply {
+            title = getString(R.string.prayer_offset_category)
+        }
+        root?.addPreference(offsets)
+        addOffset(offsets, KEY_OFFSET_FAJR, R.string.prayer_offset_fajr)
+        addOffset(offsets, KEY_OFFSET_DHUHR, R.string.prayer_offset_dhuhr)
+        addOffset(offsets, KEY_OFFSET_ASR, R.string.prayer_offset_asr)
+        addOffset(offsets, KEY_OFFSET_MAGHRIB, R.string.prayer_offset_maghrib)
+        addOffset(offsets, KEY_OFFSET_ISHA, R.string.prayer_offset_isha)
+        val selected = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx)
+            .getString(KEY_METHOD, DEFAULT_METHOD)
+        showCustom(selected == CUSTOM_METHOD)
+        loadMethods()
+    }
+
+    override fun onPause() {
+        executor?.shutdownNow()
+        executor = null
+        super.onPause()
+    }
+
+    private fun addDecimal(category: PreferenceCategory, key: String, titleId: Int, default: String) {
+        category.addPreference(EditTextPreference(preferenceManager.context).apply {
+            this.key = key
+            title = getString(titleId)
+            setDefaultValue(default)
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType =
+                android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                val text = value.toString().trim()
+                text.isEmpty() || (text.toDoubleOrNull()?.let { it in 0.0..90.0 } == true)
+            }
+        })
+    }
+
+    private fun addOffset(category: PreferenceCategory, key: String, titleId: Int) {
+        category.addPreference(EditTextPreference(preferenceManager.context).apply {
+            this.key = key
+            title = getString(titleId)
+            summary = getString(R.string.prayer_offset_desc)
+            setDefaultValue("0")
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType =
+                android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                value.toString().toIntOrNull()?.let { it in -180..180 } == true
+            }
+        })
+    }
+
+    private fun showCustom(show: Boolean) {
+        listOf(KEY_CUSTOM_FAJR, KEY_CUSTOM_MAGHRIB, KEY_CUSTOM_ISHA).forEach {
+            root?.findPreference<Preference>(it)?.isVisible = show
+        }
+    }
+
+    private fun loadMethods() {
+        executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        executor?.execute {
+            val methods = try {
+                val connection = (java.net.URL("https://api.aladhan.com/v1/methods")
+                    .openConnection() as java.net.HttpURLConnection).apply {
+                    connectTimeout = 7000
+                    readTimeout = 7000
+                }
+                try {
+                    if (connection.responseCode !in 200..299) error("AlAdhan methods unavailable")
+                    val data = org.json.JSONObject(
+                        connection.inputStream.bufferedReader().use { it.readText() }
+                    ).getJSONObject("data")
+                    val result = mutableListOf<Pair<String, String>>()
+                    val keys = data.keys()
+                    while (keys.hasNext()) {
+                        val item = data.optJSONObject(keys.next()) ?: continue
+                        val id = item.optInt("id", -1)
+                        val name = item.optString("name")
+                        if (id >= 0 && name.isNotBlank() && id != 99) result += id.toString() to name
+                    }
+                    result.sortedBy { it.second.lowercase(java.util.Locale.ROOT) }
+                } finally {
+                    connection.disconnect()
+                }
+            } catch (_: Exception) { emptyList() }
+            main.post {
+                if (!isAdded) return@post
+                val choices = (if (methods.isEmpty()) listOf(
+                    DEFAULT_METHOD to getString(R.string.prayer_method_kemenag_fallback)
+                ) else methods) + (CUSTOM_METHOD to getString(R.string.prayer_method_custom))
+                method?.apply {
+                    entries = choices.map { it.second }.toTypedArray()
+                    entryValues = choices.map { it.first }.toTypedArray()
+                    val saved = androidx.preference.PreferenceManager
+                        .getDefaultSharedPreferences(preferenceManager.context)
+                        .getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
+                    value = if (choices.any { it.first == saved }) saved else DEFAULT_METHOD
+                }
+                showCustom(method?.value == CUSTOM_METHOD)
+            }
+        }
+    }
+
+    companion object {
+        private const val KEY_METHOD = "prayer_method"
+        private const val KEY_OFFSET_FAJR = "prayer_offset_fajr"
+        private const val KEY_OFFSET_DHUHR = "prayer_offset_dhuhr"
+        private const val KEY_OFFSET_ASR = "prayer_offset_asr"
+        private const val KEY_OFFSET_MAGHRIB = "prayer_offset_maghrib"
+        private const val KEY_OFFSET_ISHA = "prayer_offset_isha"
+        private const val KEY_CUSTOM_FAJR = "prayer_custom_fajr"
+        private const val KEY_CUSTOM_MAGHRIB = "prayer_custom_maghrib"
+        private const val KEY_CUSTOM_ISHA = "prayer_custom_isha"
+        private const val DEFAULT_METHOD = "20"
+        private const val CUSTOM_METHOD = "99"
+    }
+}

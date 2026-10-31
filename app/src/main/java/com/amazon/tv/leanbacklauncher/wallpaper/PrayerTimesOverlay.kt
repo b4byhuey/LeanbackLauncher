@@ -198,7 +198,29 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private fun fetchTimings(location: String): Map<String, String> {
         val encoded = URLEncoder.encode(location, "UTF-8")
-        val connection = (URL("https://api.aladhan.com/v1/timingsByAddress?address=$encoded&method=20")
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val method = preferences.getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
+        val tune = listOf(
+            0, prayerOffset(preferences, KEY_OFFSET_FAJR), 0,
+            prayerOffset(preferences, KEY_OFFSET_DHUHR),
+            prayerOffset(preferences, KEY_OFFSET_ASR),
+            prayerOffset(preferences, KEY_OFFSET_MAGHRIB), 0,
+            prayerOffset(preferences, KEY_OFFSET_ISHA), 0
+        ).joinToString(",")
+
+        val customSettings = if (method == CUSTOM_METHOD) {
+            val fajr = preferences.getString(KEY_CUSTOM_FAJR, DEFAULT_CUSTOM_FAJR)
+                ?.toDecimalOrNull() ?: DEFAULT_CUSTOM_FAJR
+            val maghrib = preferences.getString(KEY_CUSTOM_MAGHRIB, "")
+                ?.toDecimalOrNull() ?: "null"
+            val isha = preferences.getString(KEY_CUSTOM_ISHA, DEFAULT_CUSTOM_ISHA)
+                ?.toDecimalOrNull() ?: DEFAULT_CUSTOM_ISHA
+            "&methodSettings=${URLEncoder.encode("$fajr,$maghrib,$isha", "UTF-8")}"
+        } else ""
+
+        val requestUrl = "https://api.aladhan.com/v1/timingsByAddress?address=$encoded" +
+            "&method=$method&tune=$tune$customSettings"
+        val connection = (URL(requestUrl)
             .openConnection() as HttpURLConnection).apply {
             connectTimeout = 7000
             readTimeout = 7000
@@ -252,6 +274,13 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         }.minByOrNull { it.second }
     }
 
+    private fun prayerOffset(preferences: android.content.SharedPreferences, key: String): Int =
+        preferences.getString(key, "0")?.toIntOrNull()?.coerceIn(-180, 180) ?: 0
+
+    private fun String.toDecimalOrNull(): String? =
+        trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+            ?.takeIf { it in 0.0..90.0 }?.toString()
+
     private fun parseHm(raw: String?): Pair<Int, Int>? {
         val parts = raw?.trim()?.split(":") ?: return null
         if (parts.size < 2) return null
@@ -279,6 +308,19 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     companion object {
         private const val KEY_DETECTED_CITY = "launcher_detected_city"
+        private const val KEY_METHOD = "prayer_method"
+        private const val KEY_OFFSET_FAJR = "prayer_offset_fajr"
+        private const val KEY_OFFSET_DHUHR = "prayer_offset_dhuhr"
+        private const val KEY_OFFSET_ASR = "prayer_offset_asr"
+        private const val KEY_OFFSET_MAGHRIB = "prayer_offset_maghrib"
+        private const val KEY_OFFSET_ISHA = "prayer_offset_isha"
+        private const val KEY_CUSTOM_FAJR = "prayer_custom_fajr"
+        private const val KEY_CUSTOM_MAGHRIB = "prayer_custom_maghrib"
+        private const val KEY_CUSTOM_ISHA = "prayer_custom_isha"
+        private const val DEFAULT_METHOD = "20"
+        private const val CUSTOM_METHOD = "99"
+        private const val DEFAULT_CUSTOM_FAJR = "18"
+        private const val DEFAULT_CUSTOM_ISHA = "18"
         private const val REFRESH_INTERVAL = 6 * 60 * 60 * 1000L
         private const val RETRY_NO_LOCATION_INTERVAL = 2 * 60 * 1000L
         private const val TICK_INTERVAL = 60 * 1000L

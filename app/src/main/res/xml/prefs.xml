@@ -35,6 +35,12 @@
             app:fragment="com.amazon.tv.leanbacklauncher.settings.WeatherPreferenceFragment" />
 
         <Preference
+            android:key="prayer_settings"
+            android:summary="@string/prayer_settings_desc"
+            android:title="@string/prayer_settings_title"
+            app:fragment="com.amazon.tv.leanbacklauncher.settings.PrayerPreferenceFragment" />
+
+        <Preference
             android:key="version"
             android:summary="version"
             android:title="@string/version"
