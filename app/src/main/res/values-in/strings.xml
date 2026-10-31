@@ -179,4 +179,6 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="unknown_title">Tidak diketahui</string>
     <string name="update_pending">Pembaruan tertunda...</string>
     <string name="weather_error">Kesalahan cuaca: %1$s</string>
+    <string name="prayer_detecting">Mendeteksi lokasi…</string>
+    <string name="prayer_city_not_set">Atur kota di pengaturan</string>
 </resources>

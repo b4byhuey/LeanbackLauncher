@@ -103,9 +103,6 @@ import de.interaapps.localweather.utils.Lang
 import de.interaapps.localweather.utils.LocationFailedEnum
 import de.interaapps.localweather.utils.Units
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -167,12 +164,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     // Weather constants
     private val gson by lazy { GsonBuilder().setPrettyPrinting().create() }
     private val maxCacheAge = TimeUnit.MINUTES.toMillis(30) // 30 minutes
-
-    // Weather Animation constants
-    private val showCycleDur: Long = TimeUnit.SECONDS.toMillis(10) // 10 seconds
-    private val fadeInDur: Long = 300L // milliseconds
-    private val fadeOutDur: Long = 500L
-    private var weatherAnimationJob: Job? = null
 
     // Core components
     private val mHandler: Handler = MainActivityMessageHandler(this)
@@ -843,13 +834,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         // Get views
         val weatherVG = findViewById<ViewGroup?>(R.id.weather)
         val detailsVG = findViewById<ViewGroup?>(R.id.details)
-        val curLocTV = findViewById<TextView?>(R.id.curLocation)?.apply {
-            setupMarquee()
-        }
-        // Set Location Info
-        curLocTV?.text = weather.name.ifEmpty { "" }
         // Set Weather Info
-        weatherVG?.let { group ->
+        weatherVG?.let {
             findViewById<AppCompatImageView>(R.id.weather_icon)?.let { icon ->
                 OpenWeatherIcons(this, weather.icons[0], icon)
                 icon.visibility = View.VISIBLE
@@ -857,11 +843,9 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
             findViewById<TextView>(R.id.curTemp)?.text =
                 "${weather.temperature.toInt()}${getTempUnit()}"
-
-            group.visibility = View.GONE
         }
         // Set Weather details
-        detailsVG?.let { details ->
+        detailsVG?.let {
             findViewById<TextView>(R.id.hilotemp)?.text = getHiLoTempText(weather)
             findViewById<TextView>(R.id.pressure)?.text = getPressureText(weather)
             findViewById<TextView>(R.id.humidity)?.text =
@@ -871,15 +855,9 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                 text = weather.descriptions[0]
                 setupMarquee()
             }
-
-            details.visibility = View.GONE
         }
-        // Show
-        if (RowPreferences.showLocation(this)) {
-            showLocation(weatherVG, detailsVG, curLocTV)
-        } else {
-            showWeather(weatherVG, detailsVG)
-        }
+        // Show (cuaca + detail tampil bersamaan di dalam satu kartu)
+        showWeatherCard(weatherVG, detailsVG)
     }
 
     private fun TextView.setupMarquee() {
@@ -942,109 +920,14 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         return directions[(angle % 360 / 45).roundToInt()]
     }
 
-    private fun showLocation(
-        weatherView: ViewGroup?,
-        detailsView: ViewGroup?,
-        curLocView: TextView?
-    ) {
-        weatherView?.visibility = View.GONE
-        curLocView?.run {
-            cancelWeatherAnimations()
-            alpha = 0f
-            visibility = View.VISIBLE
-            animate()
-                .alpha(1f)
-                .setDuration(fadeInDur * 2)
-                .withEndAction {
-                    animate()
-                        .alpha(0f)
-                        .setDuration(fadeOutDur)
-                        .withEndAction {
-                            visibility = View.GONE
-                            showWeather(weatherView, detailsView)
-                        }
-                        .start()
-                }
-                .start()
-        }
-    }
-
-    private fun showWeather(weatherView: ViewGroup?, detailsView: ViewGroup?) {
-        cancelWeatherAnimations()
-
-        // Initial state
-        weatherView?.apply {
-            alpha = 0f
-            visibility = View.VISIBLE
-        }
-        detailsView?.apply {
-            alpha = 0f
-            visibility = View.VISIBLE
-        }
-
-        weatherAnimationJob = lifecycleScope.launch {
-            while (isActive) {
-                // 1. Fade in weather
-                weatherView?.run {
-                    animate()
-                        .alpha(1f)
-                        .setDuration(fadeInDur)
-                        .withEndAction { /* no-op */ }
-                        .start()
-                }
-                delay(fadeInDur)
-                // 2. Show weather for 10 seconds
-                delay(showCycleDur)
-                // 3. Cross-fade to details
-                weatherView?.run {
-                    animate()
-                        .alpha(0f)
-                        .setDuration(fadeOutDur)
-                        .start()
-                }
-                detailsView?.run {
-                    animate()
-                        .alpha(1f)
-                        .setDuration(fadeInDur)
-                        .start()
-                }
-                delay(maxOf(fadeOutDur, fadeInDur))
-                // 4. Show details for 10 seconds
-                delay(showCycleDur)
-                // 5. Cross-fade back to weather
-                detailsView?.run {
-                    animate()
-                        .alpha(0f)
-                        .setDuration(fadeOutDur)
-                        .start()
-                }
-                weatherView?.run {
-                    animate()
-                        .alpha(1f)
-                        .setDuration(fadeInDur)
-                        .start()
-                }
-                delay(maxOf(fadeOutDur, fadeInDur))
+    /** Cuaca dan detailnya tampil sekaligus (tanpa cross-fade) supaya menyatu dalam satu kartu. */
+    private fun showWeatherCard(weatherView: ViewGroup?, detailsView: ViewGroup?) {
+        for (v in listOf(weatherView, detailsView)) {
+            v?.apply {
+                animate().cancel()
+                alpha = 1f
+                visibility = View.VISIBLE
             }
-        }
-    }
-
-    fun cancelWeatherAnimations() {
-        weatherAnimationJob?.cancel()
-        weatherAnimationJob = null
-
-        // Immediately reset views to default state
-        findViewById<ViewGroup?>(R.id.weather)?.apply {
-            animate().cancel()
-            alpha = 1f
-        }
-        findViewById<ViewGroup?>(R.id.details)?.apply {
-            animate().cancel()
-            alpha = 0f
-        }
-        findViewById<TextView>(R.id.curLocation)?.apply {
-            animate().cancel()
-            alpha = 0f
         }
     }
 
@@ -1374,7 +1257,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         super.onPause()
         mResetAfterIdleEnabled = false
         mLaunchAnimation.cancel()
-        cancelWeatherAnimations()
         mHandler.removeMessages(1)
         mHandler.removeMessages(6)
         mHandler.removeMessages(7)

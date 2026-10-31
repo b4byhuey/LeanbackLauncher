@@ -2,14 +2,15 @@ package com.amazon.tv.leanbacklauncher.wallpaper
 
 import android.content.Context
 import android.graphics.Color
-import android.view.Gravity
-import androidx.preference.PreferenceManager
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
+import android.text.TextUtils
 import android.util.AttributeSet
+import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.preference.PreferenceManager
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences
 import com.amazon.tv.leanbacklauncher.R
 import org.json.JSONObject
@@ -20,52 +21,102 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-/** Compact prayer-time row embedded in the launcher's clock/weather area. */
+/**
+ * Jadwal sholat di dalam kartu header (jam + cuaca + sholat).
+ *
+ * Susunan: baris info (kota · tanggal | "Berikutnya: ...") lalu 5 kotak waktu sholat
+ * dengan sholat berikutnya di-highlight. Tinggi total sekitar 52dp.
+ */
 class PrayerTimesOverlay @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : LinearLayout(context, attrs) {
-    private val executor = Executors.newSingleThreadExecutor()
+
+    private class Chip(val root: LinearLayout, val name: TextView, val time: TextView)
+
     private val main = Handler(Looper.getMainLooper())
+    private var executor: ExecutorService? = null
+    private var requestId = 0
+
     private val city = TextView(context)
-    private val date = TextView(context)
-    private val times = TextView(context)
+    private val next = TextView(context)
+    private val chips = LinkedHashMap<String, Chip>()
+
+    /** Waktu sholat hari ini ("HH:mm") per nama API; null = belum ada data. */
+    private var timings: Map<String, String>? = null
+    /** Pesan status (memuat / gagal); null = tampilkan "berikutnya". */
+    private var statusText: String? = null
+
     private val refresh = Runnable { loadTimes() }
+    private val tick = object : Runnable {
+        override fun run() {
+            render()
+            main.postDelayed(this, TICK_INTERVAL)
+        }
+    }
 
     init {
         orientation = VERTICAL
-        setPadding(0, dp(4), 0, dp(2))
         setBackgroundColor(Color.TRANSPARENT)
         isFocusable = false
         isClickable = false
 
-        city.textSize = 13f
-        city.gravity = Gravity.END
-        city.typeface = Typeface.DEFAULT_BOLD
-        city.setTextColor(Color.WHITE)
-        date.textSize = 10f
-        date.gravity = Gravity.END
-        date.setTextColor(Color.rgb(195, 205, 220))
-        times.textSize = 11f
-        times.gravity = Gravity.END
-        times.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-        times.setTextColor(Color.WHITE)
-        times.maxLines = 2
+        city.apply {
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            isSingleLine = true
+            ellipsize = TextUtils.TruncateAt.END
+            includeFontPadding = false
+        }
+        next.apply {
+            textSize = 11f
+            gravity = Gravity.END
+            setTextColor(COLOR_MUTED)
+            isSingleLine = true
+            ellipsize = TextUtils.TruncateAt.END
+            includeFontPadding = false
+        }
+        val header = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(city, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+            addView(next, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+                marginStart = dp(8)
+            })
+        }
+        addView(header, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
-        addView(city, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        addView(date, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        addView(times, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        val row = LinearLayout(context).apply { orientation = HORIZONTAL }
+        for (name in NAMES) {
+            val chip = buildChip()
+            chips[name] = chip
+            row.addView(chip.root, LayoutParams(0, dp(36), 1f).apply {
+                marginStart = dp(2)
+                marginEnd = dp(2)
+            })
+        }
+        addView(row, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(3)
+        })
+        render()
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        main.removeCallbacks(refresh)
+        main.removeCallbacks(tick)
+        main.postDelayed(tick, TICK_INTERVAL)
         loadTimes()
     }
 
     override fun onDetachedFromWindow() {
         main.removeCallbacks(refresh)
+        main.removeCallbacks(tick)
+        requestId++ // abaikan hasil request yang masih berjalan
+        executor?.shutdownNow()
+        executor = null
         super.onDetachedFromWindow()
     }
 
@@ -73,91 +124,151 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         loadTimes()
     }
 
+    private fun buildChip(): Chip {
+        val name = TextView(context).apply {
+            textSize = 11f
+            gravity = Gravity.CENTER
+            isSingleLine = true
+            includeFontPadding = false
+        }
+        val time = TextView(context).apply {
+            textSize = 15f
+            gravity = Gravity.CENTER
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            isSingleLine = true
+            includeFontPadding = false
+            setTextColor(Color.WHITE)
+        }
+        val root = LinearLayout(context).apply {
+            orientation = VERTICAL
+            gravity = Gravity.CENTER
+            isFocusable = false
+            isClickable = false
+            addView(name, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+            addView(time, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        }
+        return Chip(root, name, time)
+    }
+
     private fun loadTimes() {
+        main.removeCallbacks(refresh)
+
         val automatic = RowPreferences.isUseLocationEnabled(context)
-        val weatherData = readWeather()
         val location = if (automatic) {
-            weatherData?.optString("name")?.takeIf { it.isNotBlank() }
+            readWeather()?.optString("name")?.takeIf { it.isNotBlank() }
                 ?: PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
         } else {
             RowPreferences.getUserLocation(context)?.takeIf { it.isNotBlank() }
         }
-        city.text = location ?: if (automatic) "Mendeteksi lokasi..." else "Atur kota di pengaturan"
-        date.text = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
+        val dateText = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
 
         if (location == null) {
-            times.text = if (automatic) "Menunggu lokasi perangkat..." else "Lokasi belum diatur"
-            main.removeCallbacks(refresh)
-            main.postDelayed(refresh, 2 * 60 * 1000L)
+            city.text = context.getString(if (automatic) R.string.prayer_detecting else R.string.prayer_city_not_set)
+            timings = null
+            statusText = null
+            render()
+            main.postDelayed(refresh, RETRY_NO_LOCATION_INTERVAL)
             return
         }
 
-        times.text = context.getString(R.string.prayer_loading)
-        executor.execute {
-            val result = try {
-                val encoded = URLEncoder.encode(location, "UTF-8")
-                val connection = (URL("https://api.aladhan.com/v1/timingsByAddress?address=$encoded&method=20")
-                    .openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 7000
-                    readTimeout = 7000
-                    requestMethod = "GET"
-                }
-                try {
-                    if (connection.responseCode !in 200..299) error("HTTP ${connection.responseCode}")
-                    val data = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-                        .getJSONObject("data")
-                    val timing = data.getJSONObject("timings")
-                    val names = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
-                    val labels = mapOf(
-                        "Fajr" to context.getString(R.string.prayer_fajr),
-                        "Dhuhr" to context.getString(R.string.prayer_dhuhr),
-                        "Asr" to context.getString(R.string.prayer_asr),
-                        "Maghrib" to context.getString(R.string.prayer_maghrib),
-                        "Isha" to context.getString(R.string.prayer_isha)
-                    )
-                    val dailyTimes = names.associateWith { timing.optString(it, "--:--").substringBefore(" ") }
-                    val now = Calendar.getInstance()
-                    val next = names.mapNotNull { name ->
-                        val raw = dailyTimes[name] ?: return@mapNotNull null
-                        val parsed = try { SimpleDateFormat("HH:mm", Locale.US).parse(raw) }
-                            catch (_: Exception) { null } ?: return@mapNotNull null
-                        val parsedTime = Calendar.getInstance().apply { time = parsed }
-                        val prayerCalendar = Calendar.getInstance().apply {
-                            set(Calendar.HOUR_OF_DAY, parsedTime.get(Calendar.HOUR_OF_DAY))
-                            set(Calendar.MINUTE, parsedTime.get(Calendar.MINUTE))
-                            set(Calendar.SECOND, 0)
-                            set(Calendar.MILLISECOND, 0)
-                        }
-                        if (prayerCalendar.timeInMillis <= now.timeInMillis) {
-                            prayerCalendar.add(Calendar.DAY_OF_YEAR, 1)
-                        }
-                        name to prayerCalendar.timeInMillis
-                    }.minByOrNull { it.second }
-                    val upcoming = if (next == null) "" else {
-                        val remaining = ((next.second - now.timeInMillis) / 60000L).coerceAtLeast(0)
-                        val label = labels[next.first] ?: next.first
-                        val timeLeft = if (remaining >= 60) "${remaining / 60}h ${remaining % 60}m" else "${remaining}m"
-                        "Berikutnya: $label · $timeLeft"
-                    }
-                    names.joinToString("   •   ") { name -> "${labels[name]} ${dailyTimes[name]}" } +
-                        if (upcoming.isNotEmpty()) "\n$upcoming" else ""
-                } finally {
-                    connection.disconnect()
-                }
-            } catch (_: Exception) {
-                context.getString(R.string.prayer_unavailable)
-            }
+        city.text = "$location · $dateText"
+        if (timings == null) statusText = context.getString(R.string.prayer_loading)
+        render()
+
+        val myRequest = ++requestId
+        ensureExecutor().execute {
+            val result = try { fetchTimings(location) } catch (_: Exception) { null }
             main.post {
-                if (isAttachedToWindow) {
-                    times.text = result
-                    requestLayout()
+                if (!isAttachedToWindow || myRequest != requestId) return@post
+                if (result != null) {
+                    timings = result
+                    statusText = null
+                } else {
+                    statusText = context.getString(R.string.prayer_unavailable).lineSequence().first()
                 }
+                render()
             }
         }
-        main.removeCallbacks(refresh)
         main.postDelayed(refresh, REFRESH_INTERVAL)
     }
+
+    private fun ensureExecutor(): ExecutorService =
+        executor?.takeIf { !it.isShutdown } ?: Executors.newSingleThreadExecutor().also { executor = it }
+
+    private fun fetchTimings(location: String): Map<String, String> {
+        val encoded = URLEncoder.encode(location, "UTF-8")
+        val connection = (URL("https://api.aladhan.com/v1/timingsByAddress?address=$encoded&method=20")
+            .openConnection() as HttpURLConnection).apply {
+            connectTimeout = 7000
+            readTimeout = 7000
+            requestMethod = "GET"
+        }
+        try {
+            if (connection.responseCode !in 200..299) error("HTTP ${connection.responseCode}")
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            val timing = JSONObject(body).getJSONObject("data").getJSONObject("timings")
+            return NAMES.associateWith { name ->
+                val raw = timing.optString(name, "").substringBefore(" ").trim()
+                if (parseHm(raw) != null) raw else NO_TIME
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /** Gambar ulang chip + teks "berikutnya" dari data yang sudah ada (murah, aman dipanggil tiap menit). */
+    private fun render() {
+        val data = timings
+        val upcoming = data?.let { nextPrayer(it) }
+        for ((name, chip) in chips) {
+            val active = upcoming?.first == name
+            chip.name.text = labelFor(name)
+            chip.time.text = data?.get(name) ?: NO_TIME
+            chip.name.setTextColor(if (active) Color.WHITE else COLOR_MUTED)
+            chip.root.setBackgroundResource(
+                if (active) R.drawable.prayer_chip_active_bg else R.drawable.prayer_chip_bg
+            )
+        }
+        next.text = statusText ?: upcoming?.let { (name, millis) ->
+            val minutes = ((millis - System.currentTimeMillis()) / 60000L).coerceAtLeast(0)
+            context.getString(R.string.prayer_next, labelFor(name), minutes / 60, minutes % 60)
+        }.orEmpty()
+    }
+
+    /** (nama API, waktu epoch) sholat terdekat berikutnya; yang sudah lewat dianggap besok. */
+    private fun nextPrayer(data: Map<String, String>): Pair<String, Long>? {
+        val now = System.currentTimeMillis()
+        return NAMES.mapNotNull { name ->
+            val (hour, minute) = parseHm(data[name]) ?: return@mapNotNull null
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis <= now) add(Calendar.DAY_OF_YEAR, 1)
+            }
+            name to cal.timeInMillis
+        }.minByOrNull { it.second }
+    }
+
+    private fun parseHm(raw: String?): Pair<Int, Int>? {
+        val parts = raw?.trim()?.split(":") ?: return null
+        if (parts.size < 2) return null
+        val hour = parts[0].toIntOrNull() ?: return null
+        val minute = parts[1].toIntOrNull() ?: return null
+        return if (hour in 0..23 && minute in 0..59) hour to minute else null
+    }
+
+    private fun labelFor(name: String): String = context.getString(
+        when (name) {
+            "Fajr" -> R.string.prayer_fajr
+            "Dhuhr" -> R.string.prayer_dhuhr
+            "Asr" -> R.string.prayer_asr
+            "Maghrib" -> R.string.prayer_maghrib
+            else -> R.string.prayer_isha
+        }
+    )
 
     private fun readWeather(): JSONObject? = try {
         val file = java.io.File(context.cacheDir, "weather.json")
@@ -169,5 +280,10 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     companion object {
         private const val KEY_DETECTED_CITY = "launcher_detected_city"
         private const val REFRESH_INTERVAL = 6 * 60 * 60 * 1000L
+        private const val RETRY_NO_LOCATION_INTERVAL = 2 * 60 * 1000L
+        private const val TICK_INTERVAL = 60 * 1000L
+        private const val NO_TIME = "--:--"
+        private val COLOR_MUTED = Color.rgb(195, 205, 220)
+        private val NAMES = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
     }
 }

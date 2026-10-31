@@ -367,9 +367,10 @@
     <dimen name="vertical_safety_spacing">27.0dip</dimen>
     <dimen name="widget_clock_height">60.0dip</dimen>
     <dimen name="widget_end_spacing">50.0dip</dimen>
-    <dimen name="widget_height">108.0dip</dimen>
-    <dimen name="widget_width">336.0dip</dimen>
+    <dimen name="widget_height">106.0dip</dimen>
+    <dimen name="widget_width">440.0dip</dimen>
     <dimen name="widget_settings_size">60.0dip</dimen>
     <dimen name="widget_h_padding">8.0dip</dimen>
     <dimen name="widget_weather_height">48.0dip</dimen>
+    <dimen name="widget_margin_top">12.0dip</dimen>
 </resources>

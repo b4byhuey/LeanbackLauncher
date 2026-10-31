@@ -331,4 +331,6 @@ or recommendations will not work properly."</string>
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
     <string name="weather_error">Weather error: %1$s</string>
+    <string name="prayer_detecting">Detecting location…</string>
+    <string name="prayer_city_not_set">Set a city in settings</string>
 </resources>
