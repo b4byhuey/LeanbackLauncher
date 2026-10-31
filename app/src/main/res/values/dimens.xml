@@ -368,7 +368,7 @@
     <dimen name="widget_clock_height">60.0dip</dimen>
     <dimen name="widget_end_spacing">50.0dip</dimen>
     <dimen name="widget_height">148.0dip</dimen>
-    <dimen name="widget_width">440.0dip</dimen>
+    <dimen name="widget_width">350.0dip</dimen>
     <dimen name="widget_settings_size">60.0dip</dimen>
     <dimen name="widget_h_padding">8.0dip</dimen>
     <dimen name="widget_weather_height">48.0dip</dimen>

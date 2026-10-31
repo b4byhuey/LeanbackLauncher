@@ -101,8 +101,8 @@
     <color name="settings_launch_ripple_color">#ff3d3d3d</color>
     <color name="settings_selection_indicator_color">#4ceeeeee</color>
     <color name="amazon_orange">#ffa724</color>
-    <color name="prayer_card_bg">#661b1a22</color>
-    <color name="prayer_card_stroke">#22ffffff</color>
+    <color name="prayer_card_bg">#801b1a22</color>
+    <color name="prayer_card_stroke">#B3ffffff</color>
     <color name="prayer_chip_bg">#66202833</color>
     <color name="prayer_chip_active_bg">#885b3fa6</color>
     <color name="prayer_text_muted">#ffc3cddc</color>

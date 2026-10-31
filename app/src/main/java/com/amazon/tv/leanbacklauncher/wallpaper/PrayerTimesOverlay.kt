@@ -71,7 +71,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
         city.apply {
             textSize = 13f
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             setTextColor(Color.WHITE)
             isSingleLine = true
             ellipsize = TextUtils.TruncateAt.END
@@ -100,8 +100,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             val chip = buildChip()
             chips[name] = chip
             row.addView(chip.root, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(1)
-                marginEnd = dp(1)
+                marginStart = 0
+                marginEnd = 0
             })
         }
         addView(row, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
@@ -132,9 +132,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private fun buildChip(): Chip {
         val name = TextView(context).apply {
-            textSize = 13f
+            textSize = 12f
             gravity = Gravity.CENTER
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             isSingleLine = true
             includeFontPadding = false
         }
@@ -143,9 +143,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         val time = TextView(context).apply {
-            textSize = 13f
+            textSize = 12f
             gravity = Gravity.CENTER
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             isSingleLine = true
             includeFontPadding = false
             setTextColor(Color.WHITE)
@@ -271,7 +271,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             chip.name.setTextColor(if (active) Color.WHITE else COLOR_MUTED)
             chip.time.setTextColor(if (active) Color.WHITE else COLOR_TIME)
             chip.time.typeface = Typeface.create(
-                "sans-serif-light", if (active) Typeface.BOLD else Typeface.NORMAL
+                "sans-serif-medium", if (active) Typeface.BOLD else Typeface.NORMAL
             )
             chip.root.setBackgroundResource(if (active) R.drawable.prayer_chip_active_bg else 0)
         }
