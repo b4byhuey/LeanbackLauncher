@@ -103,7 +103,7 @@
     <color name="amazon_orange">#ffa724</color>
     <color name="prayer_card_bg">#661b1a22</color>
     <color name="prayer_card_stroke">#22ffffff</color>
-    <color name="prayer_chip_bg">#26ffffff</color>
-    <color name="prayer_chip_active_bg">#ff5b3fa6</color>
+    <color name="prayer_chip_bg">#66202833</color>
+    <color name="prayer_chip_active_bg">#885b3fa6</color>
     <color name="prayer_text_muted">#ffc3cddc</color>
 </resources>

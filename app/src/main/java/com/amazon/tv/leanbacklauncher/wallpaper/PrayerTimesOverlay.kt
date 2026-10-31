@@ -8,6 +8,7 @@ import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.view.Gravity
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.preference.PreferenceManager
@@ -25,16 +26,16 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Jadwal sholat di dalam kartu header (jam + cuaca + sholat).
+ * Jadwal sholat di header (jam + cuaca + sholat), meniru baris forecast pada contoh.
  *
- * Susunan: baris info (kota · tanggal | "Berikutnya: ...") lalu 5 kotak waktu sholat
- * dengan sholat berikutnya di-highlight. Tinggi total sekitar 52dp.
+ * Susunan: baris info (tanggal · kota | "Berikutnya: ...") lalu 5 kolom rata lebar:
+ * nama sholat, ikon, jam. Kolom sholat berikutnya diberi highlight halus.
  */
 class PrayerTimesOverlay @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : LinearLayout(context, attrs) {
 
-    private class Chip(val root: LinearLayout, val name: TextView, val time: TextView)
+    private class Chip(val root: LinearLayout, val name: TextView, val icon: ImageView, val time: TextView)
 
     private val main = Handler(Looper.getMainLooper())
     private var executor: ExecutorService? = null
@@ -42,6 +43,11 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private val city = TextView(context)
     private val next = TextView(context)
+
+    /** Nama lokasi yang sedang dipakai; null bila belum ada. */
+    private var locationName: String? = null
+    /** Pesan pengganti baris tanggal (mis. "Detecting location…"); null = tampilkan tanggal · kota. */
+    private var infoText: String? = null
     private val chips = LinkedHashMap<String, Chip>()
 
     /** Waktu sholat hari ini ("HH:mm") per nama API; null = belum ada data. */
@@ -64,8 +70,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         isClickable = false
 
         city.apply {
-            textSize = 12f
-            typeface = Typeface.DEFAULT_BOLD
+            textSize = 13f
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
             setTextColor(Color.WHITE)
             isSingleLine = true
             ellipsize = TextUtils.TruncateAt.END
@@ -74,7 +80,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         next.apply {
             textSize = 11f
             gravity = Gravity.END
-            setTextColor(COLOR_MUTED)
+            setTextColor(COLOR_ACCENT)
             isSingleLine = true
             ellipsize = TextUtils.TruncateAt.END
             includeFontPadding = false
@@ -93,13 +99,13 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         for (name in NAMES) {
             val chip = buildChip()
             chips[name] = chip
-            row.addView(chip.root, LayoutParams(0, dp(36), 1f).apply {
-                marginStart = dp(2)
-                marginEnd = dp(2)
+            row.addView(chip.root, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = dp(1)
+                marginEnd = dp(1)
             })
         }
         addView(row, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
-            topMargin = dp(3)
+            topMargin = dp(2)
         })
         render()
     }
@@ -126,15 +132,20 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private fun buildChip(): Chip {
         val name = TextView(context).apply {
-            textSize = 11f
+            textSize = 13f
             gravity = Gravity.CENTER
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
             isSingleLine = true
             includeFontPadding = false
         }
+        val icon = ImageView(context).apply {
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
         val time = TextView(context).apply {
-            textSize = 15f
+            textSize = 13f
             gravity = Gravity.CENTER
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
             isSingleLine = true
             includeFontPadding = false
             setTextColor(Color.WHITE)
@@ -144,10 +155,16 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             gravity = Gravity.CENTER
             isFocusable = false
             isClickable = false
+            setPadding(0, dp(2), 0, dp(2))
             addView(name, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+            addView(icon, LayoutParams(dp(22), dp(22)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                topMargin = dp(1)
+                bottomMargin = dp(1)
+            })
             addView(time, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         }
-        return Chip(root, name, time)
+        return Chip(root, name, icon, time)
     }
 
     private fun loadTimes() {
@@ -161,10 +178,10 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         } else {
             RowPreferences.getUserLocation(context)?.takeIf { it.isNotBlank() }
         }
-        val dateText = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(Date())
 
         if (location == null) {
-            city.text = context.getString(if (automatic) R.string.prayer_detecting else R.string.prayer_city_not_set)
+            locationName = null
+            infoText = context.getString(if (automatic) R.string.prayer_detecting else R.string.prayer_city_not_set)
             timings = null
             statusText = null
             render()
@@ -172,7 +189,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             return
         }
 
-        city.text = "$location · $dateText"
+        locationName = location
+        infoText = null
         if (timings == null) statusText = context.getString(R.string.prayer_loading)
         render()
 
@@ -239,18 +257,23 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         }
     }
 
-    /** Gambar ulang chip + teks "berikutnya" dari data yang sudah ada (murah, aman dipanggil tiap menit). */
+    /** Gambar ulang kolom + teks "berikutnya" dari data yang sudah ada (murah, aman dipanggil tiap menit). */
     private fun render() {
         val data = timings
         val upcoming = data?.let { nextPrayer(it) }
+        val dateText = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
+        city.text = infoText ?: locationName?.let { "$dateText · $it" } ?: dateText
         for ((name, chip) in chips) {
             val active = upcoming?.first == name
             chip.name.text = labelFor(name)
             chip.time.text = data?.get(name) ?: NO_TIME
+            chip.icon.setImageResource(iconFor(name))
             chip.name.setTextColor(if (active) Color.WHITE else COLOR_MUTED)
-            chip.root.setBackgroundResource(
-                if (active) R.drawable.prayer_chip_active_bg else R.drawable.prayer_chip_bg
+            chip.time.setTextColor(if (active) Color.WHITE else COLOR_TIME)
+            chip.time.typeface = Typeface.create(
+                "sans-serif-light", if (active) Typeface.BOLD else Typeface.NORMAL
             )
+            chip.root.setBackgroundResource(if (active) R.drawable.prayer_chip_active_bg else 0)
         }
         next.text = statusText ?: upcoming?.let { (name, millis) ->
             val minutes = ((millis - System.currentTimeMillis()) / 60000L).coerceAtLeast(0)
@@ -299,6 +322,14 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         }
     )
 
+    private fun iconFor(name: String): Int = when (name) {
+        "Fajr" -> R.drawable.ic_prayer_fajr
+        "Dhuhr" -> R.drawable.ic_prayer_dhuhr
+        "Asr" -> R.drawable.ic_prayer_asr
+        "Maghrib" -> R.drawable.ic_prayer_maghrib
+        else -> R.drawable.ic_prayer_isha
+    }
+
     private fun readWeather(): JSONObject? = try {
         val file = java.io.File(context.cacheDir, "weather.json")
         if (file.exists()) JSONObject(file.readText()) else null
@@ -326,6 +357,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         private const val TICK_INTERVAL = 60 * 1000L
         private const val NO_TIME = "--:--"
         private val COLOR_MUTED = Color.rgb(195, 205, 220)
+        private val COLOR_TIME = Color.rgb(238, 238, 238)
+        private val COLOR_ACCENT = Color.rgb(255, 214, 120)
         private val NAMES = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
     }
 }
