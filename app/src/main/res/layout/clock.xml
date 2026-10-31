@@ -194,6 +194,7 @@
                 android:layout_height="wrap_content"
                 android:visibility="gone" />
         </LinearLayout>
+    </LinearLayout>
 
     <!-- jadwal sholat: bagian dari kartu yang sama -->
     <com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay
