@@ -66,6 +66,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:focusable="false"
             android:fontFamily="@string/light_font"
             android:gravity="center_vertical"
@@ -83,6 +84,7 @@
             android:id="@+id/weather"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
             android:clickable="false"
             android:focusable="false"
             android:gravity="center_vertical"
@@ -111,64 +113,60 @@
                 android:textSize="26sp" />
         </LinearLayout>
 
-        <!-- weather: deskripsi + kelembapan + min/maks -->
+        <!-- weather details: status/min-max on the left, humidity/wind stacked on the right -->
         <LinearLayout
             android:id="@+id/details"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginStart="10dp"
             android:gravity="center_vertical"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:visibility="gone">
 
-            <TextView
-                android:id="@+id/wDescription"
+            <LinearLayout
                 android:layout_width="116dp"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:fadingEdgeLength="6dp"
-                android:fontFamily="@string/light_font"
-                android:includeFontPadding="false"
-                android:marqueeRepeatLimit="marquee_forever"
-                android:requiresFadingEdge="horizontal"
-                android:singleLine="true"
-                android:textColor="@color/clock_text_color"
-                android:textSize="12sp" />
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/wDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:fadingEdgeLength="6dp"
+                    android:fontFamily="@string/light_font"
+                    android:includeFontPadding="false"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:requiresFadingEdge="horizontal"
+                    android:singleLine="true"
+                    android:textColor="@color/clock_text_color"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/hilotemp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="@string/light_font"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
+                    android:textColor="@color/prayer_text_muted"
+                    android:textSize="10sp" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:orientation="horizontal">
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/humidity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@string/light_font"
-                    android:includeFontPadding="false"
-                    android:singleLine="true"
-                    android:textColor="@color/prayer_text_muted"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:id="@+id/hilotemp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:fontFamily="@string/light_font"
-                    android:includeFontPadding="false"
-                    android:singleLine="true"
-                    android:textColor="@color/prayer_text_muted"
-                    android:textSize="11sp" />
-
-                <!-- Keep the weather fields used by MainActivity while keeping them compact. -->
-                <TextView
-                    android:id="@+id/pressure"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:fontFamily="@string/light_font"
                     android:includeFontPadding="false"
                     android:singleLine="true"
@@ -179,15 +177,23 @@
                     android:id="@+id/wind"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
                     android:fontFamily="@string/light_font"
                     android:includeFontPadding="false"
+                    android:maxWidth="108dp"
                     android:singleLine="true"
                     android:textColor="@color/prayer_text_muted"
                     android:textSize="10sp" />
             </LinearLayout>
+
+            <!-- Keep the pressure view ID for MainActivity compatibility; omit it from the compact header. -->
+            <TextView
+                android:id="@+id/pressure"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
         </LinearLayout>
-    </LinearLayout>
 
     <!-- jadwal sholat: bagian dari kartu yang sama -->
     <com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay
