@@ -162,4 +162,9 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="unknown_title">Tidak diketahui</string>
     <string name="update_pending">Kemas kini belum selesai…</string>
     <string name="weather_error">Ralat cuaca: %1$s</string>
+    <string name="category_label_channels">Saluran</string>
+    <string name="channels_sources_title">Sumber saluran</string>
+    <string name="channels_sources_desc">Pilih aplikasi yang salurannya dipaparkan pada skrin utama</string>
+    <string name="channels_sources_empty">Tiada aplikasi yang berkongsi saluran</string>
+    <string name="channels_sources_no_permission">Kebenaran untuk membaca saluran TV belum diberikan, jadi saluran daripada aplikasi lain mungkin tidak dipaparkan.</string>
 </resources>
