@@ -27,10 +27,8 @@ import com.amazon.tv.leanbacklauncher.BuildConfig
 import com.amazon.tv.leanbacklauncher.LauncherApp
 import com.amazon.tv.leanbacklauncher.MainActivity.Companion.JSONFILE
 import com.amazon.tv.leanbacklauncher.R
-import com.amazon.tv.leanbacklauncher.UpdateActivity
 import com.amazon.tv.leanbacklauncher.apps.AppsManager
 import com.amazon.tv.leanbacklauncher.util.Permission
-import com.amazon.tv.leanbacklauncher.util.Updater
 import com.amazon.tv.leanbacklauncher.util.Util
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -59,7 +57,6 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             PKG + "ChannelsPreferenceFragment",
             PKG + "WeatherPreferenceFragment",
             PKG + "PrayerPreferenceFragment",
-            PKG + "VersionPreferenceFragment"
         )
     }
 
