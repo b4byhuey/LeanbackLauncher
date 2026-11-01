@@ -746,12 +746,93 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     }
 }
 
+/**
+ * Shared, persistent cache for AlAdhan calculation methods.
+ * The list is prefetched at application startup and reused immediately by settings.
+ */
+internal object PrayerMethodRepository {
+    private const val CACHE_KEY = "prayer_methods_cache"
+    private val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    @Volatile private var loading = false
+    private val callbacks = mutableListOf<(List<Pair<String, String>>) -> Unit>()
+
+    fun cached(context: Context): List<Pair<String, String>> {
+        return try {
+            val raw = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(CACHE_KEY, null) ?: return emptyList()
+            val array = org.json.JSONArray(raw)
+            (0 until array.length()).mapNotNull { index ->
+                val item = array.optJSONObject(index) ?: return@mapNotNull null
+                val id = item.optString("id")
+                val name = item.optString("name")
+                if (id.isNotBlank() && name.isNotBlank()) id to name else null
+            }
+        } catch (_: Exception) { emptyList() }
+    }
+
+    fun prefetch(context: Context, callback: ((List<Pair<String, String>>) -> Unit)? = null) {
+        val appContext = context.applicationContext
+        synchronized(this) {
+            if (callback != null) callbacks += callback
+            if (loading) return
+            loading = true
+        }
+        executor.execute {
+            val methods = try {
+                val connection = (java.net.URL("https://api.aladhan.com/v1/methods")
+                    .openConnection() as java.net.HttpURLConnection).apply {
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                    requestMethod = "GET"
+                }
+                try {
+                    if (connection.responseCode !in 200..299) error("AlAdhan methods unavailable")
+                    val data = org.json.JSONObject(
+                        connection.inputStream.bufferedReader().use { it.readText() }
+                    ).getJSONObject("data")
+                    val result = mutableListOf<Pair<String, String>>()
+                    val keys = data.keys()
+                    while (keys.hasNext()) {
+                        val item = data.optJSONObject(keys.next()) ?: continue
+                        val id = item.optInt("id", -1)
+                        val name = item.optString("name")
+                        if (id >= 0 && name.isNotBlank() && id != 99) result += id.toString() to name
+                    }
+                    result.sortedBy { it.second.lowercase(java.util.Locale.ROOT) }
+                } finally {
+                    connection.disconnect()
+                }
+            } catch (error: Exception) {
+                android.util.Log.w("PrayerMethodRepository", "Unable to refresh calculation methods", error)
+                emptyList()
+            }
+
+            val result = if (methods.isNotEmpty()) {
+                val array = org.json.JSONArray()
+                methods.forEach { (id, name) ->
+                    array.put(org.json.JSONObject().put("id", id).put("name", name))
+                }
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+                    .edit().putString(CACHE_KEY, array.toString()).apply()
+                methods
+            } else {
+                cached(appContext)
+            }
+
+            val pending = synchronized(this) {
+                loading = false
+                callbacks.toList().also { callbacks.clear() }
+            }
+            main.post { pending.forEach { it(result) } }
+        }
+    }
+}
+
 /** Prayer calculation settings backed by AlAdhan's live methods endpoint. */
 class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     private var root: PreferenceScreen? = null
     private var method: ListPreference? = null
-    private var executor: java.util.concurrent.ExecutorService? = null
-    private val main = android.os.Handler(android.os.Looper.getMainLooper())
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val ctx = preferenceManager.context
@@ -792,13 +873,9 @@ class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         val selected = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx)
             .getString(KEY_METHOD, DEFAULT_METHOD)
         showCustom(selected == CUSTOM_METHOD)
-        loadMethods()
-    }
-
-    override fun onPause() {
-        executor?.shutdownNow()
-        executor = null
-        super.onPause()
+        // Populate from disk immediately; refresh the shared cache in the background.
+        applyMethods(PrayerMethodRepository.cached(ctx))
+        PrayerMethodRepository.prefetch(ctx) { applyMethods(it) }
     }
 
     private fun addDecimal(category: PreferenceCategory, key: String, titleId: Int, default: String) {
@@ -839,49 +916,20 @@ class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         }
     }
 
-    private fun loadMethods() {
-        executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-        executor?.execute {
-            val methods = try {
-                val connection = (java.net.URL("https://api.aladhan.com/v1/methods")
-                    .openConnection() as java.net.HttpURLConnection).apply {
-                    connectTimeout = 7000
-                    readTimeout = 7000
-                }
-                try {
-                    if (connection.responseCode !in 200..299) error("AlAdhan methods unavailable")
-                    val data = org.json.JSONObject(
-                        connection.inputStream.bufferedReader().use { it.readText() }
-                    ).getJSONObject("data")
-                    val result = mutableListOf<Pair<String, String>>()
-                    val keys = data.keys()
-                    while (keys.hasNext()) {
-                        val item = data.optJSONObject(keys.next()) ?: continue
-                        val id = item.optInt("id", -1)
-                        val name = item.optString("name")
-                        if (id >= 0 && name.isNotBlank() && id != 99) result += id.toString() to name
-                    }
-                    result.sortedBy { it.second.lowercase(java.util.Locale.ROOT) }
-                } finally {
-                    connection.disconnect()
-                }
-            } catch (_: Exception) { emptyList() }
-            main.post {
-                if (!isAdded) return@post
-                val choices = (if (methods.isEmpty()) listOf(
-                    DEFAULT_METHOD to getString(R.string.prayer_method_kemenag_fallback)
-                ) else methods) + (CUSTOM_METHOD to getString(R.string.prayer_method_custom))
-                method?.apply {
-                    entries = choices.map { it.second }.toTypedArray()
-                    entryValues = choices.map { it.first }.toTypedArray()
-                    val saved = androidx.preference.PreferenceManager
-                        .getDefaultSharedPreferences(preferenceManager.context)
-                        .getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
-                    value = if (choices.any { it.first == saved }) saved else DEFAULT_METHOD
-                }
-                showCustom(method?.value == CUSTOM_METHOD)
-            }
+    private fun applyMethods(methods: List<Pair<String, String>>) {
+        if (!isAdded) return
+        val choices = (if (methods.isEmpty()) listOf(
+            DEFAULT_METHOD to getString(R.string.prayer_method_kemenag_fallback)
+        ) else methods) + (CUSTOM_METHOD to getString(R.string.prayer_method_custom))
+        method?.apply {
+            entries = choices.map { it.second }.toTypedArray()
+            entryValues = choices.map { it.first }.toTypedArray()
+            val saved = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(preferenceManager.context)
+                .getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
+            value = if (choices.any { it.first == saved }) saved else DEFAULT_METHOD
         }
+        showCustom(method?.value == CUSTOM_METHOD)
     }
 
     companion object {
