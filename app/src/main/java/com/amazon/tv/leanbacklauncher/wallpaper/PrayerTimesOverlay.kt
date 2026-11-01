@@ -309,7 +309,10 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private fun render() {
         val data = timings
         val upcoming = data?.let { nextPrayer(it) }
-        val dateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).apply {
+        val dateText = SimpleDateFormat(
+            "EEEE, d MMMM",
+            androidx.core.os.ConfigurationCompat.getLocales(resources.configuration)[0] ?: Locale.ENGLISH
+        ).apply {
             timeZone = prayerTimeZone
         }.format(Date())
         city.text = infoText ?: locationName?.let { "$dateText · $it" } ?: dateText
