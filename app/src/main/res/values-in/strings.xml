@@ -289,4 +289,5 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="app_language_malay">Melayu</string>
     <string name="location_settings_title">Pengaturan Lokasi</string>
     <string name="weather_settings_title">Pengaturan Cuaca</string>
+    <string name="app_language_desc">Bahasa launcher</string>
 </resources>

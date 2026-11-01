@@ -92,7 +92,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         }
         // Pengaturan launcher yang sebelumnya ada di ikon gerigi header (hanya yang belum ada di halaman ini).
         section(root, getString(R.string.tv_section_launcher))
-        actionButton(root, getString(R.string.app_language_title), currentLanguageLabel()) { showLanguageDialog() }
+        actionButton(root, getString(R.string.app_language_title), getString(R.string.app_language_desc)) { showLanguageDialog() }
         actionButton(root, getString(R.string.home_screen_order_action_title), getString(R.string.home_screen_order_desc)) {
             openLauncherSetting("HomePreferenceFragment")
         }
@@ -148,33 +148,15 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private val languageTags = arrayOf("", "en", "in", "ms-rMY")
-
-    private fun languageLabels() = arrayOf(
-        getString(R.string.app_language_system),
-        getString(R.string.app_language_english),
-        getString(R.string.app_language_indonesian),
-        getString(R.string.app_language_malay)
-    )
-
-    private fun currentLanguageIndex(): Int {
-        val current = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags()
-        return languageTags.indexOf(current).takeIf { it >= 0 } ?: 0
-    }
-
-    private fun currentLanguageLabel(): String = languageLabels()[currentLanguageIndex()]
-
-    /** Pilih bahasa aplikasi (sama dengan item "Language" di daftar pengaturan lama). */
+    /** Pilih bahasa launcher: Default (English), Indonesia, Malaysia. */
     private fun showLanguageDialog() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(R.string.app_language_title)
-            .setSingleChoiceItems(languageLabels(), currentLanguageIndex()) { dialog, which ->
+            .setSingleChoiceItems(LauncherLanguage.labels(this), LauncherLanguage.currentIndex()) { dialog, which ->
                 dialog.dismiss()
                 SettingsFragment.needRestartHome = true
                 refreshLauncher()
-                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                    androidx.core.os.LocaleListCompat.forLanguageTags(languageTags[which])
-                )
+                LauncherLanguage.apply(which)
             }
             .show()
     }

@@ -366,4 +366,8 @@ or recommendations will not work properly."</string>
     <string name="app_language_malay">Malay</string>
     <string name="location_settings_title">Location Settings</string>
     <string name="weather_settings_title">Weather Settings</string>
+    <string name="app_language_desc">Launcher language</string>
+    <string name="app_language_opt_default" translatable="false">Default (English)</string>
+    <string name="app_language_opt_indonesia" translatable="false">Indonesia</string>
+    <string name="app_language_opt_malaysia" translatable="false">Malaysia</string>
 </resources>

@@ -270,4 +270,5 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="app_language_malay">Melayu</string>
     <string name="location_settings_title">Tetapan Lokasi</string>
     <string name="weather_settings_title">Tetapan Cuaca</string>
+    <string name="app_language_desc">Bahasa pelancar</string>
 </resources>

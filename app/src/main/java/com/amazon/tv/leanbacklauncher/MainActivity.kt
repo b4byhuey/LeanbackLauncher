@@ -367,6 +367,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     @SuppressLint("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.amazon.tv.leanbacklauncher.settings.LauncherLanguage.ensureSupported()
         mContentResolver = contentResolver
 
         if (mRecommendationsAdapter == null) {

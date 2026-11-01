@@ -6,7 +6,7 @@
         <ListPreference
             android:key="app_language"
             android:title="@string/app_language_title"
-            android:summary="%s"
+            android:summary="@string/app_language_desc"
             android:defaultValue="en" />
 
         <Preference
