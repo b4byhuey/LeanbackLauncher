@@ -183,6 +183,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     }
 
     private fun loadTimes(force: Boolean = false) {
+        if (!isAttachedToWindow) return
         main.removeCallbacks(refresh)
 
         val configKey = currentConfigKey()
