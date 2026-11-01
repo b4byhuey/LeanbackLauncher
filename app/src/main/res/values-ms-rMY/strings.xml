@@ -168,7 +168,7 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="channels_sources_empty">Tiada aplikasi yang berkongsi saluran</string>
     <string name="channels_sources_no_permission">Kebenaran untuk membaca saluran TV belum diberikan, jadi saluran daripada aplikasi lain mungkin tidak dipaparkan.</string>
     <string name="prayer_settings_title">Tetapan Solat</string>
-    <string name="prayer_settings_desc">Pilih kaedah pengiraan dan laraskan waktu setiap solat</string>
+    <string name="prayer_settings_desc">Pilih kaedah pengiraan dan laraskan waktu bagi setiap solat</string>
     <string name="prayer_method_category">Kaedah pengiraan</string>
     <string name="prayer_method_title">Kaedah pengiraan</string>
     <string name="prayer_method_desc">Pilih kaedah yang disediakan oleh AlAdhan</string>
