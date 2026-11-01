@@ -263,4 +263,11 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="weather_wind">%3$s %1$s %2$s</string>
     <string name="tv_section_launcher">PELANCAR</string>
     <string name="weather_humidity">Kelembapan %1$d%%</string>
+    <string name="app_language_title">Bahasa</string>
+    <string name="app_language_system">Lalai sistem</string>
+    <string name="app_language_english">Inggeris</string>
+    <string name="app_language_indonesian">Indonesia</string>
+    <string name="app_language_malay">Melayu</string>
+    <string name="location_settings_title">Tetapan Lokasi</string>
+    <string name="weather_settings_title">Tetapan Cuaca</string>
 </resources>
