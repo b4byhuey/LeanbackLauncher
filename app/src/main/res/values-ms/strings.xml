@@ -252,4 +252,6 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="app_language_opt_default">Default (English)</string>
     <string name="app_language_opt_indonesia">Indonesia</string>
     <string name="app_language_opt_malaysia">Malaysia</string>
+    <string name="prayer_city_not_set">Tetapkan bandar dalam tetapan</string>
+    <string name="prayer_detecting">Mengesan lokasi…</string>
 </resources>
