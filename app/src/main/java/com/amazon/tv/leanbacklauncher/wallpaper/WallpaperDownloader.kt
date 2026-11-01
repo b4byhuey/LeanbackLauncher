@@ -135,7 +135,7 @@ class WallpaperDownloader(
                     .load(mRequestedImage!!.imageUri)
                     .apply(
                         RequestOptions()
-                            .signature(ObjectKey(mRequestedImage!!.signature!!))
+                            .signature(ObjectKey(mRequestedImage!!.signature.orEmpty()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .transform(mBitmapTransform)
                     ) // removed context,
