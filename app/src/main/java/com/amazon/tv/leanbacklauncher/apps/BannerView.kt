@@ -233,10 +233,8 @@ class BannerView @JvmOverloads constructor(
             sendAccessibilityEvent(8)
         }
         setFocusedFrameState()
-        // focus outline
-        mFocusFrame?.let {
-            if (hasFocus()) it.visibility = View.VISIBLE else it.visibility = View.GONE
-        }
+        // Gaya tvOS: fokus ditandai dengan zoom + bayangan (ViewFocusAnimator), bukan bingkai garis.
+        mFocusFrame?.visibility = View.GONE
     }
 
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {

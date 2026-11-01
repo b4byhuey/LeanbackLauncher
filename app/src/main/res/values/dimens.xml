@@ -355,7 +355,7 @@
     <dimen name="search_orb_margin_top">31.0dip</dimen>
     <dimen name="search_orbs_spacing">28.0dip</dimen>
     <dimen name="search_text_margin_start">24.0dip</dimen>
-    <dimen name="selected_item_z_delta">24.0dip</dimen>
+    <dimen name="selected_item_z_delta">32.0dip</dimen>
     <dimen name="settings_card_width">98.0dip</dimen>
     <dimen name="settings_icon_size">98.0dip</dimen>
     <dimen name="settings_info_height">48.0dip</dimen>
