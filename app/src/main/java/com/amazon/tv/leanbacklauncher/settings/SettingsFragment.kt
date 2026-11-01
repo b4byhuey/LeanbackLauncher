@@ -735,12 +735,21 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     }
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        // clean cached weather
-        val cache = File(JSONFILE)
-        if (cache.exists())
-            cache.delete()
-        // refresh home broadcast
-        SettingsFragment.needRestartHome = true
+        // Only weather controls invalidate the weather response. Prayer calculation
+        // preferences are observed directly by PrayerTimesOverlay and must not clear it.
+        val weatherKeys = setOf(
+            getString(R.string.pref_enable_local_weather),
+            getString(R.string.pref_use_current_location),
+            getString(R.string.pref_user_location),
+            getString(R.string.pref_show_location),
+            getString(R.string.pref_imp_weather),
+            getString(R.string.pref_weather_apikey)
+        )
+        if (preference?.key in weatherKeys) {
+            val cache = File(JSONFILE)
+            if (cache.exists()) cache.delete()
+            SettingsFragment.needRestartHome = true
+        }
         return super.onPreferenceTreeClick(preference)
     }
 }
