@@ -52,7 +52,7 @@ class ClockView @JvmOverloads constructor(
 
     private fun updatePatterns() {
         val formatString =
-            (DateFormat.getTimeFormat(context) as SimpleDateFormat).toPattern().replace("a", "")
+            (DateFormat.getTimeFormat(context) as SimpleDateFormat).toPattern().replace("a", "").replace(".", ":")
                 .trim { it <= ' ' }
         format12Hour = formatString
         format24Hour = formatString

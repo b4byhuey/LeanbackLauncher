@@ -127,6 +127,24 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
         // Load the prefs from an XML resource
         setPreferencesFromResource(R.xml.prefs, rootKey)
 
+        findPreference<ListPreference>("app_language")?.apply {
+            entries = arrayOf(
+                getString(R.string.app_language_system),
+                getString(R.string.app_language_english),
+                getString(R.string.app_language_indonesian),
+                getString(R.string.app_language_malay)
+            )
+            entryValues = arrayOf("", "en", "id", "ms-rMY")
+            value = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            setOnPreferenceChangeListener { _, newValue ->
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.forLanguageTags(newValue?.toString().orEmpty())
+                )
+                SettingsFragment.needRestartHome = true
+                true
+            }
+        }
+
         findPreference<Preference>("version")?.apply {
             this.summary = "${getString(R.string.app_name)} v" + BuildConfig.VERSION_NAME
         }
@@ -841,8 +859,8 @@ internal object PrayerMethodRepository {
 /** Prayer calculation controls reuse the location configured in Weather Preferences. */
 private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: PreferenceScreen) {
     val ctx = fragment.requireContext()
-    val methodCategory = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_method_category) }
-    root.addPreference(methodCategory)
+    val prayerCategory = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_settings_title) }
+    root.addPreference(prayerCategory)
     val method = ListPreference(ctx).apply {
         key = "prayer_method"
         title = fragment.getString(R.string.prayer_method_title)
@@ -856,9 +874,9 @@ private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: Preferen
             true
         }
     }
-    methodCategory.addPreference(method)
+    prayerCategory.addPreference(method)
     fun addDecimal(key: String, titleId: Int, default: String) {
-        methodCategory.addPreference(EditTextPreference(ctx).apply {
+        prayerCategory.addPreference(EditTextPreference(ctx).apply {
             this.key = key
             title = fragment.getString(titleId)
             setDefaultValue(default)
@@ -873,8 +891,7 @@ private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: Preferen
     addDecimal("prayer_custom_fajr", R.string.prayer_custom_fajr, "18")
     addDecimal("prayer_custom_maghrib", R.string.prayer_custom_maghrib, "")
     addDecimal("prayer_custom_isha", R.string.prayer_custom_isha, "18")
-    val offsets = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_offset_category) }
-    root.addPreference(offsets)
+    val offsets = prayerCategory
     listOf(
         "prayer_offset_fajr" to R.string.prayer_offset_fajr,
         "prayer_offset_dhuhr" to R.string.prayer_offset_dhuhr,
@@ -882,7 +899,7 @@ private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: Preferen
         "prayer_offset_maghrib" to R.string.prayer_offset_maghrib,
         "prayer_offset_isha" to R.string.prayer_offset_isha
     ).forEach { (key, titleId) ->
-        offsets.addPreference(EditTextPreference(ctx).apply {
+        prayerCategory.addPreference(EditTextPreference(ctx).apply {
             this.key = key
             title = fragment.getString(titleId)
             summary = fragment.getString(R.string.prayer_offset_desc)
