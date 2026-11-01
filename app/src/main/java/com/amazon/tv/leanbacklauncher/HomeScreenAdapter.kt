@@ -371,7 +371,7 @@ class HomeScreenAdapter(
                         }
                     }
                 }
-                RowType.NOTIFICATIONS -> {
+                RowType.NOTIFICATIONS, RowType.ACTUAL_NOTIFICATIONS -> {
                     view = mInflater.inflate(R.layout.home_notification_row, parent, false)
                     val notifList: NotificationRowView? = view.findViewById(R.id.list)
                     val homeScreenView: HomeScreenView? =
@@ -400,7 +400,6 @@ class HomeScreenAdapter(
                         initAppRow(view as ActiveFrame, row)
                     }
                 }
-                RowType.ACTUAL_NOTIFICATIONS -> TODO()
                 //else -> TODO()
             }
             row.rowView = view
