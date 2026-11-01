@@ -1,6 +1,7 @@
 package com.amazon.tv.leanbacklauncher.wallpaper
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Handler
@@ -22,6 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -40,6 +42,15 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private val main = Handler(Looper.getMainLooper())
     private var executor: ExecutorService? = null
     private var requestId = 0
+    private var lastConfigKey: String? = null
+    private var prayerTimeZone: TimeZone = TimeZone.getDefault()
+    private val preferences by lazy { PreferenceManager.getDefaultSharedPreferences(context) }
+
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == null || key in relevantPreferenceKeys()) {
+            main.post { loadTimes() }
+        }
+    }
 
     private val city = TextView(context)
     private val next = TextView(context)
@@ -55,7 +66,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     /** Pesan status (memuat / gagal); null = tampilkan "berikutnya". */
     private var statusText: String? = null
 
-    private val refresh = Runnable { loadTimes() }
+    private val refresh = Runnable { loadTimes(force = true) }
     private val tick = object : Runnable {
         override fun run() {
             render()
@@ -112,12 +123,14 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
         main.removeCallbacks(tick)
         main.postDelayed(tick, TICK_INTERVAL)
         loadTimes()
     }
 
     override fun onDetachedFromWindow() {
+        preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         main.removeCallbacks(refresh)
         main.removeCallbacks(tick)
         requestId++ // abaikan hasil request yang masih berjalan
@@ -127,6 +140,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     }
 
     fun refreshForWeatherUpdate() {
+        // Reload only when the detected city changed; ordinary weather refreshes
+        // should not trigger an unnecessary AlAdhan request.
         loadTimes()
     }
 
@@ -167,8 +182,20 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         return Chip(root, name, icon, time)
     }
 
-    private fun loadTimes() {
+    private fun loadTimes(force: Boolean = false) {
         main.removeCallbacks(refresh)
+
+        val configKey = currentConfigKey()
+        val configurationChanged = configKey != lastConfigKey
+        if (configurationChanged) {
+            lastConfigKey = configKey
+            timings = null
+            prayerTimeZone = TimeZone.getDefault()
+            statusText = null
+        } else if (!force && timings != null) {
+            render()
+            return
+        }
 
         val automatic = RowPreferences.isUseLocationEnabled(context)
         val location = if (automatic) {
@@ -196,25 +223,40 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
         val myRequest = ++requestId
         ensureExecutor().execute {
-            val result = try { fetchTimings(location) } catch (_: Exception) { null }
+            val result = try { fetchTimings(location) } catch (error: Exception) {
+                android.util.Log.w(TAG, "Unable to load prayer times", error)
+                null
+            }
             main.post {
                 if (!isAttachedToWindow || myRequest != requestId) return@post
                 if (result != null) {
-                    timings = result
+                    timings = result.timings
+                    prayerTimeZone = result.timeZoneId?.let { id ->
+                        if (TimeZone.getAvailableIDs().contains(id)) TimeZone.getTimeZone(id)
+                        else TimeZone.getDefault()
+                    } ?: TimeZone.getDefault()
                     statusText = null
+                    render()
+                    main.postDelayed(refresh, REFRESH_INTERVAL)
                 } else {
+                    timings = null
                     statusText = context.getString(R.string.prayer_unavailable).lineSequence().first()
+                    render()
+                    main.postDelayed(refresh, RETRY_FAILURE_INTERVAL)
                 }
-                render()
             }
         }
-        main.postDelayed(refresh, REFRESH_INTERVAL)
     }
 
     private fun ensureExecutor(): ExecutorService =
         executor?.takeIf { !it.isShutdown } ?: Executors.newSingleThreadExecutor().also { executor = it }
 
-    private fun fetchTimings(location: String): Map<String, String> {
+    private data class PrayerResponse(
+        val timings: Map<String, String>,
+        val timeZoneId: String?
+    )
+
+    private fun fetchTimings(location: String): PrayerResponse {
         val encoded = URLEncoder.encode(location, "UTF-8")
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val method = preferences.getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
@@ -247,11 +289,16 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         try {
             if (connection.responseCode !in 200..299) error("HTTP ${connection.responseCode}")
             val body = connection.inputStream.bufferedReader().use { it.readText() }
-            val timing = JSONObject(body).getJSONObject("data").getJSONObject("timings")
-            return NAMES.associateWith { name ->
+            val data = JSONObject(body).optJSONObject("data") ?: error("Missing AlAdhan data")
+            val timing = data.optJSONObject("timings") ?: error("Missing prayer timings")
+            val parsed = NAMES.associateWith { name ->
                 val raw = timing.optString(name, "").substringBefore(" ").trim()
                 if (parseHm(raw) != null) raw else NO_TIME
             }
+            if (parsed.values.none { it != NO_TIME }) error("No valid prayer times in response")
+            val timeZoneId = data.optJSONObject("meta")?.optString("timezone")
+                ?.takeIf { it.isNotBlank() && it != "null" }
+            return PrayerResponse(parsed, timeZoneId)
         } finally {
             connection.disconnect()
         }
@@ -261,7 +308,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private fun render() {
         val data = timings
         val upcoming = data?.let { nextPrayer(it) }
-        val dateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
+        val dateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).apply {
+            timeZone = prayerTimeZone
+        }.format(Date())
         city.text = infoText ?: locationName?.let { "$dateText · $it" } ?: dateText
         for ((name, chip) in chips) {
             val active = upcoming?.first == name
@@ -286,7 +335,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         val now = System.currentTimeMillis()
         return NAMES.mapNotNull { name ->
             val (hour, minute) = parseHm(data[name]) ?: return@mapNotNull null
-            val cal = Calendar.getInstance().apply {
+            val cal = Calendar.getInstance(prayerTimeZone).apply {
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
                 set(Calendar.SECOND, 0)
@@ -296,6 +345,33 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             name to cal.timeInMillis
         }.minByOrNull { it.second }
     }
+
+    private fun currentConfigKey(): String {
+        val automatic = RowPreferences.isUseLocationEnabled(context)
+        val location = if (automatic) {
+            readWeather()?.optString("name")?.takeIf { it.isNotBlank() }
+                ?: preferences.getString(KEY_DETECTED_CITY, "")
+        } else {
+            RowPreferences.getUserLocation(context)
+        }
+        val keys = listOf(
+            KEY_METHOD, KEY_OFFSET_FAJR, KEY_OFFSET_DHUHR, KEY_OFFSET_ASR,
+            KEY_OFFSET_MAGHRIB, KEY_OFFSET_ISHA, KEY_CUSTOM_FAJR,
+            KEY_CUSTOM_MAGHRIB, KEY_CUSTOM_ISHA
+        )
+        return buildString {
+            append(automatic).append('|').append(location.orEmpty())
+            keys.forEach { append('|').append(preferences.getString(it, "")) }
+        }
+    }
+
+    private fun relevantPreferenceKeys(): Set<String> = setOf(
+        KEY_METHOD, KEY_OFFSET_FAJR, KEY_OFFSET_DHUHR, KEY_OFFSET_ASR,
+        KEY_OFFSET_MAGHRIB, KEY_OFFSET_ISHA, KEY_CUSTOM_FAJR,
+        KEY_CUSTOM_MAGHRIB, KEY_CUSTOM_ISHA,
+        context.getString(R.string.pref_use_current_location),
+        context.getString(R.string.pref_user_location)
+    )
 
     private fun prayerOffset(preferences: android.content.SharedPreferences, key: String): Int =
         preferences.getString(key, "0")?.toIntOrNull()?.coerceIn(-180, 180) ?: 0
@@ -354,6 +430,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         private const val DEFAULT_CUSTOM_ISHA = "18"
         private const val REFRESH_INTERVAL = 6 * 60 * 60 * 1000L
         private const val RETRY_NO_LOCATION_INTERVAL = 2 * 60 * 1000L
+        private const val RETRY_FAILURE_INTERVAL = 5 * 60 * 1000L
+        private const val TAG = "PrayerTimesOverlay"
         private const val TICK_INTERVAL = 60 * 1000L
         private const val NO_TIME = "--:--"
         private val COLOR_MUTED = Color.rgb(195, 205, 220)
