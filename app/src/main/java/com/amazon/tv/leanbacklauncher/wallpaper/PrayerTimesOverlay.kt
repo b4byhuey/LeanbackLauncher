@@ -70,7 +70,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         isClickable = false
 
         city.apply {
-            textSize = 13f
+            textSize = 12f
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             setTextColor(Color.WHITE)
             isSingleLine = true
@@ -155,9 +155,9 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             gravity = Gravity.CENTER
             isFocusable = false
             isClickable = false
-            setPadding(0, dp(2), 0, dp(2))
+            setPadding(0, dp(2), 0, dp(1))
             addView(name, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-            addView(icon, LayoutParams(dp(22), dp(22)).apply {
+            addView(icon, LayoutParams(dp(18), dp(18)).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
                 topMargin = dp(1)
                 bottomMargin = dp(1)

@@ -282,7 +282,7 @@
     <dimen name="lb_search_bar_text_size">18.0sp</dimen>
     <dimen name="lb_search_bar_unfocused_text_size">18.0sp</dimen>
     <dimen name="lb_search_browse_row_padding_start">56.0dip</dimen>
-    <dimen name="lb_search_browse_rows_align_top">164.0dip</dimen><!-- as search_area_fixed_height -->
+    <dimen name="lb_search_browse_rows_align_top">172.0dip</dimen><!-- as search_area_fixed_height -->
     <dimen name="lb_search_orb_focused_z">8.0dip</dimen>
     <dimen name="lb_search_orb_margin_bottom">4.0dip</dimen>
     <dimen name="lb_search_orb_margin_end">4.0dip</dimen>
@@ -348,7 +348,7 @@
     <dimen name="progress_bar_height">2.0dip</dimen>
     <dimen name="progress_bar_radius">5.0dip</dimen>
     <dimen name="row_padding">56.0dip</dimen>
-    <dimen name="search_area_fixed_height">164.0dip</dimen>
+    <dimen name="search_area_fixed_height">172.0dip</dimen>
     <dimen name="search_orb_hint_text">18.0sp</dimen>
     <dimen name="search_orb_margin_bottom">31.0dip</dimen>
     <dimen name="search_orb_margin_start">56.0dip</dimen>
@@ -367,7 +367,7 @@
     <dimen name="vertical_safety_spacing">27.0dip</dimen>
     <dimen name="widget_clock_height">60.0dip</dimen>
     <dimen name="widget_end_spacing">50.0dip</dimen>
-    <dimen name="widget_height">148.0dip</dimen>
+    <dimen name="widget_height">156.0dip</dimen>
     <dimen name="widget_width">350.0dip</dimen>
     <dimen name="widget_settings_size">60.0dip</dimen>
     <dimen name="widget_h_padding">8.0dip</dimen>

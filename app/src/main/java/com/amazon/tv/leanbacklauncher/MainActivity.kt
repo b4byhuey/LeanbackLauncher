@@ -574,6 +574,37 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     @Deprecated("Use OnBackPressedDispatcher")
+    private var mLastWheelNav = 0L
+
+    /**
+     * Scroll wheel mouse: RecyclerView/leanback menggeser baris secara pixel tanpa memindahkan fokus,
+     * sehingga kartu aplikasi tidak sejajar dan saling menumpuk. Ubah roda mouse menjadi navigasi
+     * D-pad (jalur yang sama dengan remote) supaya fokus, zoom, dan animasi baris tetap konsisten.
+     */
+    override fun dispatchGenericMotionEvent(ev: android.view.MotionEvent): Boolean {
+        if (ev.action == android.view.MotionEvent.ACTION_SCROLL &&
+            ev.isFromSource(android.view.InputDevice.SOURCE_CLASS_POINTER)
+        ) {
+            val v = ev.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)
+            val h = ev.getAxisValue(android.view.MotionEvent.AXIS_HSCROLL)
+            val key = when {
+                v < 0f -> KeyEvent.KEYCODE_DPAD_DOWN
+                v > 0f -> KeyEvent.KEYCODE_DPAD_UP
+                h > 0f -> KeyEvent.KEYCODE_DPAD_RIGHT
+                h < 0f -> KeyEvent.KEYCODE_DPAD_LEFT
+                else -> return true
+            }
+            val now = SystemClock.uptimeMillis()
+            if (now - mLastWheelNav >= 140L) { // batasi agar satu putaran roda tidak membanjiri navigasi
+                mLastWheelNav = now
+                dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0))
+                dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0))
+            }
+            return true
+        }
+        return super.dispatchGenericMotionEvent(ev)
+    }
+
     override fun onBackPressed() {
         super.onBackPressed()
         when {
