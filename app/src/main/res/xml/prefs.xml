@@ -45,5 +45,10 @@
             android:title="@string/version"
             app:fragment="com.amazon.tv.leanbacklauncher.settings.VersionPreferenceFragment" />
 
+        <Preference
+            android:key="set_default_launcher"
+            android:summary="@string/default_launcher_action_desc"
+            android:title="@string/default_launcher_action" />
+
     </PreferenceCategory>
 </PreferenceScreen>

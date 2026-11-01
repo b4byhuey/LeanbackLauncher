@@ -28,6 +28,7 @@ import com.amazon.tv.leanbacklauncher.LauncherApp
 import com.amazon.tv.leanbacklauncher.MainActivity.Companion.JSONFILE
 import com.amazon.tv.leanbacklauncher.R
 import com.amazon.tv.leanbacklauncher.apps.AppsManager
+import com.amazon.tv.leanbacklauncher.util.DefaultLauncher
 import com.amazon.tv.leanbacklauncher.util.Permission
 import com.amazon.tv.leanbacklauncher.util.Util
 import com.bumptech.glide.Glide
@@ -137,6 +138,17 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
 
         findPreference<Preference>("version")?.apply {
             this.summary = "${getString(R.string.app_name)} v" + BuildConfig.VERSION_NAME
+        }
+
+        findPreference<Preference>("set_default_launcher")?.apply {
+            summary = getString(
+                if (DefaultLauncher.isDefault(requireActivity())) R.string.default_launcher_already_desc
+                else R.string.default_launcher_action_desc
+            )
+            setOnPreferenceClickListener {
+                DefaultLauncher.request(requireActivity())
+                true
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

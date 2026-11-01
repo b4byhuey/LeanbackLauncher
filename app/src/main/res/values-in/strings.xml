@@ -271,4 +271,12 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="app_language_opt_default">Default (English)</string>
     <string name="app_language_opt_indonesia">Indonesia</string>
     <string name="app_language_opt_malaysia">Malaysia</string>
+    <string name="default_launcher_title">Jadikan launcher default?</string>
+    <string name="default_launcher_message">Jadikan launcher ini layar utama default agar tombol Home selalu membukanya.</string>
+    <string name="default_launcher_action">Jadikan default launcher</string>
+    <string name="default_launcher_action_desc">Buka dialog sistem untuk memilih launcher ini sebagai Home</string>
+    <string name="default_launcher_later">Nanti</string>
+    <string name="default_launcher_already">Launcher ini sudah menjadi default</string>
+    <string name="default_launcher_already_desc">Sudah menjadi default launcher</string>
+    <string name="default_launcher_manual">Perangkat ini tidak punya layar pilihan default launcher. Buka Pengaturan &gt; Aplikasi/Perangkat lalu pilih launcher ini sebagai Home.</string>
 </resources>

@@ -254,4 +254,12 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="app_language_opt_malaysia">Malaysia</string>
     <string name="prayer_city_not_set">Tetapkan bandar dalam tetapan</string>
     <string name="prayer_detecting">Mengesan lokasi…</string>
+    <string name="default_launcher_title">Jadikan pelancar lalai?</string>
+    <string name="default_launcher_message">Jadikan pelancar ini skrin utama lalai supaya butang Home sentiasa membukanya.</string>
+    <string name="default_launcher_action">Jadikan pelancar lalai</string>
+    <string name="default_launcher_action_desc">Buka dialog sistem untuk memilih pelancar ini sebagai Home</string>
+    <string name="default_launcher_later">Nanti</string>
+    <string name="default_launcher_already">Pelancar ini sudah menjadi lalai</string>
+    <string name="default_launcher_already_desc">Sudah menjadi pelancar lalai</string>
+    <string name="default_launcher_manual">Peranti ini tiada skrin pilihan pelancar lalai. Buka Tetapan &gt; Apl/Peranti dan pilih pelancar ini sebagai Home.</string>
 </resources>

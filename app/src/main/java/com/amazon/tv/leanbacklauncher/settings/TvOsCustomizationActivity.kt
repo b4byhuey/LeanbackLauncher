@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.amazon.tv.leanbacklauncher.MainActivity
 import com.amazon.tv.leanbacklauncher.R
+import com.amazon.tv.leanbacklauncher.util.DefaultLauncher
 
 /**
  * TV-friendly customization hub for launcher wallpaper and prayer-time preferences.
@@ -115,6 +116,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             "${getString(R.string.app_name)} v${com.amazon.tv.leanbacklauncher.BuildConfig.VERSION_NAME}",
             enabled = false
         ) {}
+        defaultLauncherButton(root)
 
         actionButton(root, getString(R.string.tv_back_launcher), getString(R.string.tv_back_launcher_desc)) { finish() }
         root.post { root.getChildAt(4)?.requestFocus() }
@@ -160,6 +162,30 @@ class TvOsCustomizationActivity : AppCompatActivity() {
                 LauncherLanguage.apply(which)
             }
             .show()
+    }
+
+    private var defaultLauncherSubtitle: TextView? = null
+
+    private fun defaultLauncherButton(root: LinearLayout) {
+        actionButton(
+            root,
+            getString(R.string.default_launcher_action),
+            getString(R.string.default_launcher_action_desc)
+        ) { DefaultLauncher.request(this) }
+        defaultLauncherSubtitle = ((root.getChildAt(root.childCount - 1) as LinearLayout).getChildAt(1) as TextView)
+        updateDefaultLauncherSubtitle()
+    }
+
+    private fun updateDefaultLauncherSubtitle() {
+        defaultLauncherSubtitle?.text = getString(
+            if (DefaultLauncher.isDefault(this)) R.string.default_launcher_already_desc
+            else R.string.default_launcher_action_desc
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDefaultLauncherSubtitle()
     }
 
     private fun refreshLauncher() {

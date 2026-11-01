@@ -346,4 +346,12 @@ or recommendations will not work properly."</string>
     <string name="app_language_opt_default" translatable="false">Default (English)</string>
     <string name="app_language_opt_indonesia" translatable="false">Indonesia</string>
     <string name="app_language_opt_malaysia" translatable="false">Malaysia</string>
+    <string name="default_launcher_title">Set as default launcher?</string>
+    <string name="default_launcher_message">Make this launcher your default home screen so the Home button always opens it.</string>
+    <string name="default_launcher_action">Set as default launcher</string>
+    <string name="default_launcher_action_desc">Open the system dialog to choose this launcher as Home</string>
+    <string name="default_launcher_later">Later</string>
+    <string name="default_launcher_already">This launcher is already the default</string>
+    <string name="default_launcher_already_desc">Already the default launcher</string>
+    <string name="default_launcher_manual">This device has no default launcher screen. Open Settings &gt; Apps/Device and choose this launcher as Home.</string>
 </resources>

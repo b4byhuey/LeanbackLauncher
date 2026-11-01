@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     companion object {
         private const val TAG = "MainActivity"
         private const val FIRST_POSITION = 0
+        private const val DEFAULT_LAUNCHER_PROMPT_DELAY_MS = 30_000L
         private const val UNINSTALL_CODE = 321
         const val PERMISSIONS_REQUEST_LOCATION = 99
         val JSONFILE = LauncherApp.context.cacheDir?.absolutePath + "/weather.json"
@@ -167,6 +168,11 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
     // Core components
     private val mHandler: Handler = MainActivityMessageHandler(this)
+
+    // Dialog "jadikan default launcher": ditampilkan 30 detik setelah launcher terbuka.
+    // Handler terpisah karena onStop() memanggil mHandler.removeCallbacksAndMessages(null).
+    private val defaultLauncherHandler = Handler(Looper.getMainLooper())
+    private val defaultLauncherPrompt = Runnable { showDefaultLauncherDialog() }
     private val mIdleListeners = mutableListOf<IdleListener>()
     private val mNotifListener = NotificationListenerImpl()
     private val mPackageReplacedReceiver = PackageReplacedReceiver()
@@ -546,6 +552,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     public override fun onDestroy() {
         if (BuildConfig.DEBUG) Log.d(TAG, "onDestroy()")
         mHandler.removeMessages(3)
+        defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
         super.onDestroy()
         homeAdapter?.let {
             it.onStopUi()
@@ -554,6 +561,20 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         getInstance(applicationContext)?.onDestroy()
         unregisterReceiver(mPackageReplacedReceiver)
         unregisterReceiver(mHomeRefreshReceiver)
+    }
+
+    private fun showDefaultLauncherDialog() {
+        if (isFinishing || isDestroyed || !hasWindowFocus()) return
+        if (com.amazon.tv.leanbacklauncher.util.DefaultLauncher.isDefault(this)) return
+        com.amazon.tv.leanbacklauncher.util.DefaultLauncher.promptShown = true
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.default_launcher_title)
+            .setMessage(R.string.default_launcher_message)
+            .setPositiveButton(R.string.default_launcher_action) { _, _ ->
+                com.amazon.tv.leanbacklauncher.util.DefaultLauncher.request(this)
+            }
+            .setNegativeButton(R.string.default_launcher_later, null)
+            .show()
     }
 
     override fun onUserInteraction() {
@@ -1226,6 +1247,13 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         mHandler.sendEmptyMessageDelayed(3, mResetPeriod.toLong())
         mHandler.sendEmptyMessageDelayed(7, 2000)
 
+        defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
+        if (!com.amazon.tv.leanbacklauncher.util.DefaultLauncher.promptShown &&
+            !com.amazon.tv.leanbacklauncher.util.DefaultLauncher.isDefault(this)
+        ) {
+            defaultLauncherHandler.postDelayed(defaultLauncherPrompt, DEFAULT_LAUNCHER_PROMPT_DELAY_MS)
+        }
+
         if (mLaunchAnimation.isFinished) {
             mLaunchAnimation.reset()
         }
@@ -1264,6 +1292,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
     override fun onPause() {
         super.onPause()
+        defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
         mResetAfterIdleEnabled = false
         mLaunchAnimation.cancel()
         mHandler.removeMessages(1)
