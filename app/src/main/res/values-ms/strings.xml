@@ -249,4 +249,7 @@ Pergi ke Tetapan untuk mendayakannya"</string>
 <string name="location_settings_title">Tetapan Lokasi</string>
     <string name="weather_settings_title">Tetapan Cuaca</string>
     <string name="app_language_desc">Bahasa pelancar</string>
+    <string name="app_language_opt_default">Default (English)</string>
+    <string name="app_language_opt_indonesia">Indonesia</string>
+    <string name="app_language_opt_malaysia">Malaysia</string>
 </resources>
