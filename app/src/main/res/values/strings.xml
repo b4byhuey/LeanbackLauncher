@@ -296,7 +296,7 @@ or recommendations will not work properly."</string>
     <string name="weather_wind">%3$s %1$s %2$s</string>
     <string name="tv_customization_eyebrow">HOME EXPERIENCE</string>
     <string name="tv_customization_title">Customize your TV</string>
-    <string name="tv_customization_subtitle">Wallpaper, motion and daily prayer times</string>
+    <string name="tv_customization_subtitle">Wallpaper, motion, language, weather and daily prayer times</string>
     <string name="tv_section_wallpaper">WALLPAPER</string>
     <string name="tv_choose_gallery">Choose photo from gallery</string>
     <string name="tv_choose_gallery_desc">Select an image and keep it as the launcher background</string>
