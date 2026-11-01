@@ -124,8 +124,7 @@
 
             <!-- AM/PM kecil di samping jam (kosong pada format 24 jam) -->
             <TextClock
-                android:id="@+id/clock_ampm"
-                android:layout_width="wrap_content"
+                    android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="3dp"
                 android:layout_marginBottom="5dp"
