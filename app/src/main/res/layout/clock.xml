@@ -72,32 +72,21 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- "chip" deskripsi cuaca seperti "Partly cloudy" di contoh -->
+            <!-- Deskripsi cuaca ("Partly cloudy", "rain", dll): teks biasa seperti elemen lain di widget -->
             <TextView
                 android:id="@+id/wDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/prayer_chip_bg"
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:maxWidth="190dp"
-                android:paddingStart="8dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="2dp"
                 android:singleLine="true"
                 android:textColor="@color/clock_text_color"
                 android:textSize="12sp" />
 
-            <!-- Tidak ditampilkan di desain baru; id dipertahankan karena MainActivity mengisinya. -->
+            <!-- Id dipertahankan karena MainActivity mengisinya; tidak ditampilkan. -->
             <TextView
-                android:id="@+id/humidity"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/wind"
+                android:id="@+id/hilotemp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="gone" />
@@ -172,16 +161,35 @@
                 android:textSize="30sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/hilotemp"
+            <!-- Kolom atas-bawah di tempat hi/lo: kelembapan di atas, angin di bawah -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:textColor="@color/prayer_text_muted"
-                android:textSize="11sp" />
+                android:gravity="start"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/humidity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
+                    android:textColor="@color/prayer_text_muted"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/wind"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
+                    android:textColor="@color/prayer_text_muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/weather_icon"

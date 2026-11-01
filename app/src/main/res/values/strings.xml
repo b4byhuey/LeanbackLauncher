@@ -291,7 +291,7 @@ or recommendations will not work properly."</string>
     <string name="weather_pressure_mm">mmHg</string>
     <string name="weather_speed_m">m/s</string>
     <string name="weather_speed_i">mph</string>
-    <string name="weather_wind">wind %3$s %1$s %2$s</string>
+    <string name="weather_wind">%3$s %1$s %2$s</string>
     <string name="tv_customization_eyebrow">HOME EXPERIENCE</string>
     <string name="tv_customization_title">Customize your TV</string>
     <string name="tv_customization_subtitle">Wallpaper, motion and daily prayer times</string>

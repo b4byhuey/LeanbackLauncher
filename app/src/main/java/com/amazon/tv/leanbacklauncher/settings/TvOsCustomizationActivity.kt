@@ -3,7 +3,6 @@
 package com.amazon.tv.leanbacklauncher.settings
 
 import android.app.Activity
-import android.app.WallpaperManager
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -89,20 +88,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             prefs.edit().putBoolean("launcher_live_background", true).remove(KEY_WALLPAPER_URI).remove("wallpaper_image").apply()
             refreshLauncher()
             Toast.makeText(this, getString(R.string.tv_animated_enabled), Toast.LENGTH_SHORT).show()
-        }
-        actionButton(root, getString(R.string.tv_photo_wallpaper), getString(R.string.tv_photo_wallpaper_desc)) {
-            prefs.edit().putBoolean("launcher_live_background", false).apply()
-            refreshLauncher()
-            Toast.makeText(this, getString(R.string.tv_photo_mode_enabled), Toast.LENGTH_SHORT).show()
-        }
-        actionButton(root, getString(R.string.tv_live_wallpaper), getString(R.string.tv_live_wallpaper_desc)) {
-            val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-            try {
-                startActivity(intent)
-            } catch (_: Exception) {
-                try { startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)) }
-                catch (_: Exception) { Toast.makeText(this, getString(R.string.tv_live_unsupported), Toast.LENGTH_LONG).show() }
-            }
         }
 
         section(root, getString(R.string.tv_section_prayer))
