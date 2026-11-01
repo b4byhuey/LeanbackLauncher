@@ -347,8 +347,8 @@ or recommendations will not work properly."</string>
     <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>
     <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
-    <string name="prayer_settings_title">Prayer Settings</string>
-    <string name="prayer_settings_desc">Choose a calculation method and adjust the time for each prayer</string>
+    <string name="prayer_settings_title">Weather & Prayer Time Settings</string>
+    <string name="prayer_settings_desc">Configure weather options and prayer times, including the calculation method and time adjustments</string>
     <string name="prayer_method_category">Calculation method</string>
     <string name="prayer_method_title">Calculation method</string>
     <string name="prayer_method_desc">Select a method provided by AlAdhan</string>
