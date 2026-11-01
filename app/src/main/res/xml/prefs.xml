@@ -3,6 +3,11 @@
     android:title="@string/settings_dialog_title"
     android:key="root_prefs">
     <PreferenceCategory>
+        <ListPreference
+            android:key="app_language"
+            android:title="@string/app_language_title"
+            android:summary="%s"
+            android:defaultValue="" />
 
         <Preference
             android:key="order_and_rows"
