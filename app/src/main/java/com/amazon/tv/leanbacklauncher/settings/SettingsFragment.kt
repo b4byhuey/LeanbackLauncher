@@ -127,9 +127,7 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
         // Load the prefs from an XML resource
         setPreferencesFromResource(R.xml.prefs, rootKey)
 
-        val language = ListPreference(requireContext()).apply {
-            key = "app_language"
-            title = getString(R.string.app_language_title)
+        findPreference<ListPreference>("app_language")?.apply {
             entries = arrayOf(
                 getString(R.string.app_language_system),
                 getString(R.string.app_language_english),
@@ -138,8 +136,6 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
             )
             entryValues = arrayOf("", "en", "id", "ms-rMY")
             value = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags()
-            summary = "%s"
-            order = 0
             setOnPreferenceChangeListener { _, newValue ->
                 androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
                     androidx.core.os.LocaleListCompat.forLanguageTags(newValue?.toString().orEmpty())
@@ -148,7 +144,6 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
                 true
             }
         }
-        (preferenceScreen?.getPreference(0) as? PreferenceCategory)?.addPreference(language)
 
         findPreference<Preference>("version")?.apply {
             this.summary = "${getString(R.string.app_name)} v" + BuildConfig.VERSION_NAME
