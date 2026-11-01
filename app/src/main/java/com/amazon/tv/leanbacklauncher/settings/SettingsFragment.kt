@@ -874,6 +874,7 @@ class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
             .getString(KEY_METHOD, DEFAULT_METHOD)
         showCustom(selected == CUSTOM_METHOD)
         // Populate from disk immediately; refresh the shared cache in the background.
+        // Even on a first/offline launch, show the built-in Kemenag option immediately.
         applyMethods(PrayerMethodRepository.cached(ctx))
         PrayerMethodRepository.prefetch(ctx) { applyMethods(it) }
     }
