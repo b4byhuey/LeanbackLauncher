@@ -428,8 +428,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             setItemViewCacheSize(homeAdapter!!.itemCount)
             adapter = homeAdapter
 
-            // Start on the Search row instead of Notifications/Suggestions.
-            // Selecting the suggestions row scrolls the launcher down on initial launch.
+            // Keep the launcher at the top on first launch; selecting Notifications
+            // makes the recommendations/suggestions row pull the viewport downward.
             val searchIndex = homeAdapter?.getRowIndex(0) // RowType.SEARCH
             if (searchIndex != null && searchIndex != -1) {
                 selectedPosition = searchIndex
@@ -872,7 +872,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         // Set Weather Info
         weatherVG?.let {
             findViewById<AppCompatImageView>(R.id.weather_icon)?.let { icon ->
-                // API/cache payloads can omit the icon list; never index an empty list.
                 val iconCode = weather.icons.firstOrNull()?.takeIf { it.isNotBlank() }
                 if (iconCode != null) {
                     OpenWeatherIcons(this, iconCode, icon)
@@ -894,7 +893,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                 getString(R.string.weather_humidity, weather.humidity.toInt())
             findViewById<TextView>(R.id.wind)?.text = getWindText(weather)
             findViewById<TextView>(R.id.wDescription)?.apply {
-                // Description is optional in some API responses and old cache entries.
                 text = weather.descriptions.firstOrNull()?.takeIf { it.isNotBlank() } ?: "—"
                 setupMarquee()
             }
@@ -1123,55 +1121,19 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             setEditMode(editMode = false, useAnimation = smooth)
         }
         val currIndex = mListView!!.selectedPosition
-        var notifIndex = homeAdapter!!.getRowIndex(1) // 1 - Recommendations row
-        mListView?.adapter?.let {
-            notifIndex = (it.itemCount - 1).coerceAtMost(notifIndex)
-        }
-        if (BuildConfig.DEBUG) Log.d(TAG, "currIndex:$currIndex, notifIndex:$notifIndex")
-        if (notifIndex != -1 && currIndex != notifIndex) {
-            if (BuildConfig.DEBUG) Log.d(
-                TAG,
-                "resetLauncherState -> set focus to Recommendations row"
-            )
+        val searchIndex = homeAdapter!!.getRowIndex(0) // 0 - Search row
+        if (BuildConfig.DEBUG) Log.d(TAG, "currIndex:$currIndex, searchIndex:$searchIndex")
+        if (searchIndex != -1 && currIndex != searchIndex) {
+            if (BuildConfig.DEBUG) Log.d(TAG, "resetLauncherState -> set focus to Search row")
             if (smooth) {
-                mListView?.setSelectedPositionSmooth(notifIndex)
+                mListView?.setSelectedPositionSmooth(searchIndex)
             } else {
-                mListView?.selectedPosition = notifIndex
+                mListView?.selectedPosition = searchIndex
                 val focusedChild = mListView?.focusedChild
                 focusedChild?.let { child ->
-                    val focusedPosition = mListView?.getChildAdapterPosition(child)
-                    if (focusedPosition == notifIndex) {
+                    if (mListView?.getChildAdapterPosition(child) == searchIndex) {
                         child.clearFocus()
                     }
-                }
-            }
-            if (!(mShyMode || mNotificationsView == null)) {
-                mNotificationsView?.setIgnoreNextActivateBackgroundChange()
-            }
-        } else if (notifIndex == -1) { // focus on 1st Apps cat (FAV|VIDEO|MUSIC|GAMES|APPS) in case No Notifications row
-            val rowTypes = intArrayOf(
-                7, // FAVORITES
-                9, // VIDEO
-                8, // MUSIC
-                4, // GAMES
-                3, // APPS
-            ) // 0, 3, 4, 7, 8, 9 - SEARCH, APPS, GAMES, FAVORITES, MUSIC, VIDEO as in RowType()
-            for (type in rowTypes) {
-                var rowIndex = homeAdapter?.getRowIndex(type) ?: -1
-                mListView?.adapter?.let {
-                    rowIndex = (it.itemCount - 1).coerceAtMost(rowIndex)
-                }
-                if (rowIndex != -1) {
-                    if (BuildConfig.DEBUG) Log.d(
-                        TAG,
-                        "resetLauncherState -> set focus to ${RowType.fromRowCode(type)} row"
-                    )
-                    if (smooth) {
-                        mListView?.setSelectedPositionSmooth(rowIndex)
-                    } else {
-                        mListView?.selectedPosition = rowIndex
-                    }
-                    break
                 }
             }
         }
@@ -1395,7 +1357,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                     //if (BuildConfig.DEBUG) Log.d(TAG, "select search row and requestFocus()")
                 }
             }
-        } else if (state == 0 && mListView!!.selectedPosition <= homeAdapter!!.getRowIndex(1) && mNotificationsView!!.isNotEmpty()) {
+        } else if (state == 0 && mListView!!.selectedPosition == homeAdapter!!.getRowIndex(1) && mNotificationsView!!.isNotEmpty()) {
             // focus on Recomendations
             mNotificationsView?.selectedPosition = 0
             mNotificationsView?.getChildAt(0)?.requestFocus()
