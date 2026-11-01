@@ -187,10 +187,11 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            isEnabled = enabled
-            isFocusable = enabled
-            isFocusableInTouchMode = enabled
-            isClickable = enabled
+            // Tetap aktif untuk navigasi D-pad; hanya aksi klik yang boleh dinonaktifkan.
+            isEnabled = true
+            isFocusable = true
+            isFocusableInTouchMode = true
+            isClickable = true
             setPadding(dp(18), dp(12), dp(18), dp(12))
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
@@ -205,7 +206,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
                     setStroke(dp(2), if (focused) Color.rgb(115, 190, 255) else Color.rgb(48, 73, 111))
                 }
             }
-            if (enabled) setOnClickListener { action() }
+            setOnClickListener { if (enabled) action() }
             addView(TextView(this@TvOsCustomizationActivity).apply {
                 text = title
                 textSize = 18f
