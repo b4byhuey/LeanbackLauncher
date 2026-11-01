@@ -579,32 +579,34 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private var mLastWheelNav = 0L
 
     /**
-     * Scroll wheel mouse: RecyclerView/leanback menggeser baris secara pixel tanpa memindahkan fokus,
-     * sehingga kartu aplikasi tidak sejajar dan saling menumpuk. Ubah roda mouse menjadi navigasi
-     * D-pad (jalur yang sama dengan remote) supaya fokus, zoom, dan animasi baris tetap konsisten.
+     * Mouse/touchpad wheel harus mengikuti jalur fokus D-pad Leanback, bukan pixel-scroll
+     * RecyclerView. Jangan membatasi SOURCE_CLASS_POINTER: sejumlah perangkat Android TV
+     * melaporkan wheel dengan source yang berbeda-beda.
      */
-    override fun dispatchGenericMotionEvent(ev: android.view.MotionEvent): Boolean {
-        if (ev.action == android.view.MotionEvent.ACTION_SCROLL &&
-            ev.isFromSource(android.view.InputDevice.SOURCE_CLASS_POINTER)
-        ) {
-            val v = ev.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)
-            val h = ev.getAxisValue(android.view.MotionEvent.AXIS_HSCROLL)
-            val key = when {
-                v < 0f -> KeyEvent.KEYCODE_DPAD_DOWN
-                v > 0f -> KeyEvent.KEYCODE_DPAD_UP
-                h > 0f -> KeyEvent.KEYCODE_DPAD_RIGHT
-                h < 0f -> KeyEvent.KEYCODE_DPAD_LEFT
-                else -> return true
-            }
-            val now = SystemClock.uptimeMillis()
-            if (now - mLastWheelNav >= 140L) { // batasi agar satu putaran roda tidak membanjiri navigasi
-                mLastWheelNav = now
-                dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0))
-                dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0))
-            }
-            return true
+    private fun handleMouseWheel(ev: android.view.MotionEvent): Boolean {
+        if (ev.action != android.view.MotionEvent.ACTION_SCROLL) return false
+
+        val vertical = ev.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)
+        val horizontal = ev.getAxisValue(android.view.MotionEvent.AXIS_HSCROLL)
+        val key = when {
+            vertical < 0f -> KeyEvent.KEYCODE_DPAD_DOWN
+            vertical > 0f -> KeyEvent.KEYCODE_DPAD_UP
+            horizontal > 0f -> KeyEvent.KEYCODE_DPAD_RIGHT
+            horizontal < 0f -> KeyEvent.KEYCODE_DPAD_LEFT
+            else -> return false
         }
-        return super.dispatchGenericMotionEvent(ev)
+
+        val now = SystemClock.uptimeMillis()
+        if (now - mLastWheelNav >= 80L) {
+            mLastWheelNav = now
+            dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0))
+            dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0))
+        }
+        return true
+    }
+
+    override fun dispatchGenericMotionEvent(ev: android.view.MotionEvent): Boolean {
+        return if (handleMouseWheel(ev)) true else super.dispatchGenericMotionEvent(ev)
     }
 
     @Deprecated("Deprecated in Java")
