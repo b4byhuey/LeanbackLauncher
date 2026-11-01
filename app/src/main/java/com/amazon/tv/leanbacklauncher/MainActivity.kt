@@ -328,7 +328,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                         return
                     }
 
-                    else -> TODO()
+                    else -> return
                 }
             }
         }
