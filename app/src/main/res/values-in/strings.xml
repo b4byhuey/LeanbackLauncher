@@ -268,4 +268,7 @@ Untuk mengaktifkan, buka Setelan"</string>
 <string name="location_settings_title">Pengaturan Lokasi</string>
     <string name="weather_settings_title">Pengaturan Cuaca</string>
     <string name="app_language_desc">Bahasa launcher</string>
+    <string name="app_language_opt_default">Default (English)</string>
+    <string name="app_language_opt_indonesia">Indonesia</string>
+    <string name="app_language_opt_malaysia">Malaysia</string>
 </resources>
