@@ -446,9 +446,11 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             setItemViewCacheSize(homeAdapter!!.itemCount)
             adapter = homeAdapter
 
-            val notifIndex = homeAdapter?.getRowIndex(1) // RowType.NOTIFICATIONS
-            if (notifIndex != null && notifIndex != -1) {
-                selectedPosition = notifIndex
+            // Start on the Search row instead of Notifications/Suggestions.
+            // Selecting the suggestions row scrolls the launcher down on initial launch.
+            val searchIndex = homeAdapter?.getRowIndex(0) // RowType.SEARCH
+            if (searchIndex != null && searchIndex != -1) {
+                selectedPosition = searchIndex
             }
             val rAdapter = homeAdapter?.recommendationsAdapter?.apply {
                 addIdleListener(this)
