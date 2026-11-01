@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gradasi ala tvOS di atas wallpaper: header sedikit gelap, area baris lebih gelap -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="#e6000000"
+        android:centerColor="#66000000"
+        android:endColor="#59000000"
+        android:centerY="0.45" />
+</shape>

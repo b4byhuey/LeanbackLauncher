@@ -28,6 +28,7 @@ class LauncherWallpaper @JvmOverloads constructor(
 ), HomeScrollFractionListener, OnAnimationFinishedListener, AnimatedLayer.AnimationListener,
     OnDownloadFinishedListener {
     private lateinit var mBackground: WallpaperImage
+    private lateinit var mAmbientBackground: AmbientLiveBackground
     private val mDimmer: ColorFilterDimmer
     private val mDownloader: WallpaperDownloader
     private var mFadeMaskExt: AnimatedLayer? = null
@@ -68,6 +69,7 @@ class LauncherWallpaper @JvmOverloads constructor(
     override fun onFinishInflate() {
         super.onFinishInflate()
         mWallpaper = findViewById(R.id.wallpaper)
+        mAmbientBackground = findViewById(R.id.ambient_live_background)
         mBackground = findViewById(R.id.launcher_background)
         mOverlay = findViewById(R.id.animation_layer)
         mFadeMaskExt = findViewById(R.id.fade_mask_extension)
@@ -163,6 +165,19 @@ class LauncherWallpaper @JvmOverloads constructor(
     }
 
     private fun updateChildVisibility() {
+        val liveBackgroundEnabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean("launcher_live_background", false)
+        if (liveBackgroundEnabled) {
+            mAmbientBackground.visibility = VISIBLE
+            mBackground.visibility = GONE
+            mOverlay.visibility = GONE
+            mWallpaper?.visibility = GONE
+            mVideoFadeMask?.visibility = GONE
+            mVideoFadeMaskExt?.visibility = GONE
+            mFadeMaskExt?.visibility = GONE
+            return
+        }
+        mAmbientBackground.visibility = GONE
         var i = 8
         if (mInShyMode) {
             mVideoFadeMask!!.visibility = GONE

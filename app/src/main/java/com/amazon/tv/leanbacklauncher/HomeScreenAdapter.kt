@@ -30,6 +30,7 @@ import com.amazon.tv.leanbacklauncher.HomeScreenAdapter.HomeViewHolder
 import com.amazon.tv.leanbacklauncher.HomeScreenRow.RowChangeListener
 import com.amazon.tv.leanbacklauncher.HomeScrollManager.HomeScrollFractionListener
 import com.amazon.tv.leanbacklauncher.apps.*
+import com.amazon.tv.leanbacklauncher.channels.ChannelsAdapter
 import com.amazon.tv.leanbacklauncher.apps.AppsManager.Companion.getInstance
 import com.amazon.tv.leanbacklauncher.apps.ConnectivityListener.Companion.readConnectivity
 import com.amazon.tv.leanbacklauncher.inputs.InputsAdapter
@@ -52,6 +53,7 @@ class HomeScreenAdapter(
     private val mAllRowsList: ArrayList<HomeScreenRow> = ArrayList<HomeScreenRow>(7)
     private val mAppsManager: AppsManager? = getInstance(context)
     private var mAssistantIcon: Drawable? = null
+    private var mChannelsAdapter: ChannelsAdapter? = null
     private var mAssistantSuggestions: Array<String>? = emptyArray()
     private val mConnectivityListener: ConnectivityListener?
     private var mEditListener: OnEditModeChangedListener? = null
@@ -174,6 +176,16 @@ class HomeScreenAdapter(
                 false
             )
         }
+        // baris channel / watch next (tersembunyi bila tidak ada aplikasi yang diaktifkan)
+        buildRow(
+            RowType.CHANNELS,
+            position++,
+            res.getString(R.string.category_label_channels),
+            null,
+            null,
+            R.dimen.home_scroll_size_apps,
+            true
+        )
         if (areFavoritesEnabled(mMainActivity)) {
             buildRow(
                 RowType.FAVORITES,
@@ -273,7 +285,7 @@ class HomeScreenAdapter(
     private fun addRowEntry(row: HomeScreenRow) {
         mAllRowsList.add(row)
         row.setChangeListener(this)
-        if (row.type !== RowType.NOTIFICATIONS && row.type !== RowType.ACTUAL_NOTIFICATIONS && row.type !== RowType.SEARCH) {
+        if (row.type !== RowType.NOTIFICATIONS && row.type !== RowType.ACTUAL_NOTIFICATIONS && row.type !== RowType.SEARCH && row.type !== RowType.CHANNELS) {
             mAppsManager?.addAppRow(row)
         }
         if (row.isVisible) {
@@ -374,7 +386,7 @@ class HomeScreenAdapter(
                         }
                     }
                 }
-                RowType.PARTNER, RowType.SETTINGS, RowType.INPUTS -> {
+                RowType.PARTNER, RowType.SETTINGS, RowType.INPUTS, RowType.CHANNELS -> {
                     view = mInflater.inflate(R.layout.home_active_items_row, parent, false)
                     mHeaders.put(row.type.code, view.findViewById(R.id.header))
                     if (view is ActiveFrame) {
@@ -607,6 +619,7 @@ class HomeScreenAdapter(
             RowType.MUSIC -> AppsAdapter(mMainActivity, null, AppCategory.MUSIC)
             RowType.GAMES -> AppsAdapter(mMainActivity, null, AppCategory.GAME)
             RowType.SETTINGS -> mSettingsAdapter
+            RowType.CHANNELS -> ChannelsAdapter(mMainActivity).also { mChannelsAdapter = it }
             RowType.INPUTS -> {
                 // TODO this.mPartner.showPhysicalTunersSeparately(), this.mPartner.disableDisconnectedInputs(), this.mPartner.getStateIconFromTVInput()
                 val adapter: RecyclerView.Adapter<*> =
@@ -655,7 +668,12 @@ class HomeScreenAdapter(
         mPartnerAdapter?.onInitUi()
     }
 
+    fun refreshChannels() {
+        mChannelsAdapter?.refresh()
+    }
+
     fun onUiVisible() {
+        mChannelsAdapter?.onUiVisible()
         recommendationsAdapter?.onUiVisible()
         mPartnerAdapter?.onUiVisible()
     }
@@ -666,6 +684,7 @@ class HomeScreenAdapter(
     }
 
     fun onStopUi() {
+        mChannelsAdapter?.onStopUi()
         recommendationsAdapter?.onStopUi()
         mPartnerAdapter?.onStopUi()
     }

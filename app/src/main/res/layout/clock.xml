@@ -1,35 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Header seperti contoh: pojok kiri atas ikon settings, jam besar (AM/PM kecil) di kiri,
+    cuaca di kanan, lalu tanggal + 5 waktu sholat (pengganti baris forecast) di bawah.
+    Kartu semi-transparan dengan outline putih tipis (rounded).
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/prayer_card_bg"
+    android:clipChildren="false"
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingTop="3dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="3dp">
 
+    <!-- Baris 1: settings (kiri) + deskripsi cuaca (kanan) -->
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
-        <!-- settings wrapper -->
+
         <LinearLayout
             android:id="@+id/settings"
-            android:layout_width="wrap_content"
-            android:layout_height="@dimen/widget_settings_size"
-            android:layout_gravity="end|center|top"
-            android:layout_marginStart="@dimen/widget_h_padding"
-            android:layout_marginEnd="@dimen/widget_h_padding"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:clickable="true"
+            android:contentDescription="@string/launcher_settings"
             android:focusable="true"
-            android:gravity="start|center"
-            android:orientation="vertical"
-            android:textColor="@color/clock_text_color">
+            android:gravity="center"
+            android:orientation="vertical">
 
             <FrameLayout
-                android:layout_width="@dimen/widget_settings_size"
-                android:layout_height="wrap_content">
+                android:layout_width="24dp"
+                android:layout_height="24dp">
 
                 <ImageView
                     android:id="@+id/settings_selection_circle"
-                    android:layout_width="@dimen/widget_settings_size"
-                    android:layout_height="@dimen/widget_settings_size"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:alpha="0.0"
                     android:contentDescription="@null"
@@ -38,213 +48,164 @@
 
                 <ImageView
                     android:id="@+id/settings_icon"
-                    android:layout_width="@dimen/widget_settings_size"
-                    android:layout_height="@dimen/widget_settings_size"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:alpha="1.0"
                     android:contentDescription="@null"
+                    android:padding="3dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_settings" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center"
-                    android:text="@string/launcher_settings"
-                    android:visibility="gone" />
             </FrameLayout>
         </LinearLayout>
-        <!-- clock wrapper -->
-        <com.amazon.tv.leanbacklauncher.clock.ClockView
-            android:id="@id/clock"
-            android:layout_width="wrap_content"
-            android:layout_height="@dimen/widget_clock_height"
-            android:layout_gravity="end|center|top"
-            android:focusable="false"
-            android:fontFamily="@string/light_font"
-            android:gravity="end|center"
-            android:includeFontPadding="false"
-            android:minWidth="@dimen/clock_min_width"
-            android:textColor="@color/clock_text_color"
-            android:textSize="@dimen/clock_text_size" />
-    </LinearLayout>
-    <!-- weather wrapper -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/widget_weather_height">
 
-        <LinearLayout
-            android:id="@+id/weather"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="end|center|top"
-            android:clickable="false"
-            android:focusable="false"
-            android:gravity="start|center"
-            android:orientation="horizontal"
-            android:textColor="@color/clock_text_color"
-            android:visibility="gone">
-            <!-- temp -->
-            <TextView
-                android:id="@+id/curTemp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginEnd="2dp"
-                android:focusable="false"
-                android:fontFamily="@string/light_font"
-                android:gravity="center"
-                android:textColor="@color/clock_text_color"
-                android:textSize="24sp" />
-            <!-- icon -->
-            <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <ImageView
-                    android:id="@+id/weather_selection_circle"
-                    android:layout_width="@dimen/widget_weather_height"
-                    android:layout_height="@dimen/widget_weather_height"
-                    android:layout_gravity="center"
-                    android:alpha="0.0"
-                    android:contentDescription="@null"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/settings_selection_circle"
-                    android:visibility="gone" />
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/weather_icon"
-                    android:layout_width="@dimen/widget_weather_height"
-                    android:layout_height="@dimen/widget_weather_height"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:padding="8dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/weather01d"
-                    android:visibility="gone" />
-
-            </FrameLayout>
-        </LinearLayout>
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <LinearLayout
             android:id="@+id/details"
-            android:layout_width="fill_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="end|center|top"
-            android:gravity="end|top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
             android:orientation="vertical"
-            android:visibility="visible">
-            <!--wrap_content(narrow)|match_parent(wide weight based)-->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end|center|top"
-                android:layout_marginTop="2dp"
-                android:baselineAligned="false"
-                android:gravity="end|center"
-                android:orientation="horizontal">
+            android:visibility="gone">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end|center|top"
-                    android:layout_weight="2"
-                    android:gravity="end|center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/pressure"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="5dp"
-                        android:fontFamily="@string/light_font"
-                        android:includeFontPadding="false"
-                        android:singleLine="true"
-                        android:textColor="@color/clock_text_color"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/wind"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="5dp"
-                        android:fontFamily="@string/light_font"
-                        android:includeFontPadding="false"
-                        android:singleLine="true"
-                        android:textColor="@color/clock_text_color"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end|center|top"
-                    android:layout_weight="1"
-                    android:gravity="end|center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/humidity"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="2dp"
-                        android:fontFamily="@string/light_font"
-                        android:includeFontPadding="false"
-                        android:singleLine="true"
-                        android:textColor="@color/clock_text_color"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/hilotemp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="2dp"
-                        android:fontFamily="@string/light_font"
-                        android:includeFontPadding="false"
-                        android:singleLine="true"
-                        android:textColor="@color/clock_text_color"
-                        android:textSize="12sp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-            <!-- description -->
+            <!-- Deskripsi cuaca ("Partly cloudy", "rain", dll): teks biasa seperti elemen lain di widget -->
             <TextView
                 android:id="@+id/wDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="3dp"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:fadingEdgeLength="6dp"
-                android:fontFamily="@string/light_font"
-                android:marqueeRepeatLimit="marquee_forever"
-                android:requiresFadingEdge="horizontal"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:maxWidth="190dp"
                 android:singleLine="true"
                 android:textColor="@color/clock_text_color"
                 android:textSize="12sp" />
 
-        </LinearLayout>
+            <!-- Id dipertahankan karena MainActivity mengisinya; tidak ditampilkan. -->
+            <TextView
+                android:id="@+id/hilotemp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/curLocation"
+            <TextView
+                android:id="@+id/pressure"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Baris 2: jam besar (kiri) + suhu / hi-lo / ikon cuaca (kanan) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="end|center"
-            android:layout_marginEnd="2dp"
-            android:fadingEdge="horizontal"
-            android:fadingEdgeLength="8dp"
-            android:fontFamily="@string/light_font"
-            android:gravity="center"
-            android:includeFontPadding="false"
-            android:requiresFadingEdge="horizontal"
-            android:scrollHorizontally="true"
-            android:singleLine="true"
-            android:textColor="@color/clock_text_color"
-            android:textSize="16sp"
-            android:visibility="gone" />
+            android:gravity="bottom"
+            android:orientation="horizontal">
 
-    </FrameLayout>
+            <com.amazon.tv.leanbacklauncher.clock.ClockView
+                android:id="@id/clock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:textColor="@color/clock_text_color"
+                android:textSize="38sp"
+                android:textStyle="bold" />
+
+            <!-- AM/PM kecil di samping jam (kosong pada format 24 jam) -->
+            <TextClock
+                android:id="@+id/clock_ampm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_marginBottom="5dp"
+                android:format12Hour="a"
+                android:format24Hour=""
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:textColor="@color/prayer_text_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:id="@+id/weather"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/curTemp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textColor="@color/clock_text_color"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <!-- Kolom atas-bawah di tempat hi/lo: kelembapan di atas, angin di bawah -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:gravity="start"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/humidity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
+                    android:textColor="@color/prayer_text_muted"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/wind"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:includeFontPadding="false"
+                    android:singleLine="true"
+                    android:textColor="@color/prayer_text_muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/weather_icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:src="@drawable/weather01d" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Baris 3 + 4: tanggal (+ "berikutnya") lalu 5 kolom waktu sholat -->
+    <com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay
+        android:id="@+id/prayer_times_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

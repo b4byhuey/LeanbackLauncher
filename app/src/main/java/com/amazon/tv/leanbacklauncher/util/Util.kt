@@ -227,10 +227,18 @@ object Util {
 
     @JvmStatic
     fun getDisplayMetrics(context: Context): DisplayMetrics {
-        val metrics = DisplayMetrics()
-        (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getMetrics(
-            metrics
-        )
+        val metrics = DisplayMetrics().apply {
+            setTo(context.resources.displayMetrics)
+        }
+        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            metrics.widthPixels = bounds.width()
+            metrics.heightPixels = bounds.height()
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getMetrics(metrics)
+        }
         return metrics
     }
 

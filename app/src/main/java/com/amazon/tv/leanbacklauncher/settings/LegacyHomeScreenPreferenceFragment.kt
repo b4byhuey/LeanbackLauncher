@@ -43,19 +43,19 @@ class LegacyHomeScreenPreferenceFragment : GuidedStepSupportFragment(), LoadBlac
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id.toInt()) {
             1 -> {
-                fragmentManager?.let { add(it, LegacyAppsAndGamesPreferenceFragment()) }
+                parentFragmentManager?.let { add(it, LegacyAppsAndGamesPreferenceFragment()) }
                 return
             }
             2 -> {
-                fragmentManager?.let { add(it, LegacyHiddenPreferenceFragment()) }
+                parentFragmentManager?.let { add(it, LegacyHiddenPreferenceFragment()) }
                 return
             }
             3 -> {
-                fragmentManager?.let { add(it, LegacyRecommendationsPreferenceFragment()) }
+                parentFragmentManager?.let { add(it, LegacyRecommendationsPreferenceFragment()) }
                 return
             }
             4 -> {
-                fragmentManager?.let { add(it, LegacyUpdatePreferenceFragment()) }
+                parentFragmentManager?.let { add(it, LegacyUpdatePreferenceFragment()) }
                 return
             }
             else -> return

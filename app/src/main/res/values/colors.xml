@@ -3,7 +3,7 @@
     <color name="app_launch_ripple_default_color">#ffeeeeee</color>
     <color name="banner_background">#ff455a64</color>
     <color name="banner_label_text_color">#ffeeeeee</color>
-    <color name="banner_focus_frame_color">#40eeeeee</color>
+    <color name="banner_focus_frame_color">#00ffffff</color>
     <color name="clock_text_color">#ffeeeeee</color>
     <color name="edit_finish_button_color">#ffeeeeee</color>
     <color name="edit_mode_background_color">#ff263238</color>
@@ -101,4 +101,9 @@
     <color name="settings_launch_ripple_color">#ff3d3d3d</color>
     <color name="settings_selection_indicator_color">#4ceeeeee</color>
     <color name="amazon_orange">#ffa724</color>
+    <color name="prayer_card_bg">#801b1a22</color>
+    <color name="prayer_card_stroke">#B3ffffff</color>
+    <color name="prayer_chip_bg">#66202833</color>
+    <color name="prayer_chip_active_bg">#885b3fa6</color>
+    <color name="prayer_text_muted">#ffc3cddc</color>
 </resources>

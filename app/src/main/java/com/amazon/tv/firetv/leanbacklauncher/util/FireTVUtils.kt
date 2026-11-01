@@ -76,20 +76,12 @@ object FireTVUtils {
     @JvmStatic
     fun openAppInPlayStore(context: Context, packageName: String?) {
         try {
-            startActivity(
-                context,
-                Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")),
-                null
-            )
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
         } catch (anfe: ActivityNotFoundException) {
-            startActivity(
-                context,
-                Intent(
+            context.startActivity(Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
-                ),
-                null
-            )
+                ))
         }
     }
 
