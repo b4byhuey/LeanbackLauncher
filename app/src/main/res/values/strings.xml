@@ -312,7 +312,7 @@ or recommendations will not work properly."</string>
     <string name="tv_live_wallpaper">Live wallpaper settings</string>
     <string name="tv_live_wallpaper_desc">Open Android\'s live-wallpaper chooser</string>
     <string name="tv_live_unsupported">Live wallpapers are not supported by this device</string>
-    <string name="tv_section_prayer">PRAYER TIMES</string>
+    <string name="tv_section_prayer">WEATHER &amp; PRAYER TIMES</string>
     <string name="tv_city_area">City or area</string>
     <string name="tv_city_hint">e.g. Sidoarjo, Indonesia</string>
     <string name="tv_save_prayer_location">Save prayer-time location</string>
@@ -340,7 +340,7 @@ or recommendations will not work properly."</string>
     <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>
     <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
-    <string name="prayer_settings_title">Prayer time settings</string>
+    <string name="prayer_settings_title">Weather &amp; Prayer time settings</string>
     <string name="prayer_settings_desc">Choose a calculation method and adjust each prayer time</string>
     <string name="prayer_method_category">Calculation method</string>
     <string name="prayer_method_title">Calculation method</string>
