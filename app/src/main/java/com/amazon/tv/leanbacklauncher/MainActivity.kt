@@ -880,8 +880,15 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         // Set Weather Info
         weatherVG?.let { group ->
             findViewById<AppCompatImageView>(R.id.weather_icon)?.let { icon ->
-                OpenWeatherIcons(this, weather.icons[0], icon)
-                icon.visibility = View.VISIBLE
+                // API/cache payloads can omit the icon list; never index an empty list.
+                val iconCode = weather.icons.firstOrNull()?.takeIf { it.isNotBlank() }
+                if (iconCode != null) {
+                    OpenWeatherIcons(this, iconCode, icon)
+                    icon.visibility = View.VISIBLE
+                } else {
+                    icon.setImageDrawable(null)
+                    icon.visibility = View.GONE
+                }
             }
 
             findViewById<TextView>(R.id.curTemp)?.text =
@@ -897,7 +904,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                 getString(R.string.weather_humidity, weather.humidity.toInt())
             findViewById<TextView>(R.id.wind)?.text = getWindText(weather)
             findViewById<TextView>(R.id.wDescription)?.apply {
-                text = weather.descriptions[0]
+                // Description is optional in some API responses and old cache entries.
+                text = weather.descriptions.firstOrNull()?.takeIf { it.isNotBlank() } ?: "—"
                 setupMarquee()
             }
 
