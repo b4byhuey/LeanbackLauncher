@@ -112,8 +112,9 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         actionButton(
             root,
             getString(R.string.version),
-            "${getString(R.string.app_name)} v${com.amazon.tv.leanbacklauncher.BuildConfig.VERSION_NAME}"
-        ) { openLauncherSetting("VersionPreferenceFragment") }
+            "${getString(R.string.app_name)} v${com.amazon.tv.leanbacklauncher.BuildConfig.VERSION_NAME}",
+            enabled = false
+        ) {}
 
         actionButton(root, getString(R.string.tv_back_launcher), getString(R.string.tv_back_launcher_desc)) { finish() }
         root.post { root.getChildAt(4)?.requestFocus() }
@@ -176,12 +177,20 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         })
     }
 
-    private fun actionButton(root: LinearLayout, title: String, subtitle: String, action: () -> Unit) {
+    private fun actionButton(
+        root: LinearLayout,
+        title: String,
+        subtitle: String,
+        enabled: Boolean = true,
+        action: () -> Unit
+    ) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            isFocusable = true
-            isFocusableInTouchMode = true
+            isEnabled = enabled
+            isFocusable = enabled
+            isFocusableInTouchMode = enabled
+            isClickable = enabled
             setPadding(dp(18), dp(12), dp(18), dp(12))
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
@@ -196,7 +205,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
                     setStroke(dp(2), if (focused) Color.rgb(115, 190, 255) else Color.rgb(48, 73, 111))
                 }
             }
-            setOnClickListener { action() }
+            if (enabled) setOnClickListener { action() }
             addView(TextView(this@TvOsCustomizationActivity).apply {
                 text = title
                 textSize = 18f
