@@ -428,9 +428,11 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             setItemViewCacheSize(homeAdapter!!.itemCount)
             adapter = homeAdapter
 
-            val notifIndex = homeAdapter?.getRowIndex(1) // RowType.NOTIFICATIONS
-            if (notifIndex != null && notifIndex != -1) {
-                selectedPosition = notifIndex
+            // Start on the Search row instead of Notifications/Suggestions.
+            // Selecting the suggestions row scrolls the launcher down on initial launch.
+            val searchIndex = homeAdapter?.getRowIndex(0) // RowType.SEARCH
+            if (searchIndex != null && searchIndex != -1) {
+                selectedPosition = searchIndex
             }
             val rAdapter = homeAdapter?.recommendationsAdapter?.apply {
                 addIdleListener(this)
@@ -870,8 +872,15 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         // Set Weather Info
         weatherVG?.let {
             findViewById<AppCompatImageView>(R.id.weather_icon)?.let { icon ->
-                OpenWeatherIcons(this, weather.icons[0], icon)
-                icon.visibility = View.VISIBLE
+                // API/cache payloads can omit the icon list; never index an empty list.
+                val iconCode = weather.icons.firstOrNull()?.takeIf { it.isNotBlank() }
+                if (iconCode != null) {
+                    OpenWeatherIcons(this, iconCode, icon)
+                    icon.visibility = View.VISIBLE
+                } else {
+                    icon.setImageDrawable(null)
+                    icon.visibility = View.GONE
+                }
             }
 
             findViewById<TextView>(R.id.curTemp)?.text =
@@ -885,7 +894,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                 getString(R.string.weather_humidity, weather.humidity.toInt())
             findViewById<TextView>(R.id.wind)?.text = getWindText(weather)
             findViewById<TextView>(R.id.wDescription)?.apply {
-                text = weather.descriptions[0]
+                // Description is optional in some API responses and old cache entries.
+                text = weather.descriptions.firstOrNull()?.takeIf { it.isNotBlank() } ?: "—"
                 setupMarquee()
             }
         }
