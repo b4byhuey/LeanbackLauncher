@@ -130,12 +130,12 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
         findPreference<ListPreference>("app_language")?.apply {
             entries = arrayOf(
                 getString(R.string.app_language_system),
-                getString(R.string.app_language_english),
                 getString(R.string.app_language_indonesian),
                 getString(R.string.app_language_malay)
             )
-            entryValues = arrayOf("", "en", "in", "ms-MY")
-            value = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            entryValues = arrayOf("en", "in", "ms-MY")
+            value = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales()
+                .toLanguageTags().ifEmpty { "en" }
             setOnPreferenceChangeListener { _, newValue ->
                 androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
                     androidx.core.os.LocaleListCompat.forLanguageTags(newValue?.toString().orEmpty())
