@@ -152,7 +152,7 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="tv_prayer_saved">Lokasi solat disimpan</string>
     <string name="tv_save_prayer_desc">Waktu solat dimuatkan dalam talian untuk lokasi ini</string>
     <string name="tv_save_prayer_location">Simpan lokasi waktu solat</string>
-    <string name="tv_section_prayer">WAKTU SOLAT</string>
+    <string name="tv_section_prayer">TETAPAN SOLAT</string>
     <string name="tv_section_wallpaper">KERTAS DINDING</string>
     <string name="tv_wallpaper_saved">Kertas dinding disimpan</string>
     <string name="unknown_album">Tidak diketahui</string>
@@ -167,7 +167,7 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="channels_sources_desc">Pilih aplikasi yang salurannya dipaparkan pada skrin utama</string>
     <string name="channels_sources_empty">Tiada aplikasi yang berkongsi saluran</string>
     <string name="channels_sources_no_permission">Kebenaran untuk membaca saluran TV belum diberikan, jadi saluran daripada aplikasi lain mungkin tidak dipaparkan.</string>
-    <string name="prayer_settings_title">Tetapan waktu solat</string>
+    <string name="prayer_settings_title">Tetapan Solat</string>
     <string name="prayer_settings_desc">Pilih kaedah pengiraan dan laraskan waktu setiap solat</string>
     <string name="prayer_method_category">Kaedah pengiraan</string>
     <string name="prayer_method_title">Kaedah pengiraan</string>
@@ -215,6 +215,11 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="imp_weather_description">Fahrenheit, batu dan hPa</string>
     <string name="inputs_row_title">Baris Input</string>
     <string name="launcher_settings">Pelancar</string>
+    <string name="app_language_title">Bahasa</string>
+    <string name="app_language_system">Ikut bahasa sistem</string>
+    <string name="app_language_english">Inggeris</string>
+    <string name="app_language_indonesian">Indonesia</string>
+    <string name="app_language_malay">Melayu</string>
     <string name="location_note">Kebenaran lokasi diperlukan untuk penunjuk status rangkaian Wi-Fi pada Android Marshmallow dan ke atas</string>
     <string name="max_apps_rows_title">Baris Aplikasi Maksimum</string>
     <string name="max_col_title">Lajur yang Dipaparkan</string>
@@ -249,6 +254,8 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="wallpaper_choose">Letakkan imej kertas dinding dalam folder akar storan, kemudian pilih di sini</string>
     <string name="weather_apikey_title">Kunci API OpenWeatherMap</string>
     <string name="weather_home_title">Tetapan Cuaca</string>
+    <string name="location_settings_title">Tetapan Lokasi</string>
+    <string name="weather_settings_title">Tetapan Cuaca</string>
     <string name="weather_prayer_settings_title">Tetapan Cuaca &amp; Waktu Solat</string>
     <string name="weather_prayer_settings_desc">Tetapkan lokasi bersama, cuaca setempat dan kaedah pengiraan waktu solat</string>
     <string name="weather_home_description">Cuaca setempat dan ramalan pada skrin utama</string>
