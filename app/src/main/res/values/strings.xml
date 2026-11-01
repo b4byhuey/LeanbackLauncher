@@ -360,7 +360,7 @@ or recommendations will not work properly."</string>
     <string name="prayer_settings_loading">Loading methods…</string>
     <string name="tv_section_launcher">LAUNCHER</string>
     <string name="app_language_title">Language</string>
-    <string name="app_language_system">Launcher language</string>
+    <string name="app_language_system">Default (English)</string>
     <string name="app_language_english">English</string>
     <string name="app_language_indonesian">Indonesian</string>
     <string name="app_language_malay">Malay</string>
