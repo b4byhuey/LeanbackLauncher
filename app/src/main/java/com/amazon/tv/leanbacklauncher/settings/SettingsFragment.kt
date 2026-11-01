@@ -730,9 +730,8 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
 class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        // Load the prefs from an XML resource
         setPreferencesFromResource(R.xml.weather_prefs, rootKey)
-        //val ps = findPreference<PreferenceScreen>("weather_prefs")
+        preferenceScreen?.let { addPrayerControls(this, it) }
     }
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
@@ -826,6 +825,78 @@ internal object PrayerMethodRepository {
             }
             main.post { pending.forEach { it(result) } }
         }
+    }
+}
+
+
+/** Prayer calculation controls reuse the location configured in Weather Preferences. */
+private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: PreferenceScreen) {
+    val ctx = fragment.requireContext()
+    val methodCategory = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_method_category) }
+    root.addPreference(methodCategory)
+    val method = ListPreference(ctx).apply {
+        key = "prayer_method"
+        title = fragment.getString(R.string.prayer_method_title)
+        summary = fragment.getString(R.string.prayer_method_desc)
+        setDefaultValue("20")
+        entries = arrayOf(fragment.getString(R.string.prayer_settings_loading))
+        entryValues = arrayOf("20")
+        onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+            listOf("prayer_custom_fajr", "prayer_custom_maghrib", "prayer_custom_isha")
+                .forEach { root.findPreference<Preference>(it)?.isVisible = value.toString() == "99" }
+            true
+        }
+    }
+    methodCategory.addPreference(method)
+    fun addDecimal(key: String, titleId: Int, default: String) {
+        methodCategory.addPreference(EditTextPreference(ctx).apply {
+            this.key = key
+            title = fragment.getString(titleId)
+            setDefaultValue(default)
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                val text = value.toString().trim()
+                text.isEmpty() || (text.toDoubleOrNull()?.let { it in 0.0..90.0 } == true)
+            }
+        })
+    }
+    addDecimal("prayer_custom_fajr", R.string.prayer_custom_fajr, "18")
+    addDecimal("prayer_custom_maghrib", R.string.prayer_custom_maghrib, "")
+    addDecimal("prayer_custom_isha", R.string.prayer_custom_isha, "18")
+    val offsets = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_offset_category) }
+    root.addPreference(offsets)
+    listOf(
+        "prayer_offset_fajr" to R.string.prayer_offset_fajr,
+        "prayer_offset_dhuhr" to R.string.prayer_offset_dhuhr,
+        "prayer_offset_asr" to R.string.prayer_offset_asr,
+        "prayer_offset_maghrib" to R.string.prayer_offset_maghrib,
+        "prayer_offset_isha" to R.string.prayer_offset_isha
+    ).forEach { (key, titleId) ->
+        offsets.addPreference(EditTextPreference(ctx).apply {
+            this.key = key
+            title = fragment.getString(titleId)
+            summary = fragment.getString(R.string.prayer_offset_desc)
+            setDefaultValue("0")
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                value.toString().toIntOrNull()?.let { it in -180..180 } == true
+            }
+        })
+    }
+    val selected = PreferenceManager.getDefaultSharedPreferences(ctx).getString("prayer_method", "20")
+    listOf("prayer_custom_fajr", "prayer_custom_maghrib", "prayer_custom_isha")
+        .forEach { root.findPreference<Preference>(it)?.isVisible = selected == "99" }
+    method.value = selected ?: "20"
+    PrayerMethodRepository.prefetch(ctx) { methods ->
+        if (!fragment.isAdded) return@prefetch
+        val choices = (if (methods.isEmpty()) listOf("20" to fragment.getString(R.string.prayer_method_kemenag_fallback))
+            else methods) + ("99" to fragment.getString(R.string.prayer_method_custom))
+        method.entries = choices.map { it.second }.toTypedArray()
+        method.entryValues = choices.map { it.first }.toTypedArray()
+        val saved = PreferenceManager.getDefaultSharedPreferences(ctx).getString("prayer_method", "20") ?: "20"
+        method.value = if (choices.any { it.first == saved }) saved else "20"
     }
 }
 
