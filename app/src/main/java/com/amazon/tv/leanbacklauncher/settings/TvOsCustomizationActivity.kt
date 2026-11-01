@@ -11,10 +11,8 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -27,8 +25,6 @@ import com.amazon.tv.leanbacklauncher.R
  * All controls are focusable and usable with a D-pad/remote.
  */
 class TvOsCustomizationActivity : AppCompatActivity() {
-    private lateinit var cityInput: EditText
-    private lateinit var autoPrayerLocation: Switch
     private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,68 +87,9 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         }
 
         section(root, getString(R.string.tv_section_prayer))
-        root.addView(TextView(this).apply {
-            text = getString(R.string.tv_city_area)
-            textSize = 16f
-            setTextColor(Color.WHITE)
-            setPadding(0, dp(4), 0, dp(8))
-        })
-        autoPrayerLocation = Switch(this).apply {
-            text = getString(R.string.use_current_location_title)
-            setTextColor(Color.WHITE)
-            textSize = 16f
-            isChecked = prefs.getBoolean(
-                KEY_PRAYER_AUTO_LOCATION,
-                prefs.getBoolean(getString(R.string.pref_use_current_location), true)
-            )
-            setPadding(0, 0, 0, dp(10))
-        }
-        root.addView(autoPrayerLocation)
-
-        cityInput = EditText(this).apply {
-            setSingleLine(true)
-            textSize = 18f
-            hint = getString(R.string.tv_city_hint)
-            setHintTextColor(Color.rgb(132, 149, 178))
-            setTextColor(Color.WHITE)
-            setPadding(dp(14), dp(10), dp(14), dp(10))
-            background = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = dp(12).toFloat()
-                setColor(Color.rgb(29, 46, 76))
-                setStroke(dp(1), Color.rgb(66, 100, 148))
-            }
-            setText(prefs.getString(KEY_PRAYER_CITY, ""))
-        }
-        root.addView(cityInput, LinearLayout.LayoutParams(-1, dp(56)))
-        actionButton(root, getString(R.string.tv_save_prayer_location), getString(R.string.tv_save_prayer_desc)) {
-            val city = cityInput.text.toString().trim()
-            if (!autoPrayerLocation.isChecked && city.isBlank()) {
-                cityInput.error = getString(R.string.tv_enter_city)
-            } else {
-                prefs.edit()
-                    .putBoolean(KEY_PRAYER_AUTO_LOCATION, autoPrayerLocation.isChecked)
-                    .putBoolean(getString(R.string.pref_use_current_location), autoPrayerLocation.isChecked)
-                    .apply {
-                        if (city.isNotBlank()) {
-                            putString(KEY_PRAYER_CITY, city)
-                            putString(getString(R.string.pref_user_location), city)
-                        }
-                    }
-                    .apply()
-                refreshLauncher()
-                Toast.makeText(this, getString(R.string.tv_prayer_saved), Toast.LENGTH_SHORT).show()
-            }
-        }
         actionButton(root, getString(R.string.prayer_settings_title), getString(R.string.prayer_settings_desc)) {
-            openLauncherSetting("PrayerPreferenceFragment")
+            openLauncherSetting("WeatherPreferenceFragment")
         }
-        root.addView(TextView(this).apply {
-            text = getString(R.string.tv_prayer_note)
-            textSize = 13f
-            setTextColor(Color.rgb(153, 174, 205))
-            setPadding(0, dp(16), 0, dp(16))
-        })
-
         // Pengaturan launcher yang sebelumnya ada di ikon gerigi header (hanya yang belum ada di halaman ini).
         section(root, getString(R.string.tv_section_launcher))
         actionButton(root, getString(R.string.home_screen_order_action_title), getString(R.string.home_screen_order_desc)) {
@@ -170,9 +107,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         }
         actionButton(root, getString(R.string.channels_sources_title), getString(R.string.channels_sources_desc)) {
             openLauncherSetting("ChannelsPreferenceFragment")
-        }
-        actionButton(root, getString(R.string.weather_home_title), getString(R.string.weather_home_description)) {
-            openLauncherSetting("WeatherPreferenceFragment")
         }
         actionButton(
             root,
@@ -269,8 +203,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
 
     companion object {
         const val KEY_WALLPAPER_URI = "launcher_wallpaper_uri"
-        const val KEY_PRAYER_CITY = "launcher_prayer_city"
-        private const val KEY_PRAYER_AUTO_LOCATION = "launcher_prayer_use_weather_location"
         private const val PICK_WALLPAPER = 4107
     }
 }
