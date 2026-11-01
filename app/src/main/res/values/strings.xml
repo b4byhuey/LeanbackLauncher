@@ -341,7 +341,7 @@ or recommendations will not work properly."</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>
     <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
     <string name="prayer_settings_title">Weather &amp; Prayer time settings</string>
-    <string name="prayer_settings_desc">Choose a calculation method and adjust each prayer time</string>
+    <string name="prayer_settings_desc">Enable weather, location, units, calculation method and adjust each prayer time</string>
     <string name="prayer_method_category">Calculation method</string>
     <string name="prayer_method_title">Calculation method</string>
     <string name="prayer_method_desc">Select a method provided by AlAdhan</string>
