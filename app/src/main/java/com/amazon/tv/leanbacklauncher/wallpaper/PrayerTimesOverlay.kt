@@ -184,7 +184,6 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private fun loadTimes(force: Boolean = false) {
         if (!isAttachedToWindow) return
-        main.removeCallbacks(refresh)
 
         val configKey = currentConfigKey()
         val configurationChanged = configKey != lastConfigKey
@@ -198,6 +197,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             return
         }
 
+        main.removeCallbacks(refresh)
         val automatic = RowPreferences.isUseLocationEnabled(context)
         val location = if (automatic) {
             readWeather()?.optString("name")?.takeIf { it.isNotBlank() }
