@@ -261,7 +261,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     private fun render() {
         val data = timings
         val upcoming = data?.let { nextPrayer(it) }
-        val dateText = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
+        val dateText = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
         city.text = infoText ?: locationName?.let { "$dateText · $it" } ?: dateText
         for ((name, chip) in chips) {
             val active = upcoming?.first == name

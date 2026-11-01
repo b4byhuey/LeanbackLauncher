@@ -605,6 +605,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         return super.dispatchGenericMotionEvent(ev)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         super.onBackPressed()
         when {

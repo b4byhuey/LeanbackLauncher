@@ -253,16 +253,15 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
                 setColor(Color.rgb(29, 46, 76))
-                setStroke(dp(1), Color.rgb(48, 73, 111))
+                setStroke(dp(2), Color.rgb(48, 73, 111))
             }
+            // Fokus hanya mengganti warna; ukuran kartu dan tebal garis tetap, jadi border tidak melebar keluar layar.
             setOnFocusChangeListener { v, focused ->
                 v.background = android.graphics.drawable.GradientDrawable().apply {
                     cornerRadius = dp(14).toFloat()
                     setColor(if (focused) Color.rgb(48, 79, 123) else Color.rgb(29, 46, 76))
-                    setStroke(dp(if (focused) 2 else 1), if (focused) Color.rgb(115, 190, 255) else Color.rgb(48, 73, 111))
+                    setStroke(dp(2), if (focused) Color.rgb(115, 190, 255) else Color.rgb(48, 73, 111))
                 }
-                v.scaleX = if (focused) 1.015f else 1f
-                v.scaleY = if (focused) 1.015f else 1f
             }
             setOnClickListener { action() }
             addView(TextView(this@TvOsCustomizationActivity).apply {
