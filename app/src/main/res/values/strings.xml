@@ -121,6 +121,11 @@
     <string name="installing">Installing…</string>
     <string name="keyboard_search_accessibility_hint">Select to type your search query</string>
     <string name="launcher_settings">Launcher</string>
+    <string name="app_language_title">Language</string>
+    <string name="app_language_system">System default</string>
+    <string name="app_language_english">English</string>
+    <string name="app_language_indonesian">Indonesia</string>
+    <string name="app_language_malay">Malay</string>
     <string name="lb_control_display_fast_forward_multiplier">%1$dX</string>
     <string name="lb_control_display_rewind_multiplier">%1$dX</string>
     <string name="lb_date_separator">/</string>
@@ -282,6 +287,8 @@ or recommendations will not work properly."</string>
     <string name="weather_apikey_title">OpenWeatherMap API Key</string>
     <string name="weather_hilotemp">%1$s–%2$s %3$s</string>
     <string name="weather_home_title">Weather Preferences</string>
+    <string name="location_settings_title">Location Settings</string>
+    <string name="weather_settings_title">Weather Settings</string>
     <string name="weather_prayer_settings_title">Weather &amp; Prayer Settings</string>
     <string name="weather_prayer_settings_desc">Shared location, local weather, and prayer-time calculation settings</string>
     <string name="weather_home_description">Local weather and forecast on Home screen</string>
@@ -312,7 +319,7 @@ or recommendations will not work properly."</string>
     <string name="tv_live_wallpaper">Live wallpaper settings</string>
     <string name="tv_live_wallpaper_desc">Open Android\'s live-wallpaper chooser</string>
     <string name="tv_live_unsupported">Live wallpapers are not supported by this device</string>
-    <string name="tv_section_prayer">WEATHER &amp; PRAYER TIMES</string>
+    <string name="tv_section_prayer">PRAYER SETTINGS</string>
     <string name="tv_city_area">City or area</string>
     <string name="tv_city_hint">e.g. Sidoarjo, Indonesia</string>
     <string name="tv_save_prayer_location">Save prayer-time location</string>
@@ -340,7 +347,7 @@ or recommendations will not work properly."</string>
     <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>
     <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
-    <string name="prayer_settings_title">Weather &amp; Prayer time settings</string>
+    <string name="prayer_settings_title">Prayer Settings</string>
     <string name="prayer_settings_desc">Choose a calculation method and adjust each prayer time</string>
     <string name="prayer_method_category">Calculation method</string>
     <string name="prayer_method_title">Calculation method</string>
