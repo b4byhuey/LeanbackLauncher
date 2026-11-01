@@ -158,12 +158,43 @@ class TvOsCustomizationActivity : AppCompatActivity() {
                 Toast.makeText(this, getString(R.string.tv_prayer_saved), Toast.LENGTH_SHORT).show()
             }
         }
+        actionButton(root, getString(R.string.prayer_settings_title), getString(R.string.prayer_settings_desc)) {
+            openLauncherSetting("PrayerPreferenceFragment")
+        }
         root.addView(TextView(this).apply {
             text = getString(R.string.tv_prayer_note)
             textSize = 13f
             setTextColor(Color.rgb(153, 174, 205))
             setPadding(0, dp(16), 0, dp(16))
         })
+
+        // Pengaturan launcher yang sebelumnya ada di ikon gerigi header (hanya yang belum ada di halaman ini).
+        section(root, getString(R.string.tv_section_launcher))
+        actionButton(root, getString(R.string.home_screen_order_action_title), getString(R.string.home_screen_order_desc)) {
+            openLauncherSetting("HomePreferenceFragment")
+        }
+        actionButton(root, getString(R.string.hidden_applications_title), getString(R.string.hidden_applications_desc)) {
+            openLauncherSetting("HiddenPreferenceFragment")
+        }
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+            actionButton(
+                root,
+                getString(R.string.recommendation_blacklist_action_title),
+                getString(R.string.recommendation_blacklist_content_description)
+            ) { openLauncherSetting("RecommendationsPreferenceFragment") }
+        }
+        actionButton(root, getString(R.string.channels_sources_title), getString(R.string.channels_sources_desc)) {
+            openLauncherSetting("ChannelsPreferenceFragment")
+        }
+        actionButton(root, getString(R.string.weather_home_title), getString(R.string.weather_home_description)) {
+            openLauncherSetting("WeatherPreferenceFragment")
+        }
+        actionButton(
+            root,
+            getString(R.string.version),
+            "${getString(R.string.app_name)} v${com.amazon.tv.leanbacklauncher.BuildConfig.VERSION_NAME}"
+        ) { openLauncherSetting("VersionPreferenceFragment") }
+
         actionButton(root, getString(R.string.tv_back_launcher), getString(R.string.tv_back_launcher_desc)) { finish() }
         root.post { root.getChildAt(4)?.requestFocus() }
     }
@@ -182,6 +213,19 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         prefs.edit().putString(KEY_WALLPAPER_URI, uri.toString()).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
         refreshLauncher()
         Toast.makeText(this, getString(R.string.tv_wallpaper_saved), Toast.LENGTH_SHORT).show()
+    }
+
+    /** Buka salah satu layar pengaturan launcher yang sudah ada, langsung ke sub-layarnya. */
+    private fun openLauncherSetting(fragmentName: String) {
+        val full = resources.getBoolean(R.bool.full_screen_settings_enabled)
+        val side = resources.getBoolean(R.bool.side_panel_settings_enabled)
+        val intent = when {
+            side -> Intent(this, SettingsActivity::class.java)
+                .putExtra(SettingsActivity.EXTRA_FRAGMENT, "com.amazon.tv.leanbacklauncher.settings.$fragmentName")
+            full -> Intent(this, LegacyHomeScreenSettingsActivity::class.java)
+            else -> return
+        }
+        startActivity(intent)
     }
 
     private fun refreshLauncher() {

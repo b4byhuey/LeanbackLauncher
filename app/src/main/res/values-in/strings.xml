@@ -204,4 +204,5 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="prayer_offset_maghrib">Penyesuaian Magrib (menit)</string>
     <string name="prayer_offset_isha">Penyesuaian Isya (menit)</string>
     <string name="prayer_settings_loading">Memuat metode…</string>
+    <string name="tv_section_launcher">LAUNCHER</string>
 </resources>

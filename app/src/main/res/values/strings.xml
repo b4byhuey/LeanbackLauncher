@@ -356,4 +356,5 @@ or recommendations will not work properly."</string>
     <string name="prayer_offset_maghrib">Maghrib adjustment (minutes)</string>
     <string name="prayer_offset_isha">Isha adjustment (minutes)</string>
     <string name="prayer_settings_loading">Loading methods…</string>
+    <string name="tv_section_launcher">LAUNCHER</string>
 </resources>

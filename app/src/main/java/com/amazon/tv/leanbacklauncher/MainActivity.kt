@@ -1544,15 +1544,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     private fun startSettings() {
-        if (applicationContext.resources.getBoolean(R.bool.full_screen_settings_enabled)) {
-            val intent = Intent(this@MainActivity, LegacyHomeScreenSettingsActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            startActivity(intent)
-        } else if (applicationContext.resources.getBoolean(R.bool.side_panel_settings_enabled)) {
-            val intent = Intent(this@MainActivity, SettingsActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            startActivity(intent)
-        }
+        // Satu pintu pengaturan: halaman "Sesuaikan TV Anda" (berisi wallpaper, waktu salat, dan semua pengaturan launcher).
+        startActivity(Intent(this@MainActivity, com.amazon.tv.leanbacklauncher.settings.TvOsCustomizationActivity::class.java))
     }
 
     private fun clearWidget(appWidgetId: Int) {

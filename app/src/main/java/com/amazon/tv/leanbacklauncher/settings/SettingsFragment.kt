@@ -50,10 +50,30 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             ) else SettingsFragment::class.java.simpleName
         }
         var needRestartHome = false
+
+        private const val PKG = "com.amazon.tv.leanbacklauncher.settings."
+        private val DEEP_LINK_FRAGMENTS = setOf(
+            PKG + "HomePreferenceFragment",
+            PKG + "HiddenPreferenceFragment",
+            PKG + "RecommendationsPreferenceFragment",
+            PKG + "ChannelsPreferenceFragment",
+            PKG + "WeatherPreferenceFragment",
+            PKG + "PrayerPreferenceFragment",
+            PKG + "VersionPreferenceFragment"
+        )
     }
 
     override fun onPreferenceStartInitialScreen() {
         needRestartHome = false // reset state
+        // Dibuka dari halaman "Sesuaikan TV Anda": langsung ke sub-pengaturan yang dipilih.
+        val target = requireActivity().intent?.getStringExtra(SettingsActivity.EXTRA_FRAGMENT)
+        if (target != null && target in DEEP_LINK_FRAGMENTS) {
+            val f = childFragmentManager.fragmentFactory.instantiate(requireActivity().classLoader, target)
+            if (f is PreferenceFragmentCompat) {
+                startPreferenceFragment(f)
+                return
+            }
+        }
         startPreferenceFragment(LauncherSettingsFragment())
     }
 
