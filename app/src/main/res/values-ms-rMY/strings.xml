@@ -262,4 +262,5 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="weather_speed_i">mph</string>
     <string name="weather_wind">%3$s %1$s %2$s</string>
     <string name="tv_section_launcher">PELANCAR</string>
+    <string name="weather_humidity">Kelembapan %1$d%%</string>
 </resources>
