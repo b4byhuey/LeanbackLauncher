@@ -868,9 +868,19 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             }
         }
 
+        // Manual-location setup already started its own city/coordinate request above.
+        // Do not start a second, unrelated GPS lookup in that mode.
+        if (!shouldUseCurrentLocation()) return
+
+        // Render cached weather immediately and avoid a fresh location/network request
+        // while the cache is still valid (e.g. after returning from Settings or an app).
+        if (isWeatherCacheValid) {
+            readJsonWeather(JSONFILE)
+            return
+        }
+
         lw.fetchCurrentLocation(object : LocalWeather.CurrentLocationCallback {
             override fun onSuccess(location: Location) {
-                // The device location is newer and more accurate than the cached weather city.
                 lw.fetchCurrentWeatherByLocation(location)
             }
 
