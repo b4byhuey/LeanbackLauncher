@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="recommendation_blacklist_action_description">
+        <item quantity="other">%d sumber disembunyikan</item>
+        <item quantity="one">%d sumber disembunyikan</item>
+    </plurals>
+    <plurals name="channels_sources_programs">
+        <item quantity="other">%d item</item>
+    </plurals>
+</resources>

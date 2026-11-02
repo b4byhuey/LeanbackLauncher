@@ -140,6 +140,9 @@ class LauncherApp : Application() {
         initDeviceCapabilities()
         demigrate()
 
+        // Warm the prayer calculation-method cache before the user opens its settings.
+        com.amazon.tv.leanbacklauncher.settings.PrayerMethodRepository.prefetch(appContext)
+
         val autoupdate = PreferenceManager.getDefaultSharedPreferences(appContext)
             .getBoolean("update_check", true)
         if (autoupdate) // self update check

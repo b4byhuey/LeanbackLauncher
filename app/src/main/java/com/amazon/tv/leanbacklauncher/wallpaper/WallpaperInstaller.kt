@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.graphics.Shader.TileMode
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.content.res.ResourcesCompat
@@ -61,8 +62,20 @@ class WallpaperInstaller private constructor(context: Context) {
                 mContext
             )
             var systemBg: Drawable? = null
-            // user background
-            if (prefs.getString("wallpaper_image", "")!!.isNotEmpty()) {
+            // User-selected gallery image. ACTION_OPEN_DOCUMENT grants a persistent URI.
+            val selectedUri = prefs.getString("launcher_wallpaper_uri", null)
+            if (!selectedUri.isNullOrBlank()) {
+                try {
+                    val bitmap = mContext.contentResolver.openInputStream(Uri.parse(selectedUri))?.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                    if (bitmap != null) systemBg = BitmapDrawable(resources, bitmap)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Unable to read selected wallpaper URI", e)
+                }
+            }
+            // Legacy user background path
+            if (systemBg == null && prefs.getString("wallpaper_image", "")!!.isNotEmpty()) {
                 Log.d(TAG, "wallpaper image " + prefs.getString("wallpaper_image", ""))
                 systemBg = Drawable.createFromPath(prefs.getString("wallpaper_image", ""))
             }

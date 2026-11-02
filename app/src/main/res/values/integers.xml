@@ -19,7 +19,7 @@
     <integer name="impression_delay">3000</integer>
     <integer name="install_fade_period_days">15</integer>
     <integer name="item_dim_anim_duration">100</integer>
-    <integer name="item_scale_anim_duration">150</integer>
+    <integer name="item_scale_anim_duration">250</integer>
     <integer name="launcher_pause_animation_duration">500</integer>
     <integer name="lb_search_orb_scale_duration_ms">200</integer>
     <integer name="max_num_banner_rows">2</integer>

@@ -27,10 +27,9 @@ import com.amazon.tv.leanbacklauncher.BuildConfig
 import com.amazon.tv.leanbacklauncher.LauncherApp
 import com.amazon.tv.leanbacklauncher.MainActivity.Companion.JSONFILE
 import com.amazon.tv.leanbacklauncher.R
-import com.amazon.tv.leanbacklauncher.UpdateActivity
 import com.amazon.tv.leanbacklauncher.apps.AppsManager
+import com.amazon.tv.leanbacklauncher.util.DefaultLauncher
 import com.amazon.tv.leanbacklauncher.util.Permission
-import com.amazon.tv.leanbacklauncher.util.Updater
 import com.amazon.tv.leanbacklauncher.util.Util
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -50,10 +49,29 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             ) else SettingsFragment::class.java.simpleName
         }
         var needRestartHome = false
+
+        private const val PKG = "com.amazon.tv.leanbacklauncher.settings."
+        private val DEEP_LINK_FRAGMENTS = setOf(
+            PKG + "HomePreferenceFragment",
+            PKG + "HiddenPreferenceFragment",
+            PKG + "RecommendationsPreferenceFragment",
+            PKG + "ChannelsPreferenceFragment",
+            PKG + "WeatherPreferenceFragment",
+            PKG + "PrayerPreferenceFragment",
+        )
     }
 
     override fun onPreferenceStartInitialScreen() {
         needRestartHome = false // reset state
+        // Dibuka dari halaman "Sesuaikan TV Anda": langsung ke sub-pengaturan yang dipilih.
+        val target = requireActivity().intent?.getStringExtra(SettingsActivity.EXTRA_FRAGMENT)
+        if (target != null && target in DEEP_LINK_FRAGMENTS) {
+            val f = childFragmentManager.fragmentFactory.instantiate(requireActivity().classLoader, target)
+            if (f is PreferenceFragmentCompat) {
+                startPreferenceFragment(f)
+                return
+            }
+        }
         startPreferenceFragment(LauncherSettingsFragment())
     }
 
@@ -66,6 +84,7 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             requireActivity().classLoader, pref.fragment
         )
         f.arguments = args
+        @Suppress("DEPRECATION")
         f.setTargetFragment(caller, 0)
         if (f is PreferenceFragmentCompat
             || f is PreferenceDialogFragmentCompat
@@ -106,299 +125,36 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
         // Load the prefs from an XML resource
         setPreferencesFromResource(R.xml.prefs, rootKey)
 
+        findPreference<ListPreference>("app_language")?.apply {
+            entries = LauncherLanguage.labels(requireContext())
+            entryValues = LauncherLanguage.tags
+            value = LauncherLanguage.tags[LauncherLanguage.currentIndex()]
+            setOnPreferenceChangeListener { _, newValue ->
+                LauncherLanguage.apply(LauncherLanguage.tags.indexOf(newValue?.toString()).coerceAtLeast(0))
+                SettingsFragment.needRestartHome = true
+                true
+            }
+        }
+
         findPreference<Preference>("version")?.apply {
             this.summary = "${getString(R.string.app_name)} v" + BuildConfig.VERSION_NAME
+        }
+
+        findPreference<Preference>("set_default_launcher")?.apply {
+            summary = getString(
+                if (DefaultLauncher.isDefault(requireActivity())) R.string.default_launcher_already_desc
+                else R.string.default_launcher_action_desc
+            )
+            setOnPreferenceClickListener {
+                DefaultLauncher.request(requireActivity())
+                true
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val ps = findPreference<PreferenceScreen>("root_prefs")
             ps?.removePreferenceRecursively("rec_sources")
         }
-    }
-}
-
-/**
- * The fragment that is defined in prefs.xml
- */
-class VersionPreferenceFragment : LeanbackPreferenceFragmentCompat() {
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        // Load the prefs from an XML resource
-        setPreferencesFromResource(R.xml.version_prefs, rootKey)
-
-        findPreference<Preference>("update")?.let {
-            lifecycleScope.launch(Dispatchers.IO) {
-                if (Updater.check()) {
-                    withContext(Dispatchers.Main) {
-                        it.summary = getString(
-                            R.string.update_app_found,
-                            "${getString(R.string.app_name)} v" + Updater.getVersion()
-                        )
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        it.summary = getString(R.string.update_no_updates)
-                    }
-                }
-            }
-        }
-    }
-
-    // https://developer.android.com/topic/libraries/architecture/coroutines
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        if (preference?.key == "update") {
-            lifecycleScope.launch(Dispatchers.IO) {
-                if (Updater.check())
-                    startActivity(Intent(activity, UpdateActivity::class.java))
-                else
-                    withContext(Dispatchers.Main) {
-                        LauncherApp.toast(getString(R.string.update_no_updates))
-                    }
-            }
-            return true
-        } else if (preference?.key == "app_link") {
-            if (!preference.summary.isNullOrEmpty())
-                openBrowser(preference.summary.toString())
-            return true
-        }
-        return super.onPreferenceTreeClick(preference)
-    }
-
-    private fun openBrowser(url: String) {
-        if (url.isNotEmpty()) {
-            val intent = Intent()
-            intent.action = Intent.ACTION_VIEW
-            intent.addCategory(Intent.CATEGORY_BROWSABLE)
-            // pass the url to intent data
-            intent.data = Uri.parse(url)
-            try {
-                startActivity(intent)
-            } catch (e: Exception) {
-                LauncherApp.toast(R.string.failed_launch)
-            }
-        }
-    }
-}
-
-/**
- * The fragment that is defined in prefs.xml
- */
-class HomePreferenceFragment : LeanbackPreferenceFragmentCompat() {
-    private val appContext = LauncherApp.context
-    private val sortingMode = AppsManager.getSavedSortingMode(appContext)
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        // Load the prefs from an XML resource
-        setPreferencesFromResource(R.xml.home_prefs, rootKey)
-        findPreference<Preference>("apps_order")?.apply {
-            this.summary =
-                if (sortingMode === AppsManager.SortingMode.FIXED) getString(R.string.fixed_order_action_description)
-                else getString(R.string.recency_order_action_description)
-        }
-    }
-
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        if (preference?.key == "apps_order") {
-            val curMode = AppsManager.getSavedSortingMode(appContext)
-            if (curMode === AppsManager.SortingMode.FIXED) {
-                AppsManager.saveSortingMode(appContext, AppsManager.SortingMode.RECENCY)
-                preference.summary = getString(R.string.recency_order_action_description)
-            } else {
-                AppsManager.saveSortingMode(appContext, AppsManager.SortingMode.FIXED)
-                preference.summary = getString(R.string.fixed_order_action_description)
-
-            }
-            return true
-        }
-        return super.onPreferenceTreeClick(preference)
-    }
-}
-
-/**
- * The fragment that is defined in prefs.xml
- */
-class HiddenPreferenceFragment : LeanbackPreferenceFragmentCompat() {
-    private var screen: PreferenceScreen? = null
-
-    companion object {
-        private const val KEY_ID_ALL_APP = "show_all_apps"
-        private const val HIDDEN_CAT_KEY = "hidden_apps_category"
-    }
-
-    private fun loadHiddenApps() {
-        val prefUtil = SharedPreferencesUtil.instance(requireContext())
-        val packages: List<String> = ArrayList(prefUtil!!.hiddenApps())
-        val prefs = ArrayList<Preference>()
-
-        val showAllAppsPref = SwitchPreference(context)
-        showAllAppsPref.key = KEY_ID_ALL_APP
-        showAllAppsPref.title = getString(R.string.show_all_apps)
-        screen?.addPreference(showAllAppsPref) // show all apps switch
-
-        val pm = requireActivity().packageManager
-        for (pkg in packages) {
-            if (pkg.isNotEmpty()) {
-                try {
-                    // val packageInfo = pm.getPackageInfo(pkg, 0) ?: continue
-                    val hidden: Boolean = prefUtil.isHidden(pkg)
-                    if (hidden) { // show only hidden apps
-                        val appInfo = pm.getPackageInfo(pkg, 0).applicationInfo ?: continue
-                        val icon =
-                            pm.getApplicationIcon(appInfo) // ?: pm.getApplicationBanner(packageInfo.applicationInfo)
-                        val appPreference = Preference(context)
-                        appPreference.key = appInfo.packageName // packageInfo.packageName
-                        appPreference.title = pm.getApplicationLabel(appInfo)
-                        appPreference.icon = icon
-                        prefs.add(appPreference)
-                    }
-                } catch (e: PackageManager.NameNotFoundException) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        val hiddenCategory = PreferenceCategory(context)
-        hiddenCategory.key = HIDDEN_CAT_KEY
-        hiddenCategory.title = getString(R.string.hidden_applications_desc)
-        screen?.addPreference(hiddenCategory)
-        if (prefs.isNotEmpty()) {
-            for (pref in prefs) {
-                hiddenCategory.addPreference(pref)
-            }
-        } else {
-            val emptyPref = Preference(context)
-            emptyPref.key = "empty"
-            emptyPref.title = getString(R.string.hidden_applications_empty)
-            emptyPref.isEnabled = false
-            emptyPref.isSelectable = false
-            hiddenCategory.addPreference(emptyPref)
-        }
-    }
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        val context = preferenceManager.context
-        screen = preferenceManager.createPreferenceScreen(context)
-        screen?.title = getString(R.string.hidden_applications_title)
-        loadHiddenApps()
-        preferenceScreen = screen
-    }
-
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        val context = requireContext()
-        val prefUtil = SharedPreferencesUtil.instance(context)
-
-        return if (preference is SwitchPreference) { // show all apps switch
-            if (preference.key == KEY_ID_ALL_APP) {
-                // refresh home broadcast
-                SettingsFragment.needRestartHome = true
-            }
-            true
-        } else { // hidden apps list
-            prefUtil?.unhide(preference?.key)
-            screen?.findPreference<PreferenceCategory>(HIDDEN_CAT_KEY)
-                ?.removePreference(preference)
-            true
-        }
-    }
-}
-
-/**
- * The fragment that is defined in prefs.xml
- */
-class RecommendationsPreferenceFragment : LeanbackPreferenceFragmentCompat(),
-    RecommendationsPreferenceManager.LoadRecommendationPackagesCallback {
-    private var mIdToPackageMap: HashMap<Long, String> = hashMapOf()
-    private var mPreferenceManager: RecommendationsPreferenceManager? = null
-    private var screen: PreferenceScreen? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        mPreferenceManager = RecommendationsPreferenceManager(requireContext())
-    }
-
-    override fun onResume() {
-        super.onResume()
-        mPreferenceManager?.loadRecommendationsPackages(this)
-    }
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        val context = preferenceManager.context
-        screen = preferenceManager.createPreferenceScreen(context)
-        screen?.title = getString(R.string.recommendation_blacklist_action_title)
-        preferenceScreen = screen
-    }
-
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        var recIdFromKey: Long = -1L
-        if (preference!!.key.isDigitsOnly())
-            recIdFromKey = preference.key.toLong()
-        if (preference is CheckBoxPreference)
-            mPreferenceManager?.savePackageBlacklisted(
-                mIdToPackageMap[recIdFromKey],
-                !preference.isChecked
-            )
-        return true
-    }
-
-    override fun onRecommendationPackagesLoaded(info: List<RecommendationsPreferenceManager.PackageInfo>?) {
-        mIdToPackageMap = HashMap()
-        val recs = ArrayList<Preference>()
-        var recId: Long = 100000 // for shared prefs map
-        if (info != null) {
-            for (packageInfo in info) {
-                val banner: Drawable? = if (packageInfo.banner != null) {
-                    packageInfo.banner
-                } else {
-                    buildBannerFromIcon(packageInfo.icon)
-                }
-                val recPreference = CheckBoxPreference(context)
-                recPreference.key = recId.toString()
-                recPreference.title = packageInfo.appTitle
-                recPreference.icon = banner
-                recPreference.isChecked = !packageInfo.blacklisted
-                recs.add(recPreference)
-                mIdToPackageMap[recId] = packageInfo.packageName!!
-                recId++
-            }
-        }
-        if (recs.isNotEmpty()) {
-            for (rec in recs) {
-                screen?.addPreference(rec)
-            }
-        } else {
-            val emptyPref = Preference(context)
-            emptyPref.key = "empty"
-            emptyPref.title = getString(R.string.rec_soures_empty)
-            emptyPref.isEnabled = false
-            emptyPref.isSelectable = false
-            screen?.addPreference(emptyPref)
-        }
-    }
-
-    private fun buildBannerFromIcon(icon: Drawable?): Drawable {
-        val resources = resources
-        val bannerWidth = resources.getDimensionPixelSize(R.dimen.preference_item_banner_width)
-        val bannerHeight =
-            resources.getDimensionPixelSize(R.dimen.preference_item_banner_height)
-        val iconSize = resources.getDimensionPixelSize(R.dimen.preference_item_icon_size)
-        val bitmap = Bitmap.createBitmap(bannerWidth, bannerHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        canvas.drawColor(
-            ResourcesCompat.getColor(
-                resources,
-                R.color.preference_item_banner_background,
-                null
-            )
-        )
-        icon?.let {
-            it.setBounds(
-                (bannerWidth - iconSize) / 2,
-                (bannerHeight - iconSize) / 2,
-                (bannerWidth + iconSize) / 2,
-                (bannerHeight + iconSize) / 2
-            )
-            it.draw(canvas)
-        }
-        return BitmapDrawable(resources, bitmap)
     }
 }
 
@@ -485,7 +241,7 @@ class WallpaperFragment : LeanbackPreferenceFragmentCompat() {
         return when (preference?.key) {
             "reset_wallpaper" -> {
                 resetWallpaper()
-                fragmentManager?.popBackStack()
+                parentFragmentManager?.popBackStack()
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
@@ -543,7 +299,7 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
 
     override fun onResume() {
         super.onResume()
-        if (fragmentManager?.backStackEntryCount == 3) // 3 on root dir
+        if (parentFragmentManager?.backStackEntryCount == 3) // 3 on root dir
             rootPath = Environment.getExternalStorageDirectory().absolutePath
     }
 
@@ -561,7 +317,7 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
         val ctx = requireContext()
-        val fm = fragmentManager
+        val fm = parentFragmentManager
 
         when (preference?.key) {
             KEY_BACK.toString() -> {
@@ -709,18 +465,299 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
 class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        // Load the prefs from an XML resource
         setPreferencesFromResource(R.xml.weather_prefs, rootKey)
-        //val ps = findPreference<PreferenceScreen>("weather_prefs")
+        preferenceScreen?.let { addPrayerControls(this, it) }
     }
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        // clean cached weather
-        val cache = File(JSONFILE)
-        if (cache.exists())
-            cache.delete()
-        // refresh home broadcast
-        SettingsFragment.needRestartHome = true
+        // Only weather controls invalidate the weather response. Prayer calculation
+        // preferences are observed directly by PrayerTimesOverlay and must not clear it.
+        val weatherKeys = setOf(
+            getString(R.string.pref_enable_local_weather),
+            getString(R.string.pref_use_current_location),
+            getString(R.string.pref_user_location),
+            getString(R.string.pref_show_location),
+            getString(R.string.pref_imp_weather),
+            getString(R.string.pref_weather_apikey)
+        )
+        if (preference?.key in weatherKeys) {
+            val cache = File(JSONFILE)
+            if (cache.exists()) cache.delete()
+            SettingsFragment.needRestartHome = true
+        }
         return super.onPreferenceTreeClick(preference)
+    }
+}
+
+/**
+ * Shared, persistent cache for AlAdhan calculation methods.
+ * The list is prefetched at application startup and reused immediately by settings.
+ */
+internal object PrayerMethodRepository {
+    private const val CACHE_KEY = "prayer_methods_cache"
+    private val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    @Volatile private var loading = false
+    private val callbacks = mutableListOf<(List<Pair<String, String>>) -> Unit>()
+
+    fun cached(context: Context): List<Pair<String, String>> {
+        return try {
+            val raw = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(CACHE_KEY, null) ?: return emptyList()
+            val array = org.json.JSONArray(raw)
+            (0 until array.length()).mapNotNull { index ->
+                val item = array.optJSONObject(index) ?: return@mapNotNull null
+                val id = item.optString("id")
+                val name = item.optString("name")
+                if (id.isNotBlank() && name.isNotBlank()) id to name else null
+            }
+        } catch (_: Exception) { emptyList() }
+    }
+
+    fun prefetch(context: Context, callback: ((List<Pair<String, String>>) -> Unit)? = null) {
+        val appContext = context.applicationContext
+        synchronized(this) {
+            if (callback != null) callbacks += callback
+            if (loading) return
+            loading = true
+        }
+        executor.execute {
+            val methods = try {
+                val connection = (java.net.URL("https://api.aladhan.com/v1/methods")
+                    .openConnection() as java.net.HttpURLConnection).apply {
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                    requestMethod = "GET"
+                }
+                try {
+                    if (connection.responseCode !in 200..299) error("AlAdhan methods unavailable")
+                    val data = org.json.JSONObject(
+                        connection.inputStream.bufferedReader().use { it.readText() }
+                    ).getJSONObject("data")
+                    val result = mutableListOf<Pair<String, String>>()
+                    val keys = data.keys()
+                    while (keys.hasNext()) {
+                        val item = data.optJSONObject(keys.next()) ?: continue
+                        val id = item.optInt("id", -1)
+                        val name = item.optString("name")
+                        if (id >= 0 && name.isNotBlank() && id != 99) result += id.toString() to name
+                    }
+                    result.sortedBy { it.second.lowercase(java.util.Locale.ROOT) }
+                } finally {
+                    connection.disconnect()
+                }
+            } catch (error: Exception) {
+                android.util.Log.w("PrayerMethodRepository", "Unable to refresh calculation methods", error)
+                emptyList()
+            }
+
+            val result = if (methods.isNotEmpty()) {
+                val array = org.json.JSONArray()
+                methods.forEach { (id, name) ->
+                    array.put(org.json.JSONObject().put("id", id).put("name", name))
+                }
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+                    .edit().putString(CACHE_KEY, array.toString()).apply()
+                methods
+            } else {
+                cached(appContext)
+            }
+
+            val pending = synchronized(this) {
+                loading = false
+                callbacks.toList().also { callbacks.clear() }
+            }
+            main.post { pending.forEach { it(result) } }
+        }
+    }
+}
+
+
+/** Prayer calculation controls reuse the location configured in Weather Preferences. */
+private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: PreferenceScreen) {
+    val ctx = fragment.requireContext()
+    val prayerCategory = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_settings_title) }
+    root.addPreference(prayerCategory)
+    val method = ListPreference(ctx).apply {
+        key = "prayer_method"
+        title = fragment.getString(R.string.prayer_method_title)
+        summary = fragment.getString(R.string.prayer_method_desc)
+        setDefaultValue("20")
+        entries = arrayOf(fragment.getString(R.string.prayer_settings_loading))
+        entryValues = arrayOf("20")
+        onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+            listOf("prayer_custom_fajr", "prayer_custom_maghrib", "prayer_custom_isha")
+                .forEach { root.findPreference<Preference>(it)?.isVisible = value.toString() == "99" }
+            true
+        }
+    }
+    prayerCategory.addPreference(method)
+    fun addDecimal(key: String, titleId: Int, default: String) {
+        prayerCategory.addPreference(EditTextPreference(ctx).apply {
+            this.key = key
+            title = fragment.getString(titleId)
+            setDefaultValue(default)
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                val text = value.toString().trim()
+                text.isEmpty() || (text.toDoubleOrNull()?.let { it in 0.0..90.0 } == true)
+            }
+        })
+    }
+    addDecimal("prayer_custom_fajr", R.string.prayer_custom_fajr, "18")
+    addDecimal("prayer_custom_maghrib", R.string.prayer_custom_maghrib, "")
+    addDecimal("prayer_custom_isha", R.string.prayer_custom_isha, "18")
+    val offsets = prayerCategory
+    listOf(
+        "prayer_offset_fajr" to R.string.prayer_offset_fajr,
+        "prayer_offset_dhuhr" to R.string.prayer_offset_dhuhr,
+        "prayer_offset_asr" to R.string.prayer_offset_asr,
+        "prayer_offset_maghrib" to R.string.prayer_offset_maghrib,
+        "prayer_offset_isha" to R.string.prayer_offset_isha
+    ).forEach { (key, titleId) ->
+        prayerCategory.addPreference(EditTextPreference(ctx).apply {
+            this.key = key
+            title = fragment.getString(titleId)
+            summary = fragment.getString(R.string.prayer_offset_desc)
+            setDefaultValue("0")
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                value.toString().toIntOrNull()?.let { it in -180..180 } == true
+            }
+        })
+    }
+    val selected = PreferenceManager.getDefaultSharedPreferences(ctx).getString("prayer_method", "20")
+    listOf("prayer_custom_fajr", "prayer_custom_maghrib", "prayer_custom_isha")
+        .forEach { root.findPreference<Preference>(it)?.isVisible = selected == "99" }
+    method.value = selected ?: "20"
+    PrayerMethodRepository.prefetch(ctx) { methods ->
+        if (!fragment.isAdded) return@prefetch
+        val choices = (if (methods.isEmpty()) listOf("20" to fragment.getString(R.string.prayer_method_kemenag_fallback))
+            else methods) + ("99" to fragment.getString(R.string.prayer_method_custom))
+        method.entries = choices.map { it.second }.toTypedArray()
+        method.entryValues = choices.map { it.first }.toTypedArray()
+        val saved = PreferenceManager.getDefaultSharedPreferences(ctx).getString("prayer_method", "20") ?: "20"
+        method.value = if (choices.any { it.first == saved }) saved else "20"
+    }
+}
+
+/** Prayer calculation settings backed by AlAdhan's live methods endpoint. */
+class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
+    private var root: PreferenceScreen? = null
+    private var method: ListPreference? = null
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val ctx = preferenceManager.context
+        root = preferenceManager.createPreferenceScreen(ctx).also {
+            it.title = getString(R.string.prayer_settings_title)
+        }
+        preferenceScreen = root
+        val methodCategory = PreferenceCategory(ctx).apply {
+            title = getString(R.string.prayer_method_category)
+        }
+        root?.addPreference(methodCategory)
+        method = ListPreference(ctx).apply {
+            key = KEY_METHOD
+            title = getString(R.string.prayer_method_title)
+            summary = getString(R.string.prayer_method_desc)
+            setDefaultValue(DEFAULT_METHOD)
+            entries = arrayOf(getString(R.string.prayer_settings_loading))
+            entryValues = arrayOf(DEFAULT_METHOD)
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                showCustom(value.toString() == CUSTOM_METHOD)
+                true
+            }
+        }
+        methodCategory.addPreference(method!!)
+        addDecimal(methodCategory, KEY_CUSTOM_FAJR, R.string.prayer_custom_fajr, "18")
+        addDecimal(methodCategory, KEY_CUSTOM_MAGHRIB, R.string.prayer_custom_maghrib, "")
+        addDecimal(methodCategory, KEY_CUSTOM_ISHA, R.string.prayer_custom_isha, "18")
+
+        val offsets = PreferenceCategory(ctx).apply {
+            title = getString(R.string.prayer_offset_category)
+        }
+        root?.addPreference(offsets)
+        addOffset(offsets, KEY_OFFSET_FAJR, R.string.prayer_offset_fajr)
+        addOffset(offsets, KEY_OFFSET_DHUHR, R.string.prayer_offset_dhuhr)
+        addOffset(offsets, KEY_OFFSET_ASR, R.string.prayer_offset_asr)
+        addOffset(offsets, KEY_OFFSET_MAGHRIB, R.string.prayer_offset_maghrib)
+        addOffset(offsets, KEY_OFFSET_ISHA, R.string.prayer_offset_isha)
+        val selected = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx)
+            .getString(KEY_METHOD, DEFAULT_METHOD)
+        showCustom(selected == CUSTOM_METHOD)
+        // Populate from disk immediately; refresh the shared cache in the background.
+        // Even on a first/offline launch, show the built-in Kemenag option immediately.
+        applyMethods(PrayerMethodRepository.cached(ctx))
+        PrayerMethodRepository.prefetch(ctx) { applyMethods(it) }
+    }
+
+    private fun addDecimal(category: PreferenceCategory, key: String, titleId: Int, default: String) {
+        category.addPreference(EditTextPreference(preferenceManager.context).apply {
+            this.key = key
+            title = getString(titleId)
+            setDefaultValue(default)
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType =
+                android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                val text = value.toString().trim()
+                text.isEmpty() || (text.toDoubleOrNull()?.let { it in 0.0..90.0 } == true)
+            }
+        })
+    }
+
+    private fun addOffset(category: PreferenceCategory, key: String, titleId: Int) {
+        category.addPreference(EditTextPreference(preferenceManager.context).apply {
+            this.key = key
+            title = getString(titleId)
+            summary = getString(R.string.prayer_offset_desc)
+            setDefaultValue("0")
+            summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+            setOnBindEditTextListener { it.inputType =
+                android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+                value.toString().toIntOrNull()?.let { it in -180..180 } == true
+            }
+        })
+    }
+
+    private fun showCustom(show: Boolean) {
+        listOf(KEY_CUSTOM_FAJR, KEY_CUSTOM_MAGHRIB, KEY_CUSTOM_ISHA).forEach {
+            root?.findPreference<Preference>(it)?.isVisible = show
+        }
+    }
+
+    private fun applyMethods(methods: List<Pair<String, String>>) {
+        if (!isAdded) return
+        val choices = (if (methods.isEmpty()) listOf(
+            DEFAULT_METHOD to getString(R.string.prayer_method_kemenag_fallback)
+        ) else methods) + (CUSTOM_METHOD to getString(R.string.prayer_method_custom))
+        method?.apply {
+            entries = choices.map { it.second }.toTypedArray()
+            entryValues = choices.map { it.first }.toTypedArray()
+            val saved = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(preferenceManager.context)
+                .getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
+            value = if (choices.any { it.first == saved }) saved else DEFAULT_METHOD
+        }
+        showCustom(method?.value == CUSTOM_METHOD)
+    }
+
+    companion object {
+        private const val KEY_METHOD = "prayer_method"
+        private const val KEY_OFFSET_FAJR = "prayer_offset_fajr"
+        private const val KEY_OFFSET_DHUHR = "prayer_offset_dhuhr"
+        private const val KEY_OFFSET_ASR = "prayer_offset_asr"
+        private const val KEY_OFFSET_MAGHRIB = "prayer_offset_maghrib"
+        private const val KEY_OFFSET_ISHA = "prayer_offset_isha"
+        private const val KEY_CUSTOM_FAJR = "prayer_custom_fajr"
+        private const val KEY_CUSTOM_MAGHRIB = "prayer_custom_maghrib"
+        private const val KEY_CUSTOM_ISHA = "prayer_custom_isha"
+        private const val DEFAULT_METHOD = "20"
+        private const val CUSTOM_METHOD = "99"
     }
 }

@@ -16,9 +16,11 @@ class LegacyHomeScreenSettingsActivity : FragmentActivity() {
         }
     }
 
+    @Deprecated("Use OnBackPressedDispatcher")
     override fun onBackPressed() {
         val count = supportFragmentManager.backStackEntryCount
         if (count == 0) {
+            @Suppress("DEPRECATION")
             super.onBackPressed()
             // back to Launcher
             // Intent intent = new Intent(this, MainActivity.class);

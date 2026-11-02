@@ -52,6 +52,7 @@ class NotificationListenerMonitor : Service() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun listenerIsRunning(): Boolean {
         val notificationListenerComp = ComponentName(this, NotificationsServiceV4::class.java)
         Log.v(

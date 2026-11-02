@@ -1,18 +1,14 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:key="weather_prefs"
-    android:title="@string/weather_home_title">
-    <PreferenceCategory>
+    android:title="@string/weather_prayer_settings_title">
 
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="@string/pref_enable_local_weather"
-            android:title="@string/enable_local_weather_title"
-            android:summary="@string/enable_local_weather_description" />
+    <PreferenceCategory
+        android:key="location_settings"
+        android:title="@string/location_settings_title">
 
         <SwitchPreference
             android:defaultValue="true"
-            android:dependency="@string/pref_enable_local_weather"
             android:disableDependentsState="true"
             android:key="@string/pref_use_current_location"
             android:title="@string/use_current_location_title"
@@ -26,10 +22,21 @@
 
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pref_enable_local_weather"
             android:key="@string/pref_show_location"
             android:title="@string/show_location_title"
             android:summary="@string/show_location_description" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="weather_settings"
+        android:title="@string/weather_settings_title">
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/pref_enable_local_weather"
+            android:title="@string/enable_local_weather_title"
+            android:summary="@string/enable_local_weather_description" />
 
         <SwitchPreference
             android:defaultValue="false"

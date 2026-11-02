@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.os.Parcelable
+import android.os.Build
 import android.text.TextUtils
 import android.util.Log
 import com.amazon.tv.leanbacklauncher.R
@@ -125,7 +125,20 @@ class MarketUpdateReceiver(private val mListener: InstallingLaunchPointListener)
 
     private fun createInstallLaunchPoint(context: Context, pkgName: String, intent: Intent): LaunchPoint {
         // todo category
-        return LaunchPoint(context, intent.getStringExtra("app_name"), intent.getStringExtra("app_icon"), pkgName, intent.getParcelableExtra<Parcelable>("app_detailIntent") as Intent?, mListener)
+        val detailIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra("app_detailIntent", Intent::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra<Intent>("app_detailIntent")
+        }
+        return LaunchPoint(
+            context,
+            intent.getStringExtra("app_name"),
+            intent.getStringExtra("app_icon"),
+            pkgName,
+            detailIntent,
+            mListener
+        )
     }
 
     companion object {

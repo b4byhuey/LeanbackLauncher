@@ -3,6 +3,7 @@ package com.amazon.tv.leanbacklauncher.notifications
 import android.app.PendingIntent
 import android.content.Context
 import android.os.Handler
+import android.os.Looper
 import android.os.HandlerThread
 import android.os.Message
 import android.os.RemoteException
@@ -132,7 +133,7 @@ abstract class NotificationsServiceAdapter<VH : RecyclerView.ViewHolder?>(
     }
 
     private class RecommendationsHandler(adapter: NotificationsServiceAdapter<*>?) :
-        Handler() {
+        Handler(Looper.getMainLooper()) {
         private val mNotificationsServiceAdapter =
             WeakReference<NotificationsServiceAdapter<*>?>(adapter)
 
