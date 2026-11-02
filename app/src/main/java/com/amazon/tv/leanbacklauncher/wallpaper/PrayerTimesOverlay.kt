@@ -219,6 +219,15 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
         locationName = location
         infoText = null
+
+        // Reuse the last successful response when this view is recreated or reattached.
+        // A new network request is only needed when the cache expires or its config changes.
+        if (!force && timings == null && restoreCachedTimings(configKey)) {
+            render()
+            scheduleNextRefresh(configKey)
+            return
+        }
+
         if (timings == null) statusText = context.getString(R.string.prayer_loading)
         render()
 
@@ -237,6 +246,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                         else TimeZone.getDefault()
                     } ?: TimeZone.getDefault()
                     statusText = null
+                    saveCachedTimings(configKey)
                     render()
                     main.postDelayed(refresh, REFRESH_INTERVAL)
                 } else {
@@ -247,6 +257,55 @@ class PrayerTimesOverlay @JvmOverloads constructor(
                 }
             }
         }
+    }
+
+    private fun restoreCachedTimings(configKey: String): Boolean {
+        return try {
+            val prefs = preferences
+            if (prefs.getString(KEY_CACHE_CONFIG, null) != configKey) return false
+            val savedAt = prefs.getLong(KEY_CACHE_TIME, 0L)
+            val age = System.currentTimeMillis() - savedAt
+            if (savedAt <= 0L || age < 0L || age >= REFRESH_INTERVAL) return false
+
+            val json = JSONObject(prefs.getString(KEY_CACHE_TIMINGS, null) ?: return false)
+            val cached = NAMES.associateWith { name ->
+                json.optString(name, NO_TIME).takeIf { parseHm(it) != null } ?: NO_TIME
+            }
+            if (cached.values.none { it != NO_TIME }) return false
+
+            timings = cached
+            prayerTimeZone = prefs.getString(KEY_CACHE_TIMEZONE, null)?.let { id ->
+                if (TimeZone.getAvailableIDs().contains(id)) TimeZone.getTimeZone(id)
+                else TimeZone.getDefault()
+            } ?: TimeZone.getDefault()
+            statusText = null
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun saveCachedTimings(configKey: String) {
+        try {
+            val json = JSONObject()
+            timings.orEmpty().forEach { (name, time) -> json.put(name, time) }
+            preferences.edit()
+                .putString(KEY_CACHE_CONFIG, configKey)
+                .putString(KEY_CACHE_TIMINGS, json.toString())
+                .putString(KEY_CACHE_TIMEZONE, prayerTimeZone.id)
+                .putLong(KEY_CACHE_TIME, System.currentTimeMillis())
+                .apply()
+        } catch (_: Exception) {
+            // The in-memory result remains usable even if disk caching fails.
+        }
+    }
+
+    private fun scheduleNextRefresh(configKey: String) {
+        val savedAt = preferences.getLong(KEY_CACHE_TIME, 0L)
+        val age = (System.currentTimeMillis() - savedAt).coerceAtLeast(0L)
+        val delay = (REFRESH_INTERVAL - age).coerceAtLeast(60_000L)
+        main.removeCallbacks(refresh)
+        main.postDelayed(refresh, delay)
     }
 
     private fun ensureExecutor(): ExecutorService =
@@ -419,6 +478,10 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     companion object {
         private const val KEY_DETECTED_CITY = "launcher_detected_city"
+        private const val KEY_CACHE_CONFIG = "prayer_times_cache_config"
+        private const val KEY_CACHE_TIMINGS = "prayer_times_cache_timings"
+        private const val KEY_CACHE_TIMEZONE = "prayer_times_cache_timezone"
+        private const val KEY_CACHE_TIME = "prayer_times_cache_timestamp"
         private const val KEY_METHOD = "prayer_method"
         private const val KEY_OFFSET_FAJR = "prayer_offset_fajr"
         private const val KEY_OFFSET_DHUHR = "prayer_offset_dhuhr"
