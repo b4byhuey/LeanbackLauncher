@@ -279,7 +279,7 @@ or recommendations will not work properly."</string>
     <string name="wallpaper_choose">Put wallpaper image to storage directory root and select here</string>
     <string name="weather_apikey_title">OpenWeatherMap API Key</string>
     <string name="weather_hilotemp">%1$s–%2$s %3$s</string>
-	<string name="weather_prayer_settings_title">Weather &amp; Prayer Settings</string>
+	<string name="weather_prayer_settings_title">Prayer Settings</string>
     <string name="weather_prayer_settings_desc">Shared location, local weather, and prayer-time calculation settings</string>
 	<string name="weather_humidity">Humidity • %1$d%%</string>
 	<string name="weather_pressure">%1$s %2$s</string>
