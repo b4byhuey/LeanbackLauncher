@@ -95,7 +95,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             startActivityForResult(intent, PICK_VIDEO_PLAYLIST)
         }
         actionButton(root, getString(R.string.tv_video_urls), getString(R.string.tv_video_urls_desc)) {
-            showVideoUrlPlaylistDialog()
+            openLauncherSetting("VideoPlaylistPreferenceFragment")
         }
         actionButton(root, getString(R.string.tv_default_wallpaper), getString(R.string.tv_default_wallpaper_desc)) {
             prefs.edit().remove(KEY_WALLPAPER_URI).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
@@ -108,7 +108,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         }
         // Pengaturan launcher yang sebelumnya ada di ikon gerigi header (hanya yang belum ada di halaman ini).
         section(root, getString(R.string.tv_section_launcher))
-        actionButton(root, getString(R.string.app_language_title), getString(R.string.app_language_desc)) { showLanguageDialog() }
+        actionButton(root, getString(R.string.app_language_title), getString(R.string.app_language_desc)) { openLauncherSetting("LanguagePreferenceFragment") }
         actionButton(root, getString(R.string.home_screen_order_action_title), getString(R.string.home_screen_order_desc)) {
             openLauncherSetting("LegacyAppsAndGamesPreferenceFragment")
         }
@@ -234,7 +234,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             root,
             getString(R.string.default_launcher_action),
             getString(R.string.default_launcher_action_desc)
-        ) { DefaultLauncher.request(this) }
+        ) { openLauncherSetting("DefaultLauncherPreferenceFragment") }
         defaultLauncherSubtitle = ((root.getChildAt(root.childCount - 1) as LinearLayout).getChildAt(1) as TextView)
         updateDefaultLauncherSubtitle()
     }

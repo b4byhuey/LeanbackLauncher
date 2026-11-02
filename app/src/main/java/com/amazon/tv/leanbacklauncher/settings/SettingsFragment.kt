@@ -54,6 +54,9 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         private val DEEP_LINK_FRAGMENTS = setOf(
             PKG + "LegacyAppsAndGamesPreferenceFragment",
             PKG + "LegacyHiddenPreferenceFragment",
+            PKG + "LanguagePreferenceFragment",
+            PKG + "VideoPlaylistPreferenceFragment",
+            PKG + "DefaultLauncherPreferenceFragment",
             PKG + "RecommendationsPreferenceFragment",
             PKG + "ChannelsPreferenceFragment",
             PKG + "WeatherPreferenceFragment",
@@ -760,4 +763,47 @@ class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         private const val DEFAULT_METHOD = "20"
         private const val CUSTOM_METHOD = "99"
     }
+}
+
+
+class LanguagePreferenceFragment : LeanbackPreferenceFragmentCompat() {
+ override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+  val screen = preferenceManager.createPreferenceScreen(requireContext()); preferenceScreen = screen
+  screen.title = getString(R.string.app_language_title)
+  screen.addPreference(ListPreference(requireContext()).apply {
+   key = "app_language"; title = getString(R.string.app_language_title)
+   entries = LauncherLanguage.labels(requireContext()); entryValues = LauncherLanguage.tags.toTypedArray()
+   value = LauncherLanguage.tags[LauncherLanguage.currentIndex()]; summary = getString(R.string.app_language_desc)
+   setOnPreferenceChangeListener { _, v -> LauncherLanguage.apply(LauncherLanguage.tags.indexOf(v.toString()).coerceAtLeast(0)); SettingsFragment.needRestartHome = true; true }
+  })
+ }
+}
+
+class VideoPlaylistPreferenceFragment : LeanbackPreferenceFragmentCompat() {
+ companion object { private const val KEY = "launcher_video_wallpaper_playlist" }
+ override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+  val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+  val screen = preferenceManager.createPreferenceScreen(requireContext()); preferenceScreen = screen; screen.title = getString(R.string.tv_video_urls)
+  screen.addPreference(EditTextPreference(requireContext()).apply {
+   key = KEY; title = getString(R.string.tv_video_urls); dialogTitle = getString(R.string.tv_video_urls); dialogMessage = getString(R.string.tv_video_urls_desc)
+   setOnBindEditTextListener { it.minLines = 5; it.maxLines = 12; it.setSingleLine(false) }
+   text = prefs.getString(KEY, "")?.let { raw -> try { val ar = org.json.JSONArray(raw); (0 until ar.length()).joinToString("\n") { ar.getString(it) } } catch (_: Exception) { raw } } ?: ""
+   summary = getString(R.string.tv_video_urls_desc)
+   setOnPreferenceChangeListener { _, v ->
+    val urls = v.toString().lines().map { it.trim() }.filter { it.isNotEmpty() }
+    if (urls.isEmpty() || urls.any { !it.startsWith("https://", true) && !it.startsWith("http://", true) }) { android.widget.Toast.makeText(requireContext(), R.string.tv_video_urls_invalid, android.widget.Toast.LENGTH_LONG).show(); false }
+    else { val json = org.json.JSONArray().apply { urls.forEach { put(it) } }.toString(); prefs.edit().putString(KEY, json).remove(TvOsCustomizationActivity.KEY_WALLPAPER_URI).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply(); SettingsFragment.needRestartHome = true; true }
+   }
+  })
+ }
+}
+
+class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
+ override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+  val screen = preferenceManager.createPreferenceScreen(requireContext()); preferenceScreen = screen; screen.title = getString(R.string.default_launcher_action)
+  screen.addPreference(Preference(requireContext()).apply {
+   title = getString(R.string.default_launcher_action); summary = getString(if (DefaultLauncher.isDefault(requireActivity())) R.string.default_launcher_already_desc else R.string.default_launcher_action_desc)
+   setOnPreferenceClickListener { DefaultLauncher.request(requireActivity()); true }
+  })
+ }
 }
