@@ -179,7 +179,7 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             minLines = 3
             maxLines = 8
             setText(prefs.getString(KEY_VIDEO_PLAYLIST, "")?.let { raw ->
-                try { val a = org.json.JSONArray(raw); (0 until a.length()).joinToString("\\n") { a.getString(it) } } catch (_: Exception) { "" }
+                try { val a = org.json.JSONArray(raw); (0 until a.length()).joinToString("\n") { a.getString(it) } } catch (_: Exception) { "" }
             } ?: "")
             setPadding(dp(18), dp(12), dp(18), dp(12))
         }

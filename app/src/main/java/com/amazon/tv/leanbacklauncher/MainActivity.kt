@@ -1043,7 +1043,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
         if (changeWallpaper && wallpaperView?.shynessMode != shy) {
             wallpaperView?.shynessMode = mShyMode
-        wallpaperView?.onHostResume()
             if (mShyMode && mNotificationsView != null) {
                 //if (BuildConfig.DEBUG) Log.d(TAG, "setShyMode(shy:$shy,changeWallpaper:$changeWallpaper) refreshSelectedBackground() [mShyMode=$mShyMode]")
                 mNotificationsView?.refreshSelectedBackground()
@@ -1253,6 +1252,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         homeAdapter?.sortRowsIfNeeded(forceResort)
         WallpaperInstaller.getInstance(this)?.installWallpaperIfNeeded()
         wallpaperView?.shynessMode = mShyMode
+        wallpaperView?.onHostResume()
         if (shyChanged) {
             wallpaperView?.resetBackground()
         }

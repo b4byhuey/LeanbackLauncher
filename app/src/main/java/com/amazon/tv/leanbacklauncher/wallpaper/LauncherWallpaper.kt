@@ -280,7 +280,7 @@ class LauncherWallpaper @JvmOverloads constructor(
 
     private fun updateVideoPlayback(uris: List<Uri>) {
         if (uris.isEmpty()) return
-        val signature = uris.joinToString("\\n") { it.toString() }
+        val signature = uris.joinToString("\n") { it.toString() }
         val player = mVideoPlayer ?: ExoPlayer.Builder(context.applicationContext).build().also {
             mVideoPlayer = it
             mVideoPlayerView?.player = it
@@ -291,7 +291,7 @@ class LauncherWallpaper @JvmOverloads constructor(
         if (signature != mVideoPlaylistSignature) {
             val items = uris.map { uri ->
                 val builder = MediaItem.Builder().setUri(uri)
-                if (uri.lastPath?.substringAfterLast('.', "")?.equals("m3u8", true) == true) {
+                if (uri.lastPathSegment?.substringAfterLast('.', "")?.equals("m3u8", true) == true) {
                     builder.setMimeType(MimeTypes.APPLICATION_M3U8)
                 }
                 builder.build()
