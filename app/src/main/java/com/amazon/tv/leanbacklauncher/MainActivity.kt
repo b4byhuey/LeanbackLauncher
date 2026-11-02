@@ -735,16 +735,32 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     private fun initializeWeather() {
+        // Wallpaper changes recreate MainActivity. Restore the weather card from its
+        // cached response first, and only initialize the provider when local weather is enabled.
+        val weatherEnabled = RowPreferences.isWeatherEnabled(this)
+        val weatherView = findViewById<ViewGroup?>(R.id.weather)
+        val detailsView = findViewById<ViewGroup?>(R.id.details)
+        if (!weatherEnabled) {
+            weatherView?.visibility = View.GONE
+            detailsView?.visibility = View.GONE
+            return
+        }
+
         localWeather?.let { lw ->
             setupWeatherDefaults(lw)
+            // Register callbacks before starting manual-location requests to avoid losing
+            // a fast response during Activity recreation.
+            setupWeatherCallbacks(lw)
+
+            if (isWeatherCacheValid) {
+                readJsonWeather(JSONFILE)
+            }
 
             if (shouldUseCurrentLocation()) {
                 setupLocationBasedWeather(lw)
             } else {
                 setupManualLocationWeather(lw)
             }
-
-            setupWeatherCallbacks(lw)
         }
     }
 
@@ -919,6 +935,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
     @SuppressLint("SetTextI18n")
     private fun updateWeatherDetails(weather: Weather) {
+        if (!RowPreferences.isWeatherEnabled(this)) return
         // Get views
         val weatherVG = findViewById<ViewGroup?>(R.id.weather)
         val detailsVG = findViewById<ViewGroup?>(R.id.details)

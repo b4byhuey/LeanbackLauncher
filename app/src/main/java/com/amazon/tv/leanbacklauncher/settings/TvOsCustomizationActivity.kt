@@ -103,9 +103,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             showVideoUrlPlaylistDialog()
         }
         actionButton(root, getString(R.string.tv_clear_video), getString(R.string.tv_clear_video_desc)) {
-            prefs.edit().remove(KEY_VIDEO_PLAYLIST).apply()
-            refreshLauncher()
-            Toast.makeText(this, getString(R.string.tv_video_cleared), Toast.LENGTH_SHORT).show()
         }
 
         section(root, getString(R.string.tv_section_prayer))

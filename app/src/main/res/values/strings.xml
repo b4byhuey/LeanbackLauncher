@@ -295,7 +295,7 @@ or recommendations will not work properly."</string>
     <string name="tv_choose_gallery">Choose photo from gallery</string>
     <string name="tv_choose_gallery_desc">Select an image and keep it as the launcher background</string>
     <string name="tv_default_wallpaper">Use default wallpaper</string>
-    <string name="tv_default_wallpaper_desc">Remove the selected photo</string>
+    <string name="tv_default_wallpaper_desc">Remove the selected photo or video playlist</string>
     <string name="tv_default_wallpaper_saved">Default wallpaper restored</string>
     <string name="tv_animated_ambience">Animated tvOS ambience</string>
     <string name="tv_animated_ambience_desc">Use a slow-moving blue, teal and violet background</string>
@@ -359,9 +359,6 @@ or recommendations will not work properly."</string>
     <string name="tv_video_urls">Use video URLs</string>
     <string name="tv_video_urls_desc">Add direct HTTP/HTTPS video links, one URL per line. MP4 and HLS (.m3u8) are supported.</string>
     <string name="tv_video_urls_hint">https://example.com/video1.mp4&#10;https://example.com/video2.m3u8</string>
-    <string name="tv_clear_video">Clear video wallpaper</string>
-    <string name="tv_clear_video_desc">Return to the selected image or default wallpaper</string>
-    <string name="tv_video_cleared">Video wallpaper cleared</string>
     <string name="tv_video_playlist_saved">Video playlist saved (%1$d items)</string>
     <string name="tv_video_urls_invalid">Enter one or more valid HTTP or HTTPS video URLs.</string>
     <string name="tv_save_video_playlist">Save playlist</string>
