@@ -1080,3 +1080,49 @@ class HiddenPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         }
     }
 }
+
+/**
+ * Sumber rekomendasi (Android di bawah 8) sebagai panel samping, sama seperti pengaturan lain.
+ * Centang = rekomendasi dari aplikasi itu ditampilkan; hapus centang untuk memblokirnya.
+ */
+class RecommendationsPreferenceFragment : LeanbackPreferenceFragmentCompat(),
+    RecommendationsPreferenceManager.LoadRecommendationPackagesCallback {
+    private var manager: RecommendationsPreferenceManager? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        manager = RecommendationsPreferenceManager(requireContext())
+    }
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val screen = preferenceManager.createPreferenceScreen(preferenceManager.context)
+        screen.title = getString(R.string.recommendation_blacklist_content_title)
+        preferenceScreen = screen
+    }
+
+    override fun onResume() {
+        super.onResume()
+        manager?.loadRecommendationsPackages(this)
+    }
+
+    override fun onRecommendationPackagesLoaded(info: List<RecommendationsPreferenceManager.PackageInfo>?) {
+        if (!isAdded) return
+        val screen = preferenceScreen ?: return
+        val ctx = preferenceManager.context
+        screen.removeAll()
+        info?.forEach { pkg ->
+            val packageName = pkg.packageName ?: return@forEach
+            screen.addPreference(CheckBoxPreference(ctx).apply {
+                key = "rec_source_$packageName"
+                title = pkg.appTitle ?: packageName
+                icon = pkg.icon
+                isPersistent = false
+                isChecked = !pkg.blacklisted
+                setOnPreferenceChangeListener { _, newValue ->
+                    manager?.savePackageBlacklisted(packageName, newValue != true)
+                    true
+                }
+            })
+        }
+    }
+}
