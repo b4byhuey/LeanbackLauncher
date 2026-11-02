@@ -760,13 +760,18 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         return time <= 0L || System.currentTimeMillis() - time >= maxCacheAge
     }
 
-    private fun readWeatherCache(): JSONObject? = try {
-        if (weatherPrefs.getString(PREF_OPEN_METEO_CONFIG, null) != weatherConfigKey()) return null
-        val raw = weatherPrefs.getString(PREF_OPEN_METEO_JSON, null) ?: return null
-        JSONObject(raw).takeIf { it.has("current") && it.has("daily") }
-    } catch (e: Exception) {
-        Log.w(TAG, "Unable to read Open-Meteo cache", e)
-        null
+    private fun readWeatherCache(): JSONObject? {
+        return try {
+            if (weatherPrefs.getString(PREF_OPEN_METEO_CONFIG, null) != weatherConfigKey()) {
+                null
+            } else {
+                val raw = weatherPrefs.getString(PREF_OPEN_METEO_JSON, null)
+                raw?.let { JSONObject(it).takeIf { json -> json.has("current") && json.has("daily") } }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Unable to read Open-Meteo cache", e)
+            null
+        }
     }
 
     private fun refreshWeather(force: Boolean) {
