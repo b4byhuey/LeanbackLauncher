@@ -52,8 +52,8 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
 
         private const val PKG = "com.amazon.tv.leanbacklauncher.settings."
         private val DEEP_LINK_FRAGMENTS = setOf(
-            PKG + "HomePreferenceFragment",
-            PKG + "HiddenPreferenceFragment",
+            PKG + "LegacyAppsAndGamesPreferenceFragment",
+            PKG + "LegacyHiddenPreferenceFragment",
             PKG + "RecommendationsPreferenceFragment",
             PKG + "ChannelsPreferenceFragment",
             PKG + "WeatherPreferenceFragment",
@@ -67,10 +67,12 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         val target = requireActivity().intent?.getStringExtra(SettingsActivity.EXTRA_FRAGMENT)
         if (target != null && target in DEEP_LINK_FRAGMENTS) {
             val f = childFragmentManager.fragmentFactory.instantiate(requireActivity().classLoader, target)
-            if (f is PreferenceFragmentCompat) {
-                startPreferenceFragment(f)
-                return
+            when (f) {
+                is PreferenceFragmentCompat -> startPreferenceFragment(f)
+                is androidx.leanback.app.GuidedStepSupportFragment -> startImmersiveFragment(f)
+                else -> startPreferenceFragment(LauncherSettingsFragment())
             }
+            return
         }
         startPreferenceFragment(LauncherSettingsFragment())
     }

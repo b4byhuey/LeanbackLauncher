@@ -78,11 +78,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             startActivityForResult(intent, PICK_WALLPAPER)
         }
-        actionButton(root, getString(R.string.tv_default_wallpaper), getString(R.string.tv_default_wallpaper_desc)) {
-            prefs.edit().remove(KEY_WALLPAPER_URI).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
-            refreshLauncher()
-            Toast.makeText(this, getString(R.string.tv_default_wallpaper_saved), Toast.LENGTH_SHORT).show()
-        }
         actionButton(root, getString(R.string.tv_animated_ambience), getString(R.string.tv_animated_ambience_desc)) {
             prefs.edit().putBoolean("launcher_live_background", true).remove(KEY_WALLPAPER_URI).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").apply()
             refreshLauncher()
@@ -102,6 +97,11 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         actionButton(root, getString(R.string.tv_video_urls), getString(R.string.tv_video_urls_desc)) {
             showVideoUrlPlaylistDialog()
         }
+        actionButton(root, getString(R.string.tv_default_wallpaper), getString(R.string.tv_default_wallpaper_desc)) {
+            prefs.edit().remove(KEY_WALLPAPER_URI).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
+            refreshLauncher()
+            Toast.makeText(this, getString(R.string.tv_default_wallpaper_saved), Toast.LENGTH_SHORT).show()
+        }
         section(root, getString(R.string.tv_section_prayer))
         actionButton(root, getString(R.string.prayer_settings_title), getString(R.string.prayer_settings_desc)) {
             openLauncherSetting("WeatherPreferenceFragment")
@@ -110,10 +110,10 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         section(root, getString(R.string.tv_section_launcher))
         actionButton(root, getString(R.string.app_language_title), getString(R.string.app_language_desc)) { showLanguageDialog() }
         actionButton(root, getString(R.string.home_screen_order_action_title), getString(R.string.home_screen_order_desc)) {
-            openLauncherSetting("HomePreferenceFragment")
+            openLauncherSetting("LegacyAppsAndGamesPreferenceFragment")
         }
         actionButton(root, getString(R.string.hidden_applications_title), getString(R.string.hidden_applications_desc)) {
-            openLauncherSetting("HiddenPreferenceFragment")
+            openLauncherSetting("LegacyHiddenPreferenceFragment")
         }
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
             actionButton(
