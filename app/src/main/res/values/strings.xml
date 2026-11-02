@@ -279,15 +279,15 @@ or recommendations will not work properly."</string>
     <string name="wallpaper_choose">Put wallpaper image to storage directory root and select here</string>
     <string name="weather_apikey_title">OpenWeatherMap API Key</string>
     <string name="weather_hilotemp">%1$s–%2$s %3$s</string>
-<string name="weather_prayer_settings_title">Weather &amp; Prayer Settings</string>
+	<string name="weather_prayer_settings_title">Weather &amp; Prayer Settings</string>
     <string name="weather_prayer_settings_desc">Shared location, local weather, and prayer-time calculation settings</string>
-<string name="weather_humidity">hum.%1$d%%</string>
-<string name="weather_pressure">%1$s %2$s</string>
+	<string name="weather_humidity">Humidity • %1$d%%</string>
+	<string name="weather_pressure">%1$s %2$s</string>
     <string name="weather_pressure_hp">hPa</string>
     <string name="weather_pressure_mm">mmHg</string>
     <string name="weather_speed_m">m/s</string>
     <string name="weather_speed_i">mph</string>
-    <string name="weather_wind">%3$s %1$s %2$s</string>
+    <string name="weather_wind">Wind • %3$s %1$s %2$s</string>
     <string name="tv_customization_eyebrow">HOME EXPERIENCE</string>
     <string name="tv_customization_title">Customize your TV</string>
     <string name="tv_customization_subtitle">Wallpaper, motion, language, weather and daily prayer times</string>
@@ -300,11 +300,11 @@ or recommendations will not work properly."</string>
     <string name="tv_animated_ambience">Animated tvOS ambience</string>
     <string name="tv_animated_ambience_desc">Use a slow-moving blue, teal and violet background</string>
     <string name="tv_animated_enabled">Animated background enabled</string>
-<string name="tv_section_prayer">WEATHER &amp; PRAYER TIMES</string>
-<string name="tv_back_launcher">Back to launcher</string>
+	<string name="tv_section_prayer">WEATHER &amp; PRAYER TIMES</string>
+	<string name="tv_back_launcher">Back to launcher</string>
     <string name="tv_back_launcher_desc">Return to the home screen</string>
     <string name="tv_wallpaper_saved">Wallpaper saved</string>
-<string name="prayer_loading">Loading prayer times…</string>
+	<string name="prayer_loading">Loading prayer times…</string>
     <string name="prayer_next">Next: %1$s in %2$02d:%3$02d</string>
     <string name="prayer_unavailable">Prayer times unavailable\nCheck internet or saved city</string>
     <string name="prayer_fajr">Fajr</string>
@@ -340,7 +340,7 @@ or recommendations will not work properly."</string>
     <string name="prayer_settings_loading">Loading methods…</string>
     <string name="tv_section_launcher">LAUNCHER</string>
     <string name="app_language_title">Language</string>
-<string name="location_settings_title">Location Settings</string>
+	<string name="location_settings_title">Location Settings</string>
     <string name="weather_settings_title">Weather Settings</string>
     <string name="app_language_desc">Launcher language</string>
     <string name="app_language_opt_default" translatable="false">Default (English)</string>
