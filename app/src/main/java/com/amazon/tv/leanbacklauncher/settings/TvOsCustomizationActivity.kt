@@ -110,10 +110,10 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         section(root, getString(R.string.tv_section_launcher))
         actionButton(root, getString(R.string.app_language_title), getString(R.string.app_language_desc)) { openLauncherSetting("LanguagePreferenceFragment") }
         actionButton(root, getString(R.string.home_screen_order_action_title), getString(R.string.home_screen_order_desc)) {
-            openLauncherSetting("LegacyAppsAndGamesPreferenceFragment")
+            openLauncherSetting("HomePreferenceFragment")
         }
         actionButton(root, getString(R.string.hidden_applications_title), getString(R.string.hidden_applications_desc)) {
-            openLauncherSetting("LegacyHiddenPreferenceFragment")
+            openLauncherSetting("HiddenPreferenceFragment")
         }
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
             actionButton(

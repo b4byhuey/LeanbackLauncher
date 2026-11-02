@@ -2,6 +2,7 @@ package com.amazon.tv.leanbacklauncher.settings
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -13,9 +14,11 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.ViewGroup
+import android.widget.EditText
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.Fragment
+import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.preference.LeanbackPreferenceFragmentCompat
 import androidx.leanback.preference.LeanbackSettingsFragmentCompat
 import androidx.lifecycle.lifecycleScope
@@ -54,6 +57,8 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         private val DEEP_LINK_FRAGMENTS = setOf(
             PKG + "LegacyAppsAndGamesPreferenceFragment",
             PKG + "LegacyHiddenPreferenceFragment",
+            PKG + "HomePreferenceFragment",
+            PKG + "HiddenPreferenceFragment",
             PKG + "LanguagePreferenceFragment",
             PKG + "VideoPlaylistPreferenceFragment",
             PKG + "DefaultLauncherPreferenceFragment",
@@ -70,13 +75,7 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         val target = requireActivity().intent?.getStringExtra(SettingsActivity.EXTRA_FRAGMENT)
         if (target != null && target in DEEP_LINK_FRAGMENTS) {
             val f = childFragmentManager.fragmentFactory.instantiate(requireActivity().classLoader, target)
-            if (f is PreferenceFragmentCompat || f is PreferenceDialogFragmentCompat) {
-                startPreferenceFragment(f)
-            } else {
-                // Legacy GuidedStep settings (for example Home Screen View and Hidden Apps)
-                // must use the immersive settings container, not fall back to LauncherSettingsFragment.
-                startImmersiveFragment(f)
-            }
+            showInPanel(f)
             return
         }
         startPreferenceFragment(LauncherSettingsFragment())
@@ -93,14 +92,16 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         f.arguments = args
         @Suppress("DEPRECATION")
         f.setTargetFragment(caller, 0)
-        if (f is PreferenceFragmentCompat
-            || f is PreferenceDialogFragmentCompat
-        ) {
-            startPreferenceFragment(f)
-        } else {
-            startImmersiveFragment(f)
-        }
+        showInPanel(f)
         return true
+    }
+
+    /**
+     * Semua layar pengaturan tampil di panel samping yang sama. Hanya fragment GuidedStep
+     * (layar Legacy layar penuh) yang tetap memakai container immersive.
+     */
+    private fun showInPanel(f: Fragment) {
+        if (f is GuidedStepSupportFragment) startImmersiveFragment(f) else startPreferenceFragment(f)
     }
 
     override fun onPreferenceStartScreen(
@@ -120,6 +121,7 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         if (needRestartHome) {
             if (BuildConfig.DEBUG) Log.d(TAG, "onStop() send refresh HOME broadcast")
             Util.refreshHome(LauncherApp.context)
+            needRestartHome = false
         }
     }
 }
@@ -302,15 +304,22 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
         private const val KEY_BACK = 1
         private const val KEY_DIR = 2
         private const val KEY_SELECT = 3
+        private const val ARG_SUBDIR = "file_list_subdir"
+        private var rootDepth = -1
     }
 
     override fun onResume() {
         super.onResume()
-        if (parentFragmentManager?.backStackEntryCount == 3) // 3 on root dir
-            rootPath = Environment.getExternalStorageDirectory().absolutePath
+        // Kedalaman back stack folder awal bergantung pada cara pengaturan dibuka
+        // (menu utama atau langsung dari "Home Screen View"), jadi dicatat saat pertama tampil.
+        val depth = parentFragmentManager.backStackEntryCount
+        if (arguments?.getBoolean(ARG_SUBDIR) != true && rootDepth < 0) rootDepth = depth
+        if (depth == rootDepth) rootPath = Environment.getExternalStorageDirectory().absolutePath
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        // Folder awal (bukan subfolder) dibuat ulang: kedalaman akar dicatat lagi di onResume().
+        if (arguments?.getBoolean(ARG_SUBDIR) != true) rootDepth = -1
         val context = preferenceManager.context
         screen = preferenceManager.createPreferenceScreen(context)
         screen?.title = getString(R.string.select_wallpaper_action_title)
@@ -336,7 +345,9 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
                 rootPath = File(rootPath, preference.title.toString()).absolutePath
                 dirName = preference.title.toString()
                 val curFragContainerId = (requireView().parent as ViewGroup).id
-                fm?.beginTransaction()?.replace(curFragContainerId, FileListFragment())
+                fm?.beginTransaction()?.replace(curFragContainerId, FileListFragment().apply {
+                    arguments = Bundle().apply { putBoolean(ARG_SUBDIR, true) }
+                })
                     ?.addToBackStack(null)?.commit()
                 return true
             }
@@ -471,15 +482,12 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
  */
 class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.weather_prefs, rootKey)
-        preferenceScreen?.let { addPrayerControls(this, it) }
-    }
-
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        // Only weather controls invalidate the weather response. Prayer calculation
-        // preferences are observed directly by PrayerTimesOverlay and must not clear it.
-        val weatherKeys = setOf(
+    /**
+     * Hanya pengaturan cuaca yang membuat respons cuaca lama tidak berlaku. Pengaturan waktu
+     * sholat diamati langsung oleh PrayerTimesOverlay dan tidak boleh menghapus cache cuaca.
+     */
+    private val weatherKeys by lazy {
+        setOf(
             getString(R.string.pref_enable_local_weather),
             getString(R.string.pref_use_current_location),
             getString(R.string.pref_user_location),
@@ -487,12 +495,35 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
             getString(R.string.pref_imp_weather),
             getString(R.string.pref_weather_apikey)
         )
-        if (preference?.key in weatherKeys) {
+    }
+
+    // Dipantau saat nilai benar-benar tersimpan (bukan saat diklik): untuk kolom teks, nilai baru
+    // baru tersimpan setelah dialog ditutup, sehingga menghapus cache saat klik terlalu cepat.
+    private val weatherChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in weatherKeys) {
             val cache = File(JSONFILE)
             if (cache.exists()) cache.delete()
             SettingsFragment.needRestartHome = true
         }
-        return super.onPreferenceTreeClick(preference)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .registerOnSharedPreferenceChangeListener(weatherChangeListener)
+    }
+
+    override fun onDestroy() {
+        context?.let {
+            PreferenceManager.getDefaultSharedPreferences(it)
+                .unregisterOnSharedPreferenceChangeListener(weatherChangeListener)
+        }
+        super.onDestroy()
+    }
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.weather_prefs, rootKey)
+        preferenceScreen?.let { addPrayerControls(this, it) }
     }
 }
 
@@ -770,44 +801,282 @@ class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
 }
 
 
+/**
+ * Pilihan bahasa langsung tampil di panel samping (tanpa tombol perantara).
+ * Memilih salah satu langsung menerapkan bahasa lalu menutup panel.
+ */
 class LanguagePreferenceFragment : LeanbackPreferenceFragmentCompat() {
- override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-  val screen = preferenceManager.createPreferenceScreen(requireContext()); preferenceScreen = screen
-  screen.title = getString(R.string.app_language_title)
-  screen.addPreference(ListPreference(requireContext()).apply {
-   key = "app_language"; title = getString(R.string.app_language_title)
-   entries = LauncherLanguage.labels(requireContext()); entryValues = LauncherLanguage.tags
-   value = LauncherLanguage.tags[LauncherLanguage.currentIndex()]; summary = getString(R.string.app_language_desc)
-   setOnPreferenceChangeListener { _, v -> LauncherLanguage.apply(LauncherLanguage.tags.indexOf(v.toString()).coerceAtLeast(0)); SettingsFragment.needRestartHome = true; true }
-  })
- }
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val ctx = preferenceManager.context
+        val screen = preferenceManager.createPreferenceScreen(ctx)
+        screen.title = getString(R.string.app_language_title)
+        preferenceScreen = screen
+
+        val labels = LauncherLanguage.labels(ctx)
+        val current = LauncherLanguage.currentIndex()
+        val options = ArrayList<CheckBoxPreference>()
+        labels.forEachIndexed { index, label ->
+            val option = CheckBoxPreference(ctx).apply {
+                key = "app_language_option_$index"
+                title = label
+                isPersistent = false
+                isChecked = index == current
+                setOnPreferenceChangeListener { _, _ ->
+                    // Perubahan status dikendalikan manual: pilihan bersifat tunggal (radio).
+                    options.forEachIndexed { i, o -> o.isChecked = i == index }
+                    chooseLanguage(index)
+                    false
+                }
+            }
+            options.add(option)
+            screen.addPreference(option)
+        }
+    }
+
+    private fun chooseLanguage(index: Int) {
+        if (index != LauncherLanguage.currentIndex()) {
+            SettingsFragment.needRestartHome = true
+            LauncherLanguage.apply(index)
+        }
+        activity?.finish()
+    }
 }
 
-class VideoPlaylistPreferenceFragment : LeanbackPreferenceFragmentCompat() {
- companion object { private const val KEY = "launcher_video_wallpaper_playlist" }
- override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-  val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-  val screen = preferenceManager.createPreferenceScreen(requireContext()); preferenceScreen = screen; screen.title = getString(R.string.tv_video_urls)
-  screen.addPreference(EditTextPreference(requireContext()).apply {
-   key = KEY; title = getString(R.string.tv_video_urls); dialogTitle = getString(R.string.tv_video_urls); dialogMessage = getString(R.string.tv_video_urls_desc)
-   setOnBindEditTextListener { it.minLines = 5; it.maxLines = 12; it.setSingleLine(false) }
-   text = prefs.getString(KEY, "")?.let { raw -> try { val ar = org.json.JSONArray(raw); (0 until ar.length()).joinToString("\n") { ar.getString(it) } } catch (_: Exception) { raw } } ?: ""
-   summary = getString(R.string.tv_video_urls_desc)
-   setOnPreferenceChangeListener { _, v ->
-    val urls = v.toString().lines().map { it.trim() }.filter { it.isNotEmpty() }
-    if (urls.isEmpty() || urls.any { !it.startsWith("https://", true) && !it.startsWith("http://", true) }) { android.widget.Toast.makeText(requireContext(), R.string.tv_video_urls_invalid, android.widget.Toast.LENGTH_LONG).show(); false }
-    else { val json = org.json.JSONArray().apply { urls.forEach { put(it) } }.toString(); prefs.edit().putString(KEY, json).remove(TvOsCustomizationActivity.KEY_WALLPAPER_URI).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply(); SettingsFragment.needRestartHome = true; true }
-   }
-  })
- }
+/**
+ * Input URL video langsung tampil di panel samping: kolom teks, bukan tombol yang membuka dialog.
+ */
+class VideoPlaylistPreferenceFragment : Fragment() {
+    private var input: EditText? = null
+
+    companion object {
+        private const val KEY = "launcher_video_wallpaper_playlist"
+        private const val TEXT_PRIMARY = 0xffeeeeee.toInt()
+        private const val TEXT_SECONDARY = 0xb3eeeeee.toInt()
+    }
+
+    override fun onCreateView(
+        inflater: android.view.LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): android.view.View {
+        val ctx = requireContext()
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
+        val column = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+        }
+        column.addView(android.widget.TextView(ctx).apply {
+            text = getString(R.string.tv_video_urls)
+            textSize = 24f
+            setTextColor(TEXT_PRIMARY)
+        })
+        column.addView(android.widget.TextView(ctx).apply {
+            text = getString(R.string.tv_video_urls_desc)
+            textSize = 14f
+            setTextColor(TEXT_SECONDARY)
+            setPadding(0, dp(8), 0, dp(16))
+        })
+
+        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+        val field = EditText(ctx).apply {
+            hint = getString(R.string.tv_video_urls_hint)
+            setHintTextColor(TEXT_SECONDARY)
+            setTextColor(TEXT_PRIMARY)
+            textSize = 14f
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            minLines = 6
+            maxLines = 12
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            setText(prefs.getString(KEY, "")?.let { raw ->
+                try {
+                    val a = org.json.JSONArray(raw)
+                    (0 until a.length()).joinToString("\n") { a.getString(it) }
+                } catch (_: Exception) {
+                    raw
+                }
+            } ?: "")
+        }
+        input = field
+        column.addView(field, android.widget.LinearLayout.LayoutParams(-1, -2))
+
+        val buttons = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(0, dp(16), 0, 0)
+        }
+        buttons.addView(android.widget.Button(ctx).apply {
+            text = getString(R.string.tv_save_video_playlist)
+            setOnClickListener { save() }
+        })
+        buttons.addView(android.widget.Button(ctx).apply {
+            text = getString(android.R.string.cancel)
+            setOnClickListener { activity?.finish() }
+        })
+        column.addView(buttons)
+
+        return android.widget.ScrollView(ctx).apply {
+            isFillViewport = true
+            addView(column)
+        }
+    }
+
+    override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        input?.requestFocus()
+    }
+
+    private fun save() {
+        val ctx = requireContext()
+        val urls = input?.text?.toString().orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
+        if (urls.isEmpty() || urls.any { !it.startsWith("https://", true) && !it.startsWith("http://", true) }) {
+            android.widget.Toast.makeText(ctx, R.string.tv_video_urls_invalid, android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        val json = org.json.JSONArray().apply { urls.forEach { put(it) } }.toString()
+        PreferenceManager.getDefaultSharedPreferences(ctx).edit()
+            .putString(KEY, json)
+            .remove(TvOsCustomizationActivity.KEY_WALLPAPER_URI)
+            .remove("wallpaper_image")
+            .putBoolean("launcher_live_background", false)
+            .apply()
+        SettingsFragment.needRestartHome = true
+        android.widget.Toast.makeText(ctx, getString(R.string.tv_video_playlist_saved, urls.size), android.widget.Toast.LENGTH_SHORT).show()
+        activity?.finish()
+    }
 }
 
+/**
+ * Pilihan default launcher langsung tampil di panel samping: status, aksi, dan "Nanti".
+ */
 class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
- override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-  val screen = preferenceManager.createPreferenceScreen(requireContext()); preferenceScreen = screen; screen.title = getString(R.string.default_launcher_action)
-  screen.addPreference(Preference(requireContext()).apply {
-   title = getString(R.string.default_launcher_action); summary = getString(if (DefaultLauncher.isDefault(requireActivity())) R.string.default_launcher_already_desc else R.string.default_launcher_action_desc)
-   setOnPreferenceClickListener { DefaultLauncher.request(requireActivity()); true }
-  })
- }
+    private var status: Preference? = null
+    private var action: Preference? = null
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val ctx = preferenceManager.context
+        val screen = preferenceManager.createPreferenceScreen(ctx)
+        screen.title = getString(R.string.default_launcher_title)
+        preferenceScreen = screen
+
+        status = Preference(ctx).apply {
+            key = "default_launcher_status"
+            isSelectable = false
+            isPersistent = false
+        }.also { screen.addPreference(it) }
+
+        action = Preference(ctx).apply {
+            key = "default_launcher_action"
+            title = getString(R.string.default_launcher_action)
+            isPersistent = false
+            setOnPreferenceClickListener {
+                DefaultLauncher.request(requireActivity())
+                true
+            }
+        }.also { screen.addPreference(it) }
+
+        screen.addPreference(Preference(ctx).apply {
+            key = "default_launcher_later"
+            title = getString(R.string.default_launcher_later)
+            isPersistent = false
+            setOnPreferenceClickListener {
+                activity?.finish()
+                true
+            }
+        })
+        refreshStatus()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Kembali dari dialog sistem: perbarui status.
+        refreshStatus()
+    }
+
+    private fun refreshStatus() {
+        val isDefault = DefaultLauncher.isDefault(requireActivity())
+        status?.title = getString(
+            if (isDefault) R.string.default_launcher_already else R.string.default_launcher_title
+        )
+        status?.summary = if (isDefault) null else getString(R.string.default_launcher_message)
+        action?.summary = getString(
+            if (isDefault) R.string.default_launcher_already_desc else R.string.default_launcher_action_desc
+        )
+    }
+}
+
+/**
+ * "Home Screen View" sebagai panel samping (sama seperti pengaturan lain), bukan GuidedStep.
+ * Isinya sama dengan versi Legacy: baris, urutan aplikasi, banner, wallpaper.
+ */
+class HomePreferenceFragment : LeanbackPreferenceFragmentCompat() {
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.home_prefs, rootKey)
+        val ctx = preferenceManager.context
+        findPreference<ListPreference>("apps_order")?.apply {
+            entries = arrayOf(
+                getString(R.string.select_app_order_action_recency),
+                getString(R.string.select_app_order_action_fixed)
+            )
+            entryValues = arrayOf("recency", "fixed")
+            value = if (AppsManager.getSavedSortingMode(ctx) == AppsManager.SortingMode.FIXED) "fixed" else "recency"
+            setOnPreferenceChangeListener { _, newValue ->
+                AppsManager.saveSortingMode(
+                    ctx,
+                    if (newValue == "fixed") AppsManager.SortingMode.FIXED else AppsManager.SortingMode.RECENCY
+                )
+                true
+            }
+        }
+    }
+}
+
+/**
+ * "Hidden Applications" sebagai panel samping: sakelar "tampilkan semua aplikasi" dan daftar
+ * aplikasi tersembunyi (hapus centang untuk menampilkannya kembali).
+ */
+class HiddenPreferenceFragment : LeanbackPreferenceFragmentCompat() {
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val ctx = preferenceManager.context
+        val screen = preferenceManager.createPreferenceScreen(ctx)
+        screen.title = getString(R.string.hidden_applications_title)
+        preferenceScreen = screen
+        val prefUtil = SharedPreferencesUtil.instance(ctx) ?: return
+
+        screen.addPreference(SwitchPreference(ctx).apply {
+            key = "hidden_show_all_apps"
+            title = getString(R.string.show_all_apps)
+            isPersistent = false
+            isChecked = prefUtil.isAllAppsShown()
+            setOnPreferenceChangeListener { _, newValue ->
+                prefUtil.showAllApps(newValue as Boolean)
+                SettingsFragment.needRestartHome = true
+                true
+            }
+        })
+
+        val pm = ctx.packageManager
+        for (pkg in ArrayList(prefUtil.hiddenApps())) {
+            if (pkg.isEmpty() || !prefUtil.isHidden(pkg)) continue
+            try {
+                val info = pm.getApplicationInfo(pkg, 0)
+                screen.addPreference(CheckBoxPreference(ctx).apply {
+                    key = "hidden_app_$pkg"
+                    title = pm.getApplicationLabel(info)
+                    icon = pm.getApplicationIcon(info)
+                    isPersistent = false
+                    isChecked = true
+                    setOnPreferenceChangeListener { _, newValue ->
+                        if (newValue == true) prefUtil.hide(pkg) else prefUtil.unhide(pkg)
+                        SettingsFragment.needRestartHome = true
+                        true
+                    }
+                })
+            } catch (_: PackageManager.NameNotFoundException) {
+                // Aplikasi sudah dihapus: lewati.
+            }
+        }
+    }
 }

@@ -126,6 +126,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         private const val TAG = "MainActivity"
         private const val FIRST_POSITION = 0
         private const val WHEEL_NAV_INTERVAL_MS = 120L
+        private const val PREF_WEATHER_CACHE_SIGNATURE = "weather_cache_signature"
         private const val DEFAULT_LAUNCHER_PROMPT_DELAY_MS = 3_000L
         private const val UNINSTALL_CODE = 321
         const val PERMISSIONS_REQUEST_LOCATION = 99
@@ -734,9 +735,26 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
     }
 
+    /**
+     * Ringkasan pengaturan yang memengaruhi isi cache cuaca (lokasi, satuan, API key).
+     * Cache hanya dipakai bila ditulis dengan pengaturan yang sama dengan sekarang, sehingga
+     * cache lama (mis. satuan atau kota sebelum diubah di pengaturan) tidak tampil lagi.
+     */
+    private fun currentWeatherSignature(): String = listOf(
+        RowPreferences.isUseLocationEnabled(this),
+        RowPreferences.getUserLocation(this).orEmpty().trim(),
+        RowPreferences.isImperialUnits(this),
+        RowPreferences.getWeatherApiKey(this)
+    ).joinToString("|").hashCode().toString()
+
+    // Tanda tangan pengaturan saat Activity ini dibuat. Dipakai saat menulis cache: bila Activity
+    // lama (sudah di-recreate) masih menerima hasil cuaca, cache-nya tetap berlabel pengaturan lama.
+    private var weatherSignature: String = ""
+
     private fun initializeWeather() {
         // Wallpaper changes recreate MainActivity. Restore the weather card from its
         // cached response first, and only initialize the provider when local weather is enabled.
+        weatherSignature = currentWeatherSignature()
         val weatherEnabled = RowPreferences.isWeatherEnabled(this)
         val weatherView = findViewById<ViewGroup?>(R.id.weather)
         val detailsView = findViewById<ViewGroup?>(R.id.details)
@@ -870,6 +888,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private fun setupWeatherCallbacks(lw: LocalWeather) {
         lw.weatherCallback = object : LocalWeather.WeatherCallback {
             override fun onSuccess(weather: Weather) {
+                // Activity ini sudah dihancurkan (mis. di-recreate setelah pengaturan berubah).
+                if (isDestroyed) return
                 writeJsonWeather(weather)
                 if (weather.name.isNotBlank()) {
                     androidx.preference.PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
@@ -881,6 +901,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             }
 
             override fun onFailure(exception: Throwable?) {
+                if (isDestroyed) return
                 Log.e(TAG, "Weather fetching failed: ${exception?.message}")
                 LauncherApp.toast(getString(R.string.weather_error, exception?.message ?: ""), true)
             }
@@ -910,13 +931,25 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     private val isWeatherCacheValid: Boolean
-        get() = File(JSONFILE).let { it.exists() && it.lastModified() + maxCacheAge > System.currentTimeMillis() }
+        get() {
+            val file = File(JSONFILE)
+            if (!file.exists() || file.lastModified() + maxCacheAge <= System.currentTimeMillis()) return false
+            val saved = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .getString(PREF_WEATHER_CACHE_SIGNATURE, null)
+            if (saved != currentWeatherSignature()) {
+                if (BuildConfig.DEBUG) Log.d(TAG, "Weather cache ignored: weather settings changed")
+                return false
+            }
+            return true
+        }
 
 
     private fun writeJsonWeather(weather: Weather) {
         try {
             // Log.d(TAG, "writeJsonWeather JSON: ${gson.toJson(weather)}")
             File(JSONFILE).writeText(gson.toJson(weather))
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .edit().putString(PREF_WEATHER_CACHE_SIGNATURE, weatherSignature).apply()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to write weather cache", e)
         }
