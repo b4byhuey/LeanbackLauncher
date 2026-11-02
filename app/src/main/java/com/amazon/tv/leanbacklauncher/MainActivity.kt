@@ -597,32 +597,29 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         listener.onIdleStateChange(mIsIdle)
     }
 
-    @Deprecated("Use OnBackPressedDispatcher")
-    private var mLastWheelNav = 0L
-
     /**
-     * Mouse/touchpad wheel harus mengikuti jalur fokus D-pad Leanback, bukan pixel-scroll
-     * RecyclerView. Jangan membatasi SOURCE_CLASS_POINTER: sejumlah perangkat Android TV
-     * melaporkan wheel dengan source yang berbeda-beda.
+     * Mouse wheel di home menggeser pilihan antar-row. Mengubah posisi pilihan secara
+     * langsung lebih andal daripada mengirim KeyEvent sintetis dari Activity, yang
+     * belum tentu diteruskan ke VerticalGridView/focused child pada semua perangkat TV.
      */
     private fun handleMouseWheel(ev: android.view.MotionEvent): Boolean {
         if (ev.action != android.view.MotionEvent.ACTION_SCROLL) return false
 
         val vertical = ev.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)
-        val horizontal = ev.getAxisValue(android.view.MotionEvent.AXIS_HSCROLL)
-        val key = when {
-            vertical < 0f -> KeyEvent.KEYCODE_DPAD_DOWN
-            vertical > 0f -> KeyEvent.KEYCODE_DPAD_UP
-            horizontal > 0f -> KeyEvent.KEYCODE_DPAD_RIGHT
-            horizontal < 0f -> KeyEvent.KEYCODE_DPAD_LEFT
-            else -> return false
-        }
+        if (vertical == 0f) return false
 
-        val now = SystemClock.uptimeMillis()
-        if (now - mLastWheelNav >= 80L) {
-            mLastWheelNav = now
-            dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0))
-            dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0))
+        val list = mListView ?: return false
+        val itemCount = list.adapter?.itemCount ?: return false
+        if (itemCount <= 0) return false
+
+        val direction = if (vertical < 0f) 1 else -1
+        val currentPosition = list.selectedPosition
+            .takeIf { it != RecyclerView.NO_POSITION }
+            ?: FIRST_POSITION
+        val targetPosition = (currentPosition + direction).coerceIn(0, itemCount - 1)
+
+        if (targetPosition != currentPosition) {
+            list.setSelectedPositionSmooth(targetPosition)
         }
         return true
     }
