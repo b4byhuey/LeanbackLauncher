@@ -102,9 +102,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         actionButton(root, getString(R.string.tv_video_urls), getString(R.string.tv_video_urls_desc)) {
             showVideoUrlPlaylistDialog()
         }
-        actionButton(root, getString(R.string.tv_clear_video), getString(R.string.tv_clear_video_desc)) {
-        }
-
         section(root, getString(R.string.tv_section_prayer))
         actionButton(root, getString(R.string.prayer_settings_title), getString(R.string.prayer_settings_desc)) {
             openLauncherSetting("WeatherPreferenceFragment")
