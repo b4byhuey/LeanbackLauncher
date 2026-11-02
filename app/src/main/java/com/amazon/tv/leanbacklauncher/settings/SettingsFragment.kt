@@ -772,7 +772,7 @@ class LanguagePreferenceFragment : LeanbackPreferenceFragmentCompat() {
   screen.title = getString(R.string.app_language_title)
   screen.addPreference(ListPreference(requireContext()).apply {
    key = "app_language"; title = getString(R.string.app_language_title)
-   entries = LauncherLanguage.labels(requireContext()); entryValues = LauncherLanguage.tags.toTypedArray()
+   entries = LauncherLanguage.labels(requireContext()); entryValues = LauncherLanguage.tags
    value = LauncherLanguage.tags[LauncherLanguage.currentIndex()]; summary = getString(R.string.app_language_desc)
    setOnPreferenceChangeListener { _, v -> LauncherLanguage.apply(LauncherLanguage.tags.indexOf(v.toString()).coerceAtLeast(0)); SettingsFragment.needRestartHome = true; true }
   })
