@@ -65,6 +65,7 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             PKG + "ChannelsPreferenceFragment",
             PKG + "WeatherPreferenceFragment",
             PKG + "PrayerPreferenceFragment",
+            PKG + "VersionPreferenceFragment",
         )
     }
 
@@ -1156,15 +1157,16 @@ class VersionPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         viewLifecycleOwner.lifecycleScope.launch {
             val logs = withContext(Dispatchers.IO) {
                 try {
+                    val outputFile = java.io.File(context.cacheDir, "launcher-logcat.txt")
                     val process = ProcessBuilder(
                         "logcat", "-d", "-v", "threadtime",
                         "--pid=${android.os.Process.myPid()}"
-                    ).redirectErrorStream(true).start()
+                    ).redirectErrorStream(true).redirectOutput(outputFile).start()
                     if (!process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
                         process.destroyForcibly()
                         error("Logcat capture timed out")
                     }
-                    process.inputStream.bufferedReader().use { it.readText() }.takeLast(500_000)
+                    outputFile.takeIf { it.isFile }?.readText()?.takeLast(500_000).orEmpty()
                 } catch (error: Exception) {
                     "Unable to collect app logcat: ${error.javaClass.simpleName}: ${error.message}"
                 }
