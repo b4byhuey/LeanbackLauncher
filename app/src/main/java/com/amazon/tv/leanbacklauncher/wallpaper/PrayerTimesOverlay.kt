@@ -224,7 +224,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         // A new network request is only needed when the cache expires or its config changes.
         if (!force && timings == null && restoreCachedTimings(configKey)) {
             render()
-            scheduleNextRefresh(configKey)
+            scheduleNextRefresh()
             return
         }
 
@@ -300,7 +300,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         }
     }
 
-    private fun scheduleNextRefresh(configKey: String) {
+    private fun scheduleNextRefresh() {
         val savedAt = preferences.getLong(KEY_CACHE_TIME, 0L)
         val age = (System.currentTimeMillis() - savedAt).coerceAtLeast(0L)
         val delay = (REFRESH_INTERVAL - age).coerceAtLeast(60_000L)
