@@ -4,6 +4,7 @@ package com.amazon.tv.leanbacklauncher.settings
 
 import android.app.Activity
 import android.content.Intent
+import android.content.ClipData
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
@@ -11,6 +12,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -77,14 +79,33 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             startActivityForResult(intent, PICK_WALLPAPER)
         }
         actionButton(root, getString(R.string.tv_default_wallpaper), getString(R.string.tv_default_wallpaper_desc)) {
-            prefs.edit().remove(KEY_WALLPAPER_URI).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
+            prefs.edit().remove(KEY_WALLPAPER_URI).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
             refreshLauncher()
             Toast.makeText(this, getString(R.string.tv_default_wallpaper_saved), Toast.LENGTH_SHORT).show()
         }
         actionButton(root, getString(R.string.tv_animated_ambience), getString(R.string.tv_animated_ambience_desc)) {
-            prefs.edit().putBoolean("launcher_live_background", true).remove(KEY_WALLPAPER_URI).remove("wallpaper_image").apply()
+            prefs.edit().putBoolean("launcher_live_background", true).remove(KEY_WALLPAPER_URI).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").apply()
             refreshLauncher()
             Toast.makeText(this, getString(R.string.tv_animated_enabled), Toast.LENGTH_SHORT).show()
+        }
+
+        actionButton(root, getString(R.string.tv_choose_video), getString(R.string.tv_choose_video_desc)) {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "video/*"
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            }
+            @Suppress("DEPRECATION")
+            startActivityForResult(intent, PICK_VIDEO_PLAYLIST)
+        }
+        actionButton(root, getString(R.string.tv_video_urls), getString(R.string.tv_video_urls_desc)) {
+            showVideoUrlPlaylistDialog()
+        }
+        actionButton(root, getString(R.string.tv_clear_video), getString(R.string.tv_clear_video_desc)) {
+            prefs.edit().remove(KEY_VIDEO_PLAYLIST).apply()
+            refreshLauncher()
+            Toast.makeText(this, getString(R.string.tv_video_cleared), Toast.LENGTH_SHORT).show()
         }
 
         section(root, getString(R.string.tv_section_prayer))
@@ -125,7 +146,21 @@ class TvOsCustomizationActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Android API, retained for minSdk 22")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != PICK_WALLPAPER || resultCode != Activity.RESULT_OK) return
+        if (resultCode != Activity.RESULT_OK) return
+        if (requestCode == PICK_VIDEO_PLAYLIST) {
+            val selected = mutableListOf<Uri>()
+            data?.clipData?.let { clip ->
+                for (i in 0 until clip.itemCount) selected += clip.getItemAt(i).uri
+            } ?: data?.data?.let { selected += it }
+            if (selected.isEmpty()) return
+            val grantedFlags = data?.flags?.and(Intent.FLAG_GRANT_READ_URI_PERMISSION) ?: 0
+            selected.forEach { uri ->
+                try { contentResolver.takePersistableUriPermission(uri, grantedFlags) } catch (_: Exception) { }
+            }
+            saveVideoPlaylist(selected)
+            return
+        }
+        if (requestCode != PICK_WALLPAPER) return
         val uri: Uri = data?.data ?: return
         try {
             val flags = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
@@ -133,9 +168,43 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         } catch (_: Exception) {
             // Some document providers return a transient grant; we still save the URI.
         }
-        prefs.edit().putString(KEY_WALLPAPER_URI, uri.toString()).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
+        prefs.edit().putString(KEY_WALLPAPER_URI, uri.toString()).remove(KEY_VIDEO_PLAYLIST).remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
         refreshLauncher()
         Toast.makeText(this, getString(R.string.tv_wallpaper_saved), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showVideoUrlPlaylistDialog() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.tv_video_urls_hint)
+            minLines = 3
+            maxLines = 8
+            setText(prefs.getString(KEY_VIDEO_PLAYLIST, "")?.let { raw ->
+                try { val a = org.json.JSONArray(raw); (0 until a.length()).joinToString("\\n") { a.getString(it) } } catch (_: Exception) { "" }
+            } ?: "")
+            setPadding(dp(18), dp(12), dp(18), dp(12))
+        }
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.tv_video_urls)
+            .setMessage(R.string.tv_video_urls_desc)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.tv_save_video_playlist) { _, _ ->
+                val urls = input.text.toString().lines().map { it.trim() }.filter { it.isNotEmpty() }
+                if (urls.isEmpty() || urls.any { !it.startsWith("https://", true) && !it.startsWith("http://", true) }) {
+                    Toast.makeText(this, getString(R.string.tv_video_urls_invalid), Toast.LENGTH_LONG).show()
+                } else {
+                    saveVideoPlaylist(urls.map(Uri::parse))
+                }
+            }
+            .show()
+    }
+
+    private fun saveVideoPlaylist(uris: List<Uri>) {
+        val json = org.json.JSONArray().apply { uris.forEach { put(it.toString()) } }.toString()
+        prefs.edit().putString(KEY_VIDEO_PLAYLIST, json).remove(KEY_WALLPAPER_URI)
+            .remove("wallpaper_image").putBoolean("launcher_live_background", false).apply()
+        refreshLauncher()
+        Toast.makeText(this, getString(R.string.tv_video_playlist_saved, uris.size), Toast.LENGTH_SHORT).show()
     }
 
     /** Buka salah satu layar pengaturan launcher yang sudah ada, langsung ke sub-layarnya. */
@@ -253,6 +322,8 @@ class TvOsCustomizationActivity : AppCompatActivity() {
 
     companion object {
         const val KEY_WALLPAPER_URI = "launcher_wallpaper_uri"
+        private const val KEY_VIDEO_PLAYLIST = "launcher_video_wallpaper_playlist"
         private const val PICK_WALLPAPER = 4107
+        private const val PICK_VIDEO_PLAYLIST = 4108
     }
 }

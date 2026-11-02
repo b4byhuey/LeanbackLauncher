@@ -559,6 +559,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             it.onStopUi()
             it.unregisterReceivers()
         }
+        wallpaperView?.releaseVideoPlayer()
         getInstance(applicationContext)?.onDestroy()
         unregisterReceiver(mPackageReplacedReceiver)
         unregisterReceiver(mHomeRefreshReceiver)
@@ -1042,6 +1043,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
         if (changeWallpaper && wallpaperView?.shynessMode != shy) {
             wallpaperView?.shynessMode = mShyMode
+        wallpaperView?.onHostResume()
             if (mShyMode && mNotificationsView != null) {
                 //if (BuildConfig.DEBUG) Log.d(TAG, "setShyMode(shy:$shy,changeWallpaper:$changeWallpaper) refreshSelectedBackground() [mShyMode=$mShyMode]")
                 mNotificationsView?.refreshSelectedBackground()
@@ -1319,6 +1321,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     override fun onPause() {
+        wallpaperView?.onHostPause()
         super.onPause()
         defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
         mResetAfterIdleEnabled = false
