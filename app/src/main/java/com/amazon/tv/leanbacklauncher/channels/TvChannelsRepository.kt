@@ -23,7 +23,6 @@ object TvChannelsRepository {
     private const val KEY_ENABLED = "tv_channels_enabled_packages"
     const val MAX_PER_APP = 15
 
-    private val CHANNEL_URI: Uri = Uri.parse("content://android.media.tv/channel")
     private val PREVIEW_URI: Uri = Uri.parse("content://android.media.tv/preview_program")
     private val WATCH_NEXT_URI: Uri = Uri.parse("content://android.media.tv/watch_next_program")
 
@@ -89,40 +88,37 @@ object TvChannelsRepository {
 
     private fun loadAllPrograms(context: Context): List<Program> {
         val resolver = context.contentResolver
-        val browsable = browsableChannelIds(resolver)
         val result = ArrayList<Program>()
         result += queryWatchNext(resolver)
-        result += queryPreview(resolver, browsable)
-        Log.i(TAG, "programs read: ${result.size}, packages: ${result.map { it.packageName }.distinct()}")
+        result += queryPreview(resolver)
+        Log.i(
+            TAG,
+            "programs read: ${result.size}, per package: ${result.groupingBy { it.packageName }.eachCount()}"
+        )
         return result
     }
 
-    /** null = tidak bisa ditentukan (jangan filter). */
-    private fun browsableChannelIds(resolver: ContentResolver): Set<Long>? = try {
-        val ids = HashSet<Long>()
-        resolver.query(
-            CHANNEL_URI, arrayOf("_id"), "type=? AND browsable=?",
-            arrayOf("TYPE_PREVIEW", "1"), null
-        )?.use { c -> while (c.moveToNext()) ids.add(c.lng("_id")) }
-        Log.i(TAG, "browsable preview channels: ${ids.size}")
-        if (ids.isEmpty()) null else ids
-    } catch (e: Exception) {
-        Log.w(TAG, "channel query failed: ${e.javaClass.simpleName}: ${e.message}")
-        null
-    }
-
-    private fun queryPreview(resolver: ContentResolver, browsable: Set<Long>?): List<Program> = try {
+    /**
+     * Sengaja TIDAK memfilter channel "browsable": aplikasi pihak ketiga (mis. Cloudxtream) membuat
+     * channel dengan browsable=0 dan launcher ini tidak bisa mengubahnya (butuh izin sistem) maupun
+     * menampilkan dialog persetujuan sistem. Pengguna sudah memilih aplikasi mana yang tampil lewat
+     * switch di "Sumber channel", jadi pilihan itu yang dipakai.
+     */
+    private fun queryPreview(resolver: ContentResolver): List<Program> = try {
         val out = ArrayList<Program>()
+        val skipped = HashMap<String, Int>()
         resolver.query(
             PREVIEW_URI,
             arrayOf("_id", "package_name", "channel_id", "title", "poster_art_uri", "intent_uri"),
             null, null, "weight DESC"
         )?.use { c ->
             while (c.moveToNext()) {
-                if (browsable != null && c.lng("channel_id") !in browsable) continue
-                toProgram(c, false)?.let { out.add(it) }
+                val program = toProgram(c, false)
+                if (program != null) out.add(program)
+                else skipped.merge(c.str("package_name") ?: "?", 1, Int::plus)
             }
         }
+        if (skipped.isNotEmpty()) Log.i(TAG, "preview programs skipped (no intent_uri / title / poster): $skipped")
         out
     } catch (e: Exception) {
         Log.w(TAG, "preview_program query failed: ${e.javaClass.simpleName}: ${e.message}")
@@ -136,7 +132,12 @@ object TvChannelsRepository {
             arrayOf("_id", "package_name", "title", "poster_art_uri", "intent_uri"),
             null, null, "last_engagement_time_utc_millis DESC"
         )?.use { c ->
-            while (c.moveToNext()) toProgram(c, true)?.let { out.add(it) }
+            var total = 0
+            while (c.moveToNext()) {
+                total++
+                toProgram(c, true)?.let { out.add(it) }
+            }
+            Log.i(TAG, "watch_next rows: $total, usable: ${out.size}")
         }
         out
     } catch (e: Exception) {

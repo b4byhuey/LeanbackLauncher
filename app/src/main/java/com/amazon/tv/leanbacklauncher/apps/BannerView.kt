@@ -262,7 +262,7 @@ class BannerView @JvmOverloads constructor(
             shape = GradientDrawable.RECTANGLE
             setColor(Color.TRANSPARENT)
             setStroke((FOCUS_BORDER_WIDTH_DP * resources.displayMetrics.density).toInt().coerceAtLeast(1), Color.WHITE)
-            cornerRadius = RowPreferences.getCorners(context).toFloat()
+            cornerRadius = RowPreferences.getCorners(this@BannerView.context).toFloat()
         }
     }
 
