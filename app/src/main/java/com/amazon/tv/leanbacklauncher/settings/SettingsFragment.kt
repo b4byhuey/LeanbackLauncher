@@ -919,6 +919,8 @@ class VideoPlaylistPreferenceFragment : Fragment() {
 
         return android.widget.ScrollView(ctx).apply {
             isFillViewport = true
+            // Opaque panel background prevents the launcher screen from showing through.
+            setBackgroundColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.settings_dialog_bg_protection))
             addView(column)
         }
     }

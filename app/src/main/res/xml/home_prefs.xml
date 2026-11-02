@@ -22,11 +22,5 @@
             android:title="@string/banners_prefs_title"
             app:fragment="com.amazon.tv.leanbacklauncher.settings.BannersPreferenceFragment" />
 
-        <Preference
-            android:key="wallpaper_prefs"
-            android:summary="@string/select_wallpaper_action_desc"
-            android:title="@string/wallpaper_title"
-            app:fragment="com.amazon.tv.leanbacklauncher.settings.WallpaperFragment" />
-
     </PreferenceCategory>
 </PreferenceScreen>
