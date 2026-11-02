@@ -67,12 +67,10 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         val target = requireActivity().intent?.getStringExtra(SettingsActivity.EXTRA_FRAGMENT)
         if (target != null && target in DEEP_LINK_FRAGMENTS) {
             val f = childFragmentManager.fragmentFactory.instantiate(requireActivity().classLoader, target)
-            when (f) {
-                is PreferenceFragmentCompat -> startPreferenceFragment(f)
-                is androidx.leanback.app.GuidedStepSupportFragment -> startImmersiveFragment(f)
-                else -> startPreferenceFragment(LauncherSettingsFragment())
+            if (f is PreferenceFragmentCompat) {
+                startPreferenceFragment(f)
+                return
             }
-            return
         }
         startPreferenceFragment(LauncherSettingsFragment())
     }
