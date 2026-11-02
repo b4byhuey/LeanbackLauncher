@@ -559,6 +559,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             it.onStopUi()
             it.unregisterReceivers()
         }
+        wallpaperView?.releaseVideoPlayer()
         getInstance(applicationContext)?.onDestroy()
         unregisterReceiver(mPackageReplacedReceiver)
         unregisterReceiver(mHomeRefreshReceiver)
@@ -734,16 +735,33 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     private fun initializeWeather() {
+        // Wallpaper changes recreate MainActivity. Restore the weather card from its
+        // cached response first, and only initialize the provider when local weather is enabled.
+        val weatherEnabled = RowPreferences.isWeatherEnabled(this)
+        val weatherView = findViewById<ViewGroup?>(R.id.weather)
+        val detailsView = findViewById<ViewGroup?>(R.id.details)
+        if (!weatherEnabled) {
+            weatherView?.visibility = View.GONE
+            detailsView?.visibility = View.GONE
+            return
+        }
+
         localWeather?.let { lw ->
             setupWeatherDefaults(lw)
 
-            if (shouldUseCurrentLocation()) {
-                setupLocationBasedWeather(lw)
-            } else {
-                setupManualLocationWeather(lw)
+            if (isWeatherCacheValid) {
+                readJsonWeather(JSONFILE)
             }
 
-            setupWeatherCallbacks(lw)
+            if (shouldUseCurrentLocation()) {
+                // Configure location mode before the callback starts the location lookup.
+                setupLocationBasedWeather(lw)
+                setupWeatherCallbacks(lw)
+            } else {
+                // Register callbacks before the manual-location helpers start a request.
+                setupWeatherCallbacks(lw)
+                setupManualLocationWeather(lw)
+            }
         }
     }
 
@@ -918,6 +936,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
     @SuppressLint("SetTextI18n")
     private fun updateWeatherDetails(weather: Weather) {
+        if (!RowPreferences.isWeatherEnabled(this)) return
         // Get views
         val weatherVG = findViewById<ViewGroup?>(R.id.weather)
         val detailsVG = findViewById<ViewGroup?>(R.id.details)
@@ -1251,6 +1270,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         homeAdapter?.sortRowsIfNeeded(forceResort)
         WallpaperInstaller.getInstance(this)?.installWallpaperIfNeeded()
         wallpaperView?.shynessMode = mShyMode
+        wallpaperView?.onHostResume()
         if (shyChanged) {
             wallpaperView?.resetBackground()
         }
@@ -1319,6 +1339,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     override fun onPause() {
+        wallpaperView?.onHostPause()
         super.onPause()
         defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
         mResetAfterIdleEnabled = false

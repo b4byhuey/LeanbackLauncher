@@ -56,6 +56,10 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     // androidx
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    // Media3 powers local and network video wallpapers, including HLS playlists.
+    implementation 'androidx.media3:media3-exoplayer:1.6.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.6.1'
+    implementation 'androidx.media3:media3-ui:1.6.1'
     implementation 'androidx.core:core-ktx:1.16.0'
     implementation "androidx.leanback:leanback:$leanback_version"
     implementation "androidx.leanback:leanback-preference:$leanback_version"

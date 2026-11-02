@@ -153,7 +153,7 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="tv_customization_subtitle">Wallpaper, animasi, bahasa, cuaca dan waktu sholat harian</string>
     <string name="tv_customization_title">Sesuaikan TV Anda</string>
     <string name="tv_default_wallpaper">Gunakan wallpaper bawaan</string>
-    <string name="tv_default_wallpaper_desc">Hapus foto yang dipilih</string>
+    <string name="tv_default_wallpaper_desc">Hapus foto atau playlist video yang dipilih</string>
     <string name="tv_default_wallpaper_saved">Wallpaper bawaan dipulihkan</string>
 	<string name="tv_section_prayer">CUACA &amp; WAKTU SHOLAT</string>
     <string name="tv_section_wallpaper">WALLPAPER</string>
@@ -279,4 +279,12 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="default_launcher_already">Launcher ini sudah menjadi default</string>
     <string name="default_launcher_already_desc">Sudah menjadi default launcher</string>
     <string name="default_launcher_manual">Perangkat ini tidak punya layar pilihan default launcher. Buka Pengaturan &gt; Aplikasi/Perangkat lalu pilih launcher ini sebagai Home.</string>
+    <string name="tv_choose_video">Pilih playlist video lokal</string>
+    <string name="tv_choose_video_desc">Pilih beberapa file MP4 atau format video lain yang didukung dari penyimpanan</string>
+    <string name="tv_video_urls">Gunakan URL video</string>
+    <string name="tv_video_urls_desc">Masukkan tautan video HTTP/HTTPS langsung, satu URL per baris. Mendukung MP4 dan HLS (.m3u8).</string>
+    <string name="tv_video_urls_hint">https://contoh.com/video1.mp4&#10;https://contoh.com/video2.m3u8</string>
+    <string name="tv_video_playlist_saved">Playlist video disimpan (%1$d item)</string>
+    <string name="tv_video_urls_invalid">Masukkan satu atau beberapa URL video HTTP atau HTTPS yang valid.</string>
+    <string name="tv_save_video_playlist">Simpan playlist</string>
 </resources>

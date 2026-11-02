@@ -3,11 +3,18 @@ package com.amazon.tv.leanbacklauncher.wallpaper
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import androidx.leanback.graphics.ColorFilterCache
 import androidx.leanback.graphics.ColorFilterDimmer
 import com.amazon.tv.leanbacklauncher.HomeScrollManager.HomeScrollFractionListener
@@ -18,6 +25,7 @@ import com.amazon.tv.leanbacklauncher.trace.AppTrace
 import com.amazon.tv.leanbacklauncher.util.Partner
 import com.amazon.tv.leanbacklauncher.wallpaper.WallpaperDownloader.OnDownloadFinishedListener
 import com.amazon.tv.leanbacklauncher.wallpaper.WallpaperInstaller.Companion.getInstance
+import org.json.JSONArray
 
 class LauncherWallpaper @JvmOverloads constructor(
     context: Context,
@@ -43,6 +51,10 @@ class LauncherWallpaper @JvmOverloads constructor(
     private var mWallpaper: WallpaperImage? = null
     private val mWallpaperInstaller: WallpaperInstaller? = getInstance(context)
     private var mWallpaperReady = false
+    private var mVideoPlayerView: PlayerView? = null
+    private var mVideoPlayer: ExoPlayer? = null
+    private var mVideoPlaylistSignature: String? = null
+    private var mActivityResumed = false
     private val mWallpaperScrollScale: Float
     private val mZoom: Float
     private val mZoomThreshold: Float
@@ -69,6 +81,14 @@ class LauncherWallpaper @JvmOverloads constructor(
     override fun onFinishInflate() {
         super.onFinishInflate()
         mWallpaper = findViewById(R.id.wallpaper)
+        mVideoPlayerView = findViewById(R.id.video_wallpaper_player)
+        mVideoPlayerView?.apply {
+            useController = false
+            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+            isFocusable = false
+            isFocusableInTouchMode = false
+        }
         mAmbientBackground = findViewById(R.id.ambient_live_background)
         mBackground = findViewById(R.id.launcher_background)
         mOverlay = findViewById(R.id.animation_layer)
@@ -165,6 +185,22 @@ class LauncherWallpaper @JvmOverloads constructor(
     }
 
     private fun updateChildVisibility() {
+        val videoUris = getVideoPlaylist()
+        val videoEnabled = videoUris.isNotEmpty() && mInShyMode
+        if (videoEnabled) {
+            mAmbientBackground.visibility = GONE
+            mVideoPlayerView?.visibility = VISIBLE
+            mBackground.visibility = GONE
+            mOverlay.visibility = GONE
+            mWallpaper?.visibility = GONE
+            mVideoFadeMask?.visibility = GONE
+            mVideoFadeMaskExt?.visibility = GONE
+            mFadeMaskExt?.visibility = GONE
+            updateVideoPlayback(videoUris)
+            return
+        }
+        mVideoPlayerView?.visibility = GONE
+        mVideoPlayer?.pause()
         val liveBackgroundEnabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             .getBoolean("launcher_live_background", false)
         if (liveBackgroundEnabled) {
@@ -199,6 +235,72 @@ class LauncherWallpaper @JvmOverloads constructor(
         if (mWallpaper != null) {
             mWallpaper!!.visibility = GONE
         }
+    }
+
+    /** Keep one ExoPlayer instance across launcher visibility changes to avoid rebuffering. */
+    fun onHostResume() {
+        mActivityResumed = true
+        updateChildVisibility()
+    }
+
+    fun onHostPause() {
+        mActivityResumed = false
+        mVideoPlayer?.pause()
+    }
+
+    fun releaseVideoPlayer() {
+        mVideoPlayerView?.player = null
+        mVideoPlayer?.release()
+        mVideoPlayer = null
+        mVideoPlaylistSignature = null
+    }
+
+    override fun onDetachedFromWindow() {
+        mVideoPlayer?.pause()
+        super.onDetachedFromWindow()
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (mVideoPlayerView != null) updateChildVisibility()
+    }
+
+    private fun getVideoPlaylist(): List<Uri> {
+        val raw = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(KEY_VIDEO_PLAYLIST, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(raw)
+            (0 until array.length()).mapNotNull { index ->
+                array.optString(index).takeIf { it.isNotBlank() }?.let(Uri::parse)
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun updateVideoPlayback(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        val signature = uris.joinToString("\n") { it.toString() }
+        val player = mVideoPlayer ?: ExoPlayer.Builder(context.applicationContext).build().also {
+            mVideoPlayer = it
+            mVideoPlayerView?.player = it
+            it.repeatMode = Player.REPEAT_MODE_ALL
+            it.volume = 0f
+            it.playWhenReady = false
+        }
+        if (signature != mVideoPlaylistSignature) {
+            val items = uris.map { uri ->
+                val builder = MediaItem.Builder().setUri(uri)
+                if (uri.lastPathSegment?.substringAfterLast('.', "")?.equals("m3u8", true) == true) {
+                    builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+                }
+                builder.build()
+            }
+            player.setMediaItems(items, true)
+            player.prepare()
+            mVideoPlaylistSignature = signature
+        }
+        if (mActivityResumed && mInShyMode) player.play() else player.pause()
     }
 
     private fun updateDownloaderEnabled() {
@@ -250,5 +352,9 @@ class LauncherWallpaper @JvmOverloads constructor(
                 )
             ), 0.0f, mScrollDarkeningAmount
         )
+    }
+
+    companion object {
+        private const val KEY_VIDEO_PLAYLIST = "launcher_video_wallpaper_playlist"
     }
 }
