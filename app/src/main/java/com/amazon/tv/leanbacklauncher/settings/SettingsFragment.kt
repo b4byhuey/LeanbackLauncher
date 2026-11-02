@@ -1125,3 +1125,67 @@ class RecommendationsPreferenceFragment : LeanbackPreferenceFragmentCompat(),
         }
     }
 }
+
+/**
+ * App version side panel with one-tap diagnostic log collection.
+ * Android only permits ordinary apps to read their own process logs.
+ */
+class VersionPreferenceFragment : LeanbackPreferenceFragmentCompat() {
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        val ctx = requireContext()
+        preferenceScreen = preferenceManager.createPreferenceScreen(ctx).apply {
+            addPreference(Preference(ctx).apply {
+                title = getString(R.string.version)
+                summary = "${getString(R.string.app_name)} v${BuildConfig.VERSION_NAME}"
+                isSelectable = false
+            })
+            addPreference(Preference(ctx).apply {
+                key = "collect_launcher_logcat"
+                title = "Logcat"
+                summary = "Collect and share diagnostic logs from this launcher"
+                setOnPreferenceClickListener {
+                    collectAndShareLogs()
+                    true
+                }
+            })
+        }
+    }
+
+    private fun collectAndShareLogs() {
+        val context = requireContext()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val logs = withContext(Dispatchers.IO) {
+                try {
+                    val process = ProcessBuilder(
+                        "logcat", "-d", "-v", "threadtime",
+                        "--pid=${android.os.Process.myPid()}"
+                    ).redirectErrorStream(true).start()
+                    if (!process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                        process.destroyForcibly()
+                        error("Logcat capture timed out")
+                    }
+                    process.inputStream.bufferedReader().use { it.readText() }.takeLast(500_000)
+                } catch (error: Exception) {
+                    "Unable to collect app logcat: ${error.javaClass.simpleName}: ${error.message}"
+                }
+            }
+            if (!isAdded) return@launch
+            val report = buildString {
+                appendLine("App: ${getString(R.string.app_name)}")
+                appendLine("Version: ${BuildConfig.VERSION_NAME}")
+                appendLine("Package: ${context.packageName}")
+                appendLine("Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
+                appendLine("Captured: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
+                appendLine("Scope: launcher process only")
+                appendLine()
+                append(logs.ifBlank { "No log entries were returned." })
+            }
+            val share = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "${getString(R.string.app_name)} Logcat")
+                putExtra(Intent.EXTRA_TEXT, report)
+            }
+            startActivity(Intent.createChooser(share, "Share Logcat"))
+        }
+    }
+}
