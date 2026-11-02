@@ -46,6 +46,11 @@ class BannerView @JvmOverloads constructor(
     private val mSelectedListeners: ArrayList<BannerSelectedChangedListener?> = ArrayList()
     private val TAG by lazy { if (BuildConfig.DEBUG) ("[*]" + javaClass.simpleName).take(21) else javaClass.simpleName }
 
+    companion object {
+        /** Tebal garis putih saat icon difokus/diklik (dp). */
+        private const val FOCUS_BORDER_WIDTH_DP = 2f
+    }
+
     init {
         mSelectedListeners.add(mFocusAnimator)
         mEditModeManager = EditModeManager.instance
@@ -235,6 +240,30 @@ class BannerView @JvmOverloads constructor(
         setFocusedFrameState()
         // Gaya tvOS: fokus ditandai dengan zoom + bayangan (ViewFocusAnimator), bukan bingkai garis.
         mFocusFrame?.visibility = View.GONE
+        updateFocusBorder()
+    }
+
+    override fun setPressed(pressed: Boolean) {
+        super.setPressed(pressed)
+        updateFocusBorder()
+    }
+
+    /**
+     * Garis tipis putih di tepi icon saat difokus atau diklik. Digambar sebagai foreground
+     * (di atas gambar banner) supaya tidak tertutup banner dan ikut membesar bersama animasi fokus.
+     */
+    private fun updateFocusBorder() {
+        val show = (hasFocus() || isPressed) && !mEditMode
+        foreground = if (show) focusBorderDrawable else null
+    }
+
+    private val focusBorderDrawable: GradientDrawable by lazy {
+        GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(Color.TRANSPARENT)
+            setStroke((FOCUS_BORDER_WIDTH_DP * resources.displayMetrics.density).toInt().coerceAtLeast(1), Color.WHITE)
+            cornerRadius = RowPreferences.getCorners(context).toFloat()
+        }
     }
 
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {

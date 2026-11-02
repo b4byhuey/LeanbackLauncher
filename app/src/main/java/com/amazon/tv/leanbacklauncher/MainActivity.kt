@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     companion object {
         private const val TAG = "MainActivity"
         private const val FIRST_POSITION = 0
+        private const val WHEEL_NAV_INTERVAL_MS = 120L
         private const val DEFAULT_LAUNCHER_PROMPT_DELAY_MS = 3_000L
         private const val UNINSTALL_CODE = 321
         const val PERMISSIONS_REQUEST_LOCATION = 99
@@ -597,20 +598,37 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         listener.onIdleStateChange(mIsIdle)
     }
 
+    private var mLastWheelNavTime = 0L
+
     /**
-     * Mouse wheel di home menggeser pilihan antar-row. Mengubah posisi pilihan secara
-     * langsung lebih andal daripada mengirim KeyEvent sintetis dari Activity, yang
-     * belum tentu diteruskan ke VerticalGridView/focused child pada semua perangkat TV.
+     * Mouse wheel di home menggeser pilihan antar-row.
+     *
+     * Catatan penting:
+     * - Activity hanya memanggil onUserInteraction() untuk sentuhan/tombol, TIDAK untuk wheel.
+     *   Tanpa itu timer idle/reset launcher tidak ikut di-reset saat user hanya memakai wheel,
+     *   jadi di sini dipanggil manual.
+     * - Navigasi fokus D-pad dilakukan ViewRootImpl, bukan dispatchKeyEvent(), sehingga KeyEvent
+     *   sintetis dari Activity tidak menggeser row. Karena itu posisi pilihan diubah langsung.
+     * - Wheel throttle agar mouse/touchpad resolusi tinggi tidak melompati banyak row sekaligus.
      */
     private fun handleMouseWheel(ev: android.view.MotionEvent): Boolean {
-        if (ev.action != android.view.MotionEvent.ACTION_SCROLL) return false
+        if (ev.actionMasked != android.view.MotionEvent.ACTION_SCROLL) return false
 
         val vertical = ev.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)
-        if (vertical == 0f) return false
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "wheel: source=0x${ev.source.toString(16)} vscroll=$vertical editMode=$isInEditMode")
+        }
+        if (vertical == 0f || isInEditMode) return false
 
         val list = mListView ?: return false
         val itemCount = list.adapter?.itemCount ?: return false
         if (itemCount <= 0) return false
+
+        onUserInteraction()
+
+        val now = SystemClock.uptimeMillis()
+        if (now - mLastWheelNavTime < WHEEL_NAV_INTERVAL_MS) return true
+        mLastWheelNavTime = now
 
         val direction = if (vertical < 0f) 1 else -1
         val currentPosition = list.selectedPosition
@@ -618,6 +636,9 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             ?: FIRST_POSITION
         val targetPosition = (currentPosition + direction).coerceIn(0, itemCount - 1)
 
+        // Setelah klik mouse atau saat baru dibuka, grid bisa belum punya fokus; tanpa fokus
+        // row baru terpilih tapi tidak aktif (tampilan tetap seperti row tidak terfokus).
+        if (!list.hasFocus()) list.requestFocus()
         if (targetPosition != currentPosition) {
             list.setSelectedPositionSmooth(targetPosition)
         }

@@ -119,7 +119,7 @@
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:textColor="@color/clock_text_color"
-                android:textSize="38sp"
+                android:textSize="42sp"
                 android:textStyle="bold" />
 
             <!-- AM/PM kecil di samping jam (kosong pada format 24 jam) -->
@@ -157,7 +157,7 @@
                 android:includeFontPadding="false"
                 android:singleLine="true"
                 android:textColor="@color/clock_text_color"
-                android:textSize="30sp"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <!-- Kolom atas-bawah di tempat hi/lo: kelembapan di atas, angin di bawah -->
@@ -176,7 +176,7 @@
                     android:includeFontPadding="false"
                     android:singleLine="true"
                     android:textColor="@color/prayer_text_muted"
-                    android:textSize="11sp" />
+                    android:textSize="10sp" />
 
                 <TextView
                     android:id="@+id/wind"
@@ -187,7 +187,7 @@
                     android:includeFontPadding="false"
                     android:singleLine="true"
                     android:textColor="@color/prayer_text_muted"
-                    android:textSize="11sp" />
+                    android:textSize="10sp" />
             </LinearLayout>
 
             <androidx.appcompat.widget.AppCompatImageView
