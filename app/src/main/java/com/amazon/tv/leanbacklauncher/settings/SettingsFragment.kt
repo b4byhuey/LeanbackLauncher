@@ -28,7 +28,6 @@ import com.amazon.tv.firetv.leanbacklauncher.util.FireTVUtils
 import com.amazon.tv.firetv.leanbacklauncher.util.SharedPreferencesUtil
 import com.amazon.tv.leanbacklauncher.BuildConfig
 import com.amazon.tv.leanbacklauncher.LauncherApp
-import com.amazon.tv.leanbacklauncher.MainActivity.Companion.JSONFILE
 import com.amazon.tv.leanbacklauncher.R
 import com.amazon.tv.leanbacklauncher.apps.AppsManager
 import com.amazon.tv.leanbacklauncher.util.DefaultLauncher
@@ -493,7 +492,6 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
             getString(R.string.pref_user_location),
             getString(R.string.pref_show_location),
             getString(R.string.pref_imp_weather),
-            getString(R.string.pref_weather_apikey)
         )
     }
 
@@ -501,8 +499,7 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     // baru tersimpan setelah dialog ditutup, sehingga menghapus cache saat klik terlalu cepat.
     private val weatherChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key in weatherKeys) {
-            val cache = File(JSONFILE)
-            if (cache.exists()) cache.delete()
+            // Keep the last successful forecast; MainActivity restores it after recreation.
             SettingsFragment.needRestartHome = true
         }
     }

@@ -58,7 +58,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.amazon.tv.firetv.leanbacklauncher.apps.AppInfoActivity
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences
-import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getWeatherApiKey
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowType
 import com.amazon.tv.firetv.tvrecommendations.NotificationListenerMonitor
 import com.amazon.tv.leanbacklauncher.SearchOrbView.SearchLaunchListener
@@ -96,12 +95,8 @@ import com.amazon.tv.leanbacklauncher.wallpaper.LauncherWallpaper
 import com.amazon.tv.leanbacklauncher.wallpaper.WallpaperInstaller
 import com.amazon.tv.leanbacklauncher.widget.EditModeView
 import com.amazon.tv.leanbacklauncher.widget.EditModeView.OnEditModeUninstallPressedListener
-import com.google.gson.GsonBuilder
 import de.interaapps.localweather.LocalWeather
-import de.interaapps.localweather.Weather
-import de.interaapps.localweather.utils.Lang
 import de.interaapps.localweather.utils.LocationFailedEnum
-import de.interaapps.localweather.utils.Units
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -126,7 +121,9 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         private const val TAG = "MainActivity"
         private const val FIRST_POSITION = 0
         private const val WHEEL_NAV_INTERVAL_MS = 120L
-        private const val PREF_WEATHER_CACHE_SIGNATURE = "weather_cache_signature"
+        private const val PREF_OPEN_METEO_JSON = "open_meteo_weather_json"
+        private const val PREF_OPEN_METEO_TIME = "open_meteo_weather_time"
+        private const val PREF_OPEN_METEO_CONFIG = "open_meteo_weather_config"
         private const val DEFAULT_LAUNCHER_PROMPT_DELAY_MS = 3_000L
         private const val UNINSTALL_CODE = 321
         const val PERMISSIONS_REQUEST_LOCATION = 99
@@ -165,7 +162,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private var localWeather: LocalWeather? = null
 
     // Weather constants
-    private val gson by lazy { GsonBuilder().setPrettyPrinting().create() }
     private val maxCacheAge = TimeUnit.MINUTES.toMillis(30) // 30 minutes
 
     // Core components
@@ -544,16 +540,16 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         RowPreferences.fixRowPrefs()
 
         // Weather data also powers the native launcher header, independently of the legacy widget.
-        localWeather = LocalWeather(
-            this@MainActivity,
-            getWeatherApiKey(this)
-        )
+        // LocalWeather supplies coordinates only; all forecast data comes from Open-Meteo.
+        localWeather = LocalWeather(this@MainActivity, "")
         initializeWeather()
     }
 
     public override fun onDestroy() {
         if (BuildConfig.DEBUG) Log.d(TAG, "onDestroy()")
         mHandler.removeMessages(3)
+        weatherHandler.removeCallbacksAndMessages(null)
+        weatherGeneration++
         defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
         super.onDestroy()
         homeAdapter?.let {
@@ -735,274 +731,203 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
     }
 
-    /**
-     * Ringkasan pengaturan yang memengaruhi isi cache cuaca (lokasi, satuan, API key).
-     * Cache hanya dipakai bila ditulis dengan pengaturan yang sama dengan sekarang, sehingga
-     * cache lama (mis. satuan atau kota sebelum diubah di pengaturan) tidak tampil lagi.
-     */
-    private fun currentWeatherSignature(): String = listOf(
-        RowPreferences.isUseLocationEnabled(this),
-        RowPreferences.getUserLocation(this).orEmpty().trim(),
-        RowPreferences.isImperialUnits(this),
-        RowPreferences.getWeatherApiKey(this)
-    ).joinToString("|").hashCode().toString()
+    private val weatherPrefs by lazy { androidx.preference.PreferenceManager.getDefaultSharedPreferences(applicationContext) }
+    private val weatherHandler = Handler(Looper.getMainLooper())
+    private var weatherLoading = false
+    private var weatherGeneration = 0
+    private var weatherSignature = ""
+    private val weatherRefresh = Runnable { refreshWeather(true) }
 
-    // Tanda tangan pengaturan saat Activity ini dibuat. Dipakai saat menulis cache: bila Activity
-    // lama (sudah di-recreate) masih menerima hasil cuaca, cache-nya tetap berlabel pengaturan lama.
-    private var weatherSignature: String = ""
+    private fun weatherConfigKey(): String =
+        if (RowPreferences.isUseLocationEnabled(this)) "current"
+        else "manual:" + RowPreferences.getUserLocation(this).orEmpty().trim().lowercase(Locale.ROOT)
 
     private fun initializeWeather() {
-        // Wallpaper changes recreate MainActivity. Restore the weather card from its
-        // cached response first, and only initialize the provider when local weather is enabled.
-        weatherSignature = currentWeatherSignature()
-        val weatherEnabled = RowPreferences.isWeatherEnabled(this)
-        val weatherView = findViewById<ViewGroup?>(R.id.weather)
-        val detailsView = findViewById<ViewGroup?>(R.id.details)
-        if (!weatherEnabled) {
-            weatherView?.visibility = View.GONE
-            detailsView?.visibility = View.GONE
+        weatherSignature = weatherConfigKey()
+        if (!RowPreferences.isWeatherEnabled(this)) {
+            weatherViewGone()
+            weatherHandler.removeCallbacks(weatherRefresh)
             return
         }
-
-        localWeather?.let { lw ->
-            setupWeatherDefaults(lw)
-
-            if (isWeatherCacheValid) {
-                readJsonWeather(JSONFILE)
-            }
-
-            if (shouldUseCurrentLocation()) {
-                // Configure location mode before the callback starts the location lookup.
-                setupLocationBasedWeather(lw)
-                setupWeatherCallbacks(lw)
-            } else {
-                // Register callbacks before the manual-location helpers start a request.
-                setupWeatherCallbacks(lw)
-                setupManualLocationWeather(lw)
-            }
-        }
+        val cached = readWeatherCache()
+        if (cached != null) updateWeatherDetails(cached) else weatherViewGone()
+        scheduleWeatherRefresh()
+        if (cached == null || weatherCacheExpired()) refreshWeather(true)
     }
 
-    private fun setupWeatherDefaults(lw: LocalWeather) {
-        val ul = Locale.getDefault().isO3Language
-        lw.lang = when {
-            ul.equals("rus", true) -> Lang.RUSSIAN
-            ul.equals("ukr", true) -> Lang.UKRAINIAN
-            ul.equals("ita", true) -> Lang.ITALIAN
-            ul.equals("fra", true) -> Lang.FRENCH
-            ul.equals("esp", true) -> Lang.SPANISH
-            ul.equals("deu", true) -> Lang.GERMAN
-            else -> Lang.ENGLISH
-        }
-        lw.unit = if (RowPreferences.isImperialUnits(this)) Units.IMPERIAL else Units.METRIC
+    private fun weatherCacheExpired(): Boolean {
+        val time = weatherPrefs.getLong(PREF_OPEN_METEO_TIME, 0L)
+        return time <= 0L || System.currentTimeMillis() - time >= maxCacheAge
     }
 
-    private fun shouldUseCurrentLocation(): Boolean {
-        return RowPreferences.isUseLocationEnabled(this) // && !Util.isAmazonDev(this)
+    private fun readWeatherCache(): JSONObject? = try {
+        if (weatherPrefs.getString(PREF_OPEN_METEO_CONFIG, null) != weatherConfigKey()) return null
+        val raw = weatherPrefs.getString(PREF_OPEN_METEO_JSON, null) ?: return null
+        JSONObject(raw).takeIf { it.has("current") && it.has("daily") }
+    } catch (e: Exception) {
+        Log.w(TAG, "Unable to read Open-Meteo cache", e)
+        null
     }
 
-    private fun setupLocationBasedWeather(lw: LocalWeather) {
-        if (Util.isAmazonDev(this)) {
-            lw.useCurrentLocation = false
-            fetchGeoIPFallback(lw)
-        } else {
-            lw.useCurrentLocation = true
-            lw.updateCurrentLocation = true
-            lw.updateLocationInterval = TimeUnit.MINUTES.toMillis(10) // FIXME: no updates
-        }
-    }
-
-    private fun setupManualLocationWeather(lw: LocalWeather) {
-        try {
-            lw.useCurrentLocation = false
-            RowPreferences.getUserLocation(this)?.takeIf { it.isNotBlank() }?.let { userLoc ->
-                when {
-                    userLoc.isDigitsOnly() -> handleCityIdWeather(lw, userLoc)
-                    isCoordinateLocation(userLoc) -> handleCoordinateWeather(lw, userLoc)
-                    else -> handleCityNameWeather(lw, userLoc)
+    private fun refreshWeather(force: Boolean) {
+        if (!RowPreferences.isWeatherEnabled(this) || weatherLoading) return
+        if (!force && !weatherCacheExpired()) return
+        weatherSignature = weatherConfigKey()
+        weatherLoading = true
+        if (RowPreferences.isUseLocationEnabled(this)) {
+            val provider = localWeather
+            if (provider == null) { weatherLoading = false; return }
+            provider.useCurrentLocation = true
+            provider.updateCurrentLocation = false
+            provider.fetchCurrentLocation(object : LocalWeather.CurrentLocationCallback {
+                override fun onSuccess(location: Location) {
+                    if (!isDestroyed) loadOpenMeteo(location.latitude, location.longitude, null)
                 }
-            } ?: run {
-//                if (Util.isAmazonDev(this)) {
-//                    fetchGeoIPFallback(lw)
-//                } else {
+                override fun onFailure(failed: LocationFailedEnum) {
+                    if (!isDestroyed) loadIpWeather()
+                }
+            })
+        } else {
+            val query = RowPreferences.getUserLocation(this).orEmpty().trim()
+            if (query.isBlank()) {
+                weatherLoading = false
                 LauncherApp.toast(R.string.user_location_warning, true)
-//                }
+                return
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting up manual location weather", e)
+            val generation = ++weatherGeneration
+            lifecycleScope.launch {
+                val location = withContext(Dispatchers.IO) { OpenMeteoWeather.resolve(query) }
+                if (isDestroyed || generation != weatherGeneration) return@launch
+                if (location == null) {
+                    weatherLoading = false
+                    LauncherApp.toast(getString(R.string.weather_error, "Location not found"), true)
+                } else loadOpenMeteo(location.latitude, location.longitude, location.name)
+            }
         }
     }
 
-    private fun isCoordinateLocation(location: String): Boolean {
-        val parts = location.split(", ")
-        return parts.size == 2 &&
-                parts.first().toDoubleOrNull() != null &&
-                parts.last().toDoubleOrNull() != null
-    }
-
-    private fun handleCityIdWeather(lw: LocalWeather, cityId: String) {
-        if (isWeatherCacheValid) {
-            readJsonWeather(JSONFILE)
-        } else {
-            lw.fetchCurrentWeatherByCityId(cityId)
+    private fun loadIpWeather() {
+        val generation = ++weatherGeneration
+        lifecycleScope.launch {
+            val location = withContext(Dispatchers.IO) { OpenMeteoWeather.ipLocation() }
+            if (isDestroyed || generation != weatherGeneration) return@launch
+            if (location == null) {
+                weatherLoading = false
+                Log.e(TAG, "IP location fallback failed")
+            } else loadOpenMeteo(location.latitude, location.longitude, location.name)
         }
     }
 
-    private fun handleCoordinateWeather(lw: LocalWeather, coords: String) {
-        val parts = coords.split(", ")
-        val lat = parts.first().toDouble()
-        val lon = parts.last().toDouble()
-
-        if (isWeatherCacheValid) {
-            readJsonWeather(JSONFILE)
-        } else {
-            lw.fetchCurrentWeatherByLocation(lat, lon)
-        }
-    }
-
-    private fun handleCityNameWeather(lw: LocalWeather, cityName: String) {
-        if (isWeatherCacheValid) {
-            readJsonWeather(JSONFILE)
-        } else {
-            lw.fetchCurrentWeatherByCityName(cityName)
-        }
-    }
-
-    private fun fetchGeoIPFallback(lw: LocalWeather) {
-        lifecycleScope.launch(Dispatchers.IO) {
+    private fun loadOpenMeteo(latitude: Double, longitude: Double, name: String?) {
+        val generation = ++weatherGeneration
+        lifecycleScope.launch {
             try {
-                val response = URL("https://ipwho.is/").readText()
-                val geo = JSONObject(response)
-                if (!geo.optBoolean("success", false)) error("IP location lookup failed")
-                val lat = geo.optDouble("latitude", Double.NaN)
-                val lon = geo.optDouble("longitude", Double.NaN)
-                if (lat.isNaN() || lon.isNaN()) error("IP location coordinates unavailable")
-                lw.fetchCurrentWeatherByLocation(lat, lon)
-            } catch (e: Exception) {
-                Log.e(TAG, "GeoIP fallback failed", e)
-                if (isWeatherCacheValid) withContext(Dispatchers.Main) { readJsonWeather(JSONFILE) }
-            }
-        }
-    }
-
-    private fun setupWeatherCallbacks(lw: LocalWeather) {
-        lw.weatherCallback = object : LocalWeather.WeatherCallback {
-            override fun onSuccess(weather: Weather) {
-                // Activity ini sudah dihancurkan (mis. di-recreate setelah pengaturan berubah).
-                if (isDestroyed) return
-                writeJsonWeather(weather)
-                if (weather.name.isNotBlank()) {
-                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
-                        .edit().putString("launcher_detected_city", weather.name).apply()
+                val json = withContext(Dispatchers.IO) { OpenMeteoWeather.forecast(latitude, longitude) }
+                if (isDestroyed || generation != weatherGeneration) return@launch
+                if (!name.isNullOrBlank()) json.put("name", name)
+                else weatherPrefs.getString("launcher_detected_city", null)?.let { json.put("name", it) }
+                val raw = json.toString()
+                weatherPrefs.edit().putString(PREF_OPEN_METEO_JSON, raw)
+                    .putLong(PREF_OPEN_METEO_TIME, System.currentTimeMillis())
+                    .putString(PREF_OPEN_METEO_CONFIG, weatherSignature).apply()
+                // Keep the legacy filename because PrayerTimesOverlay reads its city name.
+                File(JSONFILE).writeText(raw)
+                json.optString("name").takeIf { it.isNotBlank() }?.let {
+                    weatherPrefs.edit().putString("launcher_detected_city", it).apply()
                 }
-                readJsonWeather(JSONFILE)
+                updateWeatherDetails(json)
                 findViewById<com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay>(R.id.prayer_times_overlay)
                     ?.refreshForWeatherUpdate()
+                weatherLoading = false
+                scheduleWeatherRefresh()
+            } catch (e: Exception) {
+                if (isDestroyed || generation != weatherGeneration) return@launch
+                weatherLoading = false
+                Log.e(TAG, "Open-Meteo request failed; retaining previous forecast", e)
+                scheduleWeatherRefresh()
             }
-
-            override fun onFailure(exception: Throwable?) {
-                if (isDestroyed) return
-                Log.e(TAG, "Weather fetching failed: ${exception?.message}")
-                LauncherApp.toast(getString(R.string.weather_error, exception?.message ?: ""), true)
-            }
-        }
-
-        // Manual-location setup already started its own city/coordinate request above.
-        // Do not start a second, unrelated GPS lookup in that mode.
-        if (!shouldUseCurrentLocation()) return
-
-        // Render cached weather immediately and avoid a fresh location/network request
-        // while the cache is still valid (e.g. after returning from Settings or an app).
-        if (isWeatherCacheValid) {
-            readJsonWeather(JSONFILE)
-            return
-        }
-
-        lw.fetchCurrentLocation(object : LocalWeather.CurrentLocationCallback {
-            override fun onSuccess(location: Location) {
-                lw.fetchCurrentWeatherByLocation(location)
-            }
-
-            override fun onFailure(failed: LocationFailedEnum) {
-                Log.e(TAG, "Location fetching failed: $failed")
-                fetchGeoIPFallback(lw)
-            }
-        })
-    }
-
-    private val isWeatherCacheValid: Boolean
-        get() {
-            val file = File(JSONFILE)
-            if (!file.exists() || file.lastModified() + maxCacheAge <= System.currentTimeMillis()) return false
-            val saved = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
-                .getString(PREF_WEATHER_CACHE_SIGNATURE, null)
-            if (saved != currentWeatherSignature()) {
-                if (BuildConfig.DEBUG) Log.d(TAG, "Weather cache ignored: weather settings changed")
-                return false
-            }
-            return true
-        }
-
-
-    private fun writeJsonWeather(weather: Weather) {
-        try {
-            // Log.d(TAG, "writeJsonWeather JSON: ${gson.toJson(weather)}")
-            File(JSONFILE).writeText(gson.toJson(weather))
-            androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
-                .edit().putString(PREF_WEATHER_CACHE_SIGNATURE, weatherSignature).apply()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to write weather cache", e)
         }
     }
 
-    private fun readJsonWeather(filePath: String) {
-        try {
-            val cachedWeather = gson.fromJson(
-                File(filePath).bufferedReader().use { it.readText() },
-                Weather::class.java
-            )
-            cachedWeather?.let { updateWeatherDetails(it) }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to read weather cache", e)
-        }
+    private fun scheduleWeatherRefresh() {
+        weatherHandler.removeCallbacks(weatherRefresh)
+        val saved = weatherPrefs.getLong(PREF_OPEN_METEO_TIME, 0L)
+        val elapsed = (System.currentTimeMillis() - saved).coerceAtLeast(0L)
+        val delay = if (saved == 0L) maxCacheAge else (maxCacheAge - elapsed).coerceAtLeast(60_000L)
+        weatherHandler.postDelayed(weatherRefresh, delay)
+    }
+
+    private fun weatherViewGone() {
+        findViewById<ViewGroup?>(R.id.weather)?.visibility = View.GONE
+        findViewById<ViewGroup?>(R.id.details)?.visibility = View.GONE
     }
 
     @SuppressLint("SetTextI18n")
-    private fun updateWeatherDetails(weather: Weather) {
+    private fun updateWeatherDetails(json: JSONObject) {
         if (!RowPreferences.isWeatherEnabled(this)) return
-        // Get views
-        val weatherVG = findViewById<ViewGroup?>(R.id.weather)
-        val detailsVG = findViewById<ViewGroup?>(R.id.details)
-        // Set Weather Info
-        weatherVG?.let {
-            findViewById<AppCompatImageView>(R.id.weather_icon)?.let { icon ->
-                val iconCode = weather.icons.firstOrNull()?.takeIf { it.isNotBlank() }
-                if (iconCode != null) {
-                    OpenWeatherIcons(this, iconCode, icon)
-                    icon.visibility = View.VISIBLE
-                } else {
-                    icon.setImageDrawable(null)
-                    icon.visibility = View.GONE
-                }
-            }
+        val current = json.optJSONObject("current") ?: return
+        val daily = json.optJSONObject("daily") ?: return
+        val imperial = RowPreferences.isImperialUnits(this)
+        val celsius = current.optDouble("temperature_2m", Double.NaN)
+        if (celsius.isNaN()) return
+        val low = daily.optJSONArray("temperature_2m_min")?.optDouble(0, celsius) ?: celsius
+        val high = daily.optJSONArray("temperature_2m_max")?.optDouble(0, celsius) ?: celsius
+        fun temperature(value: Double): String {
+            val shown = if (imperial) value * 9.0 / 5.0 + 32.0 else value
+            return format(Locale.getDefault(), "%.0f", shown)
+        }
+        val unit = if (imperial) "℉" else "℃"
+        val speed = current.optDouble("wind_speed_10m", 0.0).let { if (imperial) it / 1.609344 else it }
+        val speedUnit = if (imperial) getString(R.string.weather_speed_i) else getString(R.string.weather_speed_m)
+        val pressure = current.optDouble("pressure_msl", current.optDouble("surface_pressure", 0.0))
+        val code = current.optInt("weather_code", -1)
+        findViewById<AppCompatImageView?>(R.id.weather_icon)?.let {
+            OpenWeatherIcons(this, weatherIcon(code, current.optInt("is_day", 1) == 1), it)
+            it.visibility = View.VISIBLE
+        }
+        findViewById<TextView?>(R.id.curTemp)?.text = temperature(celsius) + unit
+        findViewById<TextView?>(R.id.hilotemp)?.text =
+            getString(R.string.weather_hilotemp, temperature(low), temperature(high), unit)
+        findViewById<TextView?>(R.id.pressure)?.text =
+            getString(R.string.weather_pressure, format(Locale.getDefault(), "%.0f", pressure), getString(R.string.weather_pressure_hp))
+        findViewById<TextView?>(R.id.humidity)?.text =
+            getString(R.string.weather_humidity, current.optInt("relative_humidity_2m", 0))
+        findViewById<TextView?>(R.id.wind)?.text = getString(
+            R.string.weather_wind, format(Locale.getDefault(), "%.1f", speed), speedUnit,
+            windDirection(current.optDouble("wind_direction_10m", 0.0))
+        )
+        findViewById<TextView?>(R.id.wDescription)?.apply {
+            text = weatherDescription(code)
+            setupMarquee()
+        }
+        showWeatherCard(findViewById(R.id.weather), findViewById(R.id.details))
+    }
 
-            findViewById<TextView>(R.id.curTemp)?.text =
-                "${weather.temperature.toInt()}${getTempUnit()}"
+    private fun windDirection(degrees: Double): String {
+        val labels = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+        return labels[((degrees % 360.0 + 360.0) % 360.0 / 45.0).roundToInt() % 8]
+    }
+
+    private fun weatherIcon(code: Int, day: Boolean): String {
+        val base = when (code) {
+            0 -> "01"; 1, 2 -> "02"; 3 -> "04"; 45, 48 -> "50"
+            in 51..57, in 61..67, in 80..82 -> "09"
+            in 71..77, 85, 86 -> "13"; in 95..99 -> "11"; else -> "03"
         }
-        // Set Weather details
-        detailsVG?.let {
-            findViewById<TextView>(R.id.hilotemp)?.text = getHiLoTempText(weather)
-            findViewById<TextView>(R.id.pressure)?.text = getPressureText(weather)
-            findViewById<TextView>(R.id.humidity)?.text =
-                getString(R.string.weather_humidity, weather.humidity.toInt())
-            findViewById<TextView>(R.id.wind)?.text = getWindText(weather)
-            findViewById<TextView>(R.id.wDescription)?.apply {
-                text = weather.descriptions.firstOrNull()?.takeIf { it.isNotBlank() } ?: "—"
-                setupMarquee()
-            }
+        return base + if (day) "d" else "n"
+    }
+
+    private fun weatherDescription(code: Int): String = when (code) {
+        0 -> "Clear sky"; 1 -> "Mainly clear"; 2 -> "Partly cloudy"; 3 -> "Overcast"
+        45, 48 -> "Fog"; in 51..57 -> "Drizzle"; in 61..67 -> "Rain"
+        in 71..77, 85, 86 -> "Snow"; in 80..82 -> "Rain showers"
+        in 95..99 -> "Thunderstorm"; else -> "—"
+    }
+
+    private fun showWeatherCard(weatherView: ViewGroup?, detailsView: ViewGroup?) {
+        listOf(weatherView, detailsView).forEach { view ->
+            view?.apply { animate().cancel(); alpha = 1f; visibility = View.VISIBLE }
         }
-        // Show (cuaca + detail tampil bersamaan di dalam satu kartu)
-        showWeatherCard(weatherVG, detailsVG)
     }
 
     private fun TextView.setupMarquee() {
@@ -1012,68 +937,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         isSelected = true
         isFocusableInTouchMode = false
         isFocusable = false
-    }
-
-    private fun getTempUnit(): String = if (localWeather?.unit == Units.METRIC) "℃" else "℉"
-
-    private fun getHiLoTempText(weather: Weather): String {
-        return getString(
-            R.string.weather_hilotemp,
-            format(Locale.getDefault(), "%.0f", weather.minTemperature),
-            format(Locale.getDefault(), "%.0f", weather.maxTemperature),
-            getTempUnit()
-        )
-    }
-
-    private fun getPressureText(weather: Weather): String {
-        return if (localWeather?.lang == Lang.RUSSIAN) {
-            getString(
-                R.string.weather_pressure,
-                format(Locale.getDefault(), "%.0f", weather.pressure / 1.333),
-                getString(R.string.weather_pressure_mm)
-            )
-        } else {
-            getString(
-                R.string.weather_pressure,
-                weather.pressure.toInt().toString(),
-                getString(R.string.weather_pressure_hp)
-            )
-        }
-    }
-
-    private fun getWindText(weather: Weather): String {
-        val speedUnit = if (localWeather?.unit == Units.METRIC) {
-            getString(R.string.weather_speed_m)
-        } else {
-            getString(R.string.weather_speed_i)
-        }
-        val windDir = getCardinalDirection(weather.windAngle)
-
-        return getString(
-            R.string.weather_wind,
-            format(Locale.getDefault(), "%.1f", weather.windSpeed),
-            speedUnit,
-            windDir
-        )
-    }
-
-    private fun getCardinalDirection(angle: Double): String {
-        val directions = if (localWeather?.lang == Lang.RUSSIAN)
-            listOf("C", "СВ", "В", "ЮВ", "Ю", "ЮЗ", "З", "СЗ", "C")
-        else
-            listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW", "N")
-        return directions[(angle % 360 / 45).roundToInt()]
-    }
-
-    /** Cuaca dan detailnya tampil sekaligus (tanpa cross-fade) supaya menyatu dalam satu kartu. */
-    private fun showWeatherCard(weatherView: ViewGroup?, detailsView: ViewGroup?) {
-        for (v in listOf(weatherView, detailsView)) {
-            v?.apply {
-                animate().cancel()
-                alpha = 1f
-                visibility = View.VISIBLE
-            }
-        }
     }
 
     private fun setShyMode(shy: Boolean, changeWallpaper: Boolean): Boolean {
@@ -1294,6 +1157,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         var forceResort = true
 
         super.onResume()
+        if (RowPreferences.isWeatherEnabled(this) && weatherCacheExpired()) refreshWeather(true)
 
         val shyChanged = setShyMode(!isBackgroundVisibleBehind, true)
 
