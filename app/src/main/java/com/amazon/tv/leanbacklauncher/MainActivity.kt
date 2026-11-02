@@ -748,17 +748,18 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         localWeather?.let { lw ->
             setupWeatherDefaults(lw)
-            // Register callbacks before starting manual-location requests to avoid losing
-            // a fast response during Activity recreation.
-            setupWeatherCallbacks(lw)
 
             if (isWeatherCacheValid) {
                 readJsonWeather(JSONFILE)
             }
 
             if (shouldUseCurrentLocation()) {
+                // Configure location mode before the callback starts the location lookup.
                 setupLocationBasedWeather(lw)
+                setupWeatherCallbacks(lw)
             } else {
+                // Register callbacks before the manual-location helpers start a request.
+                setupWeatherCallbacks(lw)
                 setupManualLocationWeather(lw)
             }
         }
