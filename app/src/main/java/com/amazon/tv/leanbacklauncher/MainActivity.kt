@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     companion object {
         private const val TAG = "MainActivity"
         private const val FIRST_POSITION = 0
-        private const val DEFAULT_LAUNCHER_PROMPT_DELAY_MS = 30_000L
+        private const val DEFAULT_LAUNCHER_PROMPT_DELAY_MS = 3_000L
         private const val UNINSTALL_CODE = 321
         const val PERMISSIONS_REQUEST_LOCATION = 99
         val JSONFILE = LauncherApp.context.cacheDir?.absolutePath + "/weather.json"
