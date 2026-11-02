@@ -45,5 +45,11 @@
             android:title="@string/imp_weather_title"
             android:summary="@string/imp_weather_description" />
 
+        <Preference
+            android:key="open_meteo_attribution"
+            android:title="Weather data by Open-Meteo.com"
+            android:summary="Forecast data provided under CC BY 4.0."
+            android:selectable="false" />
+
     </PreferenceCategory>
 </PreferenceScreen>
