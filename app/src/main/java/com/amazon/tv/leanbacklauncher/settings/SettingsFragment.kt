@@ -70,10 +70,14 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
         val target = requireActivity().intent?.getStringExtra(SettingsActivity.EXTRA_FRAGMENT)
         if (target != null && target in DEEP_LINK_FRAGMENTS) {
             val f = childFragmentManager.fragmentFactory.instantiate(requireActivity().classLoader, target)
-            if (f is PreferenceFragmentCompat) {
+            if (f is PreferenceFragmentCompat || f is PreferenceDialogFragmentCompat) {
                 startPreferenceFragment(f)
-                return
+            } else {
+                // Legacy GuidedStep settings (for example Home Screen View and Hidden Apps)
+                // must use the immersive settings container, not fall back to LauncherSettingsFragment.
+                startImmersiveFragment(f)
             }
+            return
         }
         startPreferenceFragment(LauncherSettingsFragment())
     }
