@@ -90,8 +90,6 @@
     <string name="edit_finish_button_text">Done</string>
     <string name="edit_row_title">Edit Home Rows</string>
     <string name="edit_uninstall_focused_text">Uninstall</string>
-    <string name="enable_local_weather_title">Enable Local Weather</string>
-    <string name="enable_local_weather_description">Show current weather</string>
     <string name="failed_launch">"Can't open this right now"</string>
     <string name="favorites_row_title">Show Favorites Row</string>
     <string name="file_no_access">File not accessible!</string>
@@ -185,7 +183,6 @@
     <string name="pref_enable_favorites_row" translatable="false">enable_favorites_row</string>
     <string name="pref_enable_games_row" translatable="false">enable_games_row</string>
     <string name="pref_enable_inputs_row" translatable="false">enable_inputs_row</string>
-    <string name="pref_enable_local_weather" translatable="false">enable_local_weather</string>
     <string name="pref_enable_music_row" translatable="false">enable_music_row</string>
     <string name="pref_enable_recommendations_row" translatable="false">enable_recommendations_row</string>
     <string name="pref_enable_videos_row" translatable="false">enable_videos_row</string>
@@ -193,7 +190,6 @@
     <string name="pref_show_location" translatable="false">show_location</string>
     <string name="pref_use_current_location" translatable="false">use_current_location</string>
     <string name="pref_user_location" translatable="false">user_location</string>
-    <string name="pref_weather_apikey" translatable="false">weather_apikey</string>
     <string name="pref_max_apps_rows" translatable="false">max_apps_rows</string>
     <string name="pref_max_apps" translatable="false">max_apps</string>
     <string name="pref_max_favorites_rows" translatable="false">max_favorites_rows</string>
@@ -277,14 +273,12 @@ or recommendations will not work properly."</string>
     <string name="videos_row_title">Show Videos Row</string>
     <string name="wallpaper_title">Default Wallpaper</string>
     <string name="wallpaper_choose">Put wallpaper image to storage directory root and select here</string>
-    <string name="weather_apikey_title">OpenWeatherMap API Key</string>
     <string name="weather_hilotemp">%1$s–%2$s %3$s</string>
 	<string name="weather_prayer_settings_title">Prayer Settings</string>
     <string name="weather_prayer_settings_desc">Shared location, local weather, and prayer-time calculation settings</string>
 	<string name="weather_humidity">Humidity • %1$d%%</string>
 	<string name="weather_pressure">%1$s %2$s</string>
     <string name="weather_pressure_hp">hPa</string>
-    <string name="weather_pressure_mm">mmHg</string>
     <string name="weather_speed_m">m/s</string>
     <string name="weather_speed_i">mph</string>
     <string name="weather_wind">Wind • %3$s %1$s %2$s</string>
