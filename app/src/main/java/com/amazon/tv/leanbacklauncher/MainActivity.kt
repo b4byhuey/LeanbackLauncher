@@ -121,6 +121,9 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         private const val TAG = "MainActivity"
         private const val FIRST_POSITION = 0
         private const val WHEEL_NAV_INTERVAL_MS = 120L
+        private const val MOUSE_DRAG_NONE = 0
+        private const val MOUSE_DRAG_HORIZONTAL = 1
+        private const val MOUSE_DRAG_BLOCKED = 2
         private const val PREF_OPEN_METEO_JSON = "open_meteo_weather_json"
         private const val PREF_OPEN_METEO_TIME = "open_meteo_weather_time"
         private const val PREF_OPEN_METEO_CONFIG = "open_meteo_weather_config"
@@ -676,46 +679,87 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
     private var mMouseDownX = 0f
     private var mMouseDownY = 0f
-    private var mMouseDragBlocked = false
+    private var mMouseDownLocalY = 0f
+    private var mMouseDragAnchorY = 0f
+    private var mMouseDragMode = MOUSE_DRAG_NONE
 
     /**
-     * Launcher TV dinavigasi dengan D-pad/wheel, bukan drag. Klik-tahan lalu geser memakai mouse
-     * membuat RecyclerView/HorizontalGridView ikut ter-scroll seperti layar sentuh, sehingga list
-     * dan baris bisa dipindah-pindah dari posisi awalnya. Di sini gerakan drag dari mouse yang
-     * melewati touch slop dibatalkan (child dikirimi ACTION_CANCEL) dan sisa gesturenya ditelan.
-     * Klik biasa (tanpa geser melewati slop) tetap diteruskan seperti biasa. Hanya berlaku untuk
-     * mouse; sentuhan jari/remote tidak berubah.
+     * Drag vertikal dengan mouse menggeser layar per row (seperti roda mouse), bukan scroll bebas,
+     * sehingga row tidak bisa terlempar dari posisinya. Geser ke atas = turun ke row berikutnya,
+     * geser ke bawah = naik ke row sebelumnya; satu row per ~64dp geseran.
+     */
+    private fun stepRowsFromMouseDrag(rawY: Float) {
+        if (isInEditMode) return
+        val dy = rawY - mMouseDragAnchorY
+        if (Math.abs(dy) < 64 * resources.displayMetrics.density) return
+        val list = mListView ?: return
+        val itemCount = list.adapter?.itemCount ?: return
+        if (itemCount <= 0 || list.scrollState != RecyclerView.SCROLL_STATE_IDLE) return
+        onUserInteraction()
+        val direction = if (dy < 0f) 1 else -1
+        val currentPosition = list.selectedPosition
+            .takeIf { it != RecyclerView.NO_POSITION }
+            ?: FIRST_POSITION
+        val targetPosition = (currentPosition + direction).coerceIn(0, itemCount - 1)
+        if (!list.hasFocus()) list.requestFocus()
+        if (targetPosition != currentPosition) {
+            list.setSelectedPositionSmooth(targetPosition)
+        }
+        mMouseDragAnchorY = rawY
+    }
+
+    /**
+     * Drag dengan mouse (klik-tahan lalu geser):
+     *  - geser dominan horizontal -> diteruskan ke baris icon (row ikut bergeser sampai mouse
+     *    dilepas). Komponen vertikalnya dibuang supaya list vertikal tidak ikut ter-scroll.
+     *  - geser dominan vertikal -> dibatalkan (child dikirimi ACTION_CANCEL) dan sisa gesturenya
+     *    ditelan; layar hanya berpindah per row lewat stepRowsFromMouseDrag(), tidak scroll bebas.
+     * Klik biasa (tanpa geser melewati touch slop) tetap diteruskan seperti biasa. Hanya berlaku
+     * untuk mouse; sentuhan jari/remote tidak berubah.
      */
     override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
         if (ev.getToolType(0) == android.view.MotionEvent.TOOL_TYPE_MOUSE) {
-            when (ev.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> {
-                    mMouseDownX = ev.rawX
-                    mMouseDownY = ev.rawY
-                    mMouseDragBlocked = false
-                }
-
-                android.view.MotionEvent.ACTION_MOVE -> {
-                    if (mMouseDragBlocked) return true
-                    val dx = ev.rawX - mMouseDownX
-                    val dy = ev.rawY - mMouseDownY
-                    val slop = android.view.ViewConfiguration.get(this).scaledTouchSlop
-                    if (dx * dx + dy * dy > slop * slop) {
-                        mMouseDragBlocked = true
+            val action = ev.actionMasked
+            val end = action == android.view.MotionEvent.ACTION_UP ||
+                    action == android.view.MotionEvent.ACTION_CANCEL
+            if (action == android.view.MotionEvent.ACTION_DOWN) {
+                mMouseDownX = ev.rawX
+                mMouseDownY = ev.rawY
+                mMouseDownLocalY = ev.y
+                mMouseDragMode = MOUSE_DRAG_NONE
+            } else if (mMouseDragMode == MOUSE_DRAG_BLOCKED) {
+                if (action == android.view.MotionEvent.ACTION_MOVE) stepRowsFromMouseDrag(ev.rawY)
+                if (end) mMouseDragMode = MOUSE_DRAG_NONE
+                return true
+            } else if (action == android.view.MotionEvent.ACTION_MOVE &&
+                mMouseDragMode == MOUSE_DRAG_NONE
+            ) {
+                val dx = ev.rawX - mMouseDownX
+                val dy = ev.rawY - mMouseDownY
+                val slop = android.view.ViewConfiguration.get(this).scaledTouchSlop
+                if (dx * dx + dy * dy > slop * slop) {
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        mMouseDragMode = MOUSE_DRAG_HORIZONTAL
+                    } else {
+                        mMouseDragMode = MOUSE_DRAG_BLOCKED
+                        mMouseDragAnchorY = mMouseDownY
                         val cancel = android.view.MotionEvent.obtain(ev)
                         cancel.action = android.view.MotionEvent.ACTION_CANCEL
                         super.dispatchTouchEvent(cancel)
                         cancel.recycle()
+                        stepRowsFromMouseDrag(ev.rawY)
                         return true
                     }
                 }
-
-                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                    if (mMouseDragBlocked) {
-                        mMouseDragBlocked = false
-                        return true
-                    }
-                }
+            }
+            if (mMouseDragMode == MOUSE_DRAG_HORIZONTAL) {
+                // Kunci sumbu Y ke posisi awal klik agar hanya gerakan horizontal yang terbaca.
+                val locked = android.view.MotionEvent.obtain(ev)
+                locked.setLocation(ev.x, mMouseDownLocalY)
+                val handled = super.dispatchTouchEvent(locked)
+                locked.recycle()
+                if (end) mMouseDragMode = MOUSE_DRAG_NONE
+                return handled
             }
         }
         return super.dispatchTouchEvent(ev)
