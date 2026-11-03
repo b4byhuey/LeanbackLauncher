@@ -1136,66 +1136,164 @@ class RecommendationsPreferenceFragment : LeanbackPreferenceFragmentCompat(),
 }
 
 /**
- * App version side panel with one-tap diagnostic log collection.
- * Android only permits ordinary apps to read their own process logs.
+ * App version panel.
  */
 class VersionPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        val ctx = requireContext()
-        preferenceScreen = preferenceManager.createPreferenceScreen(ctx).apply {
-            addPreference(Preference(ctx).apply {
+        preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()).apply {
+            addPreference(Preference(requireContext()).apply {
                 title = getString(R.string.version)
                 summary = "${getString(R.string.app_name)} v${BuildConfig.VERSION_NAME}"
                 isSelectable = false
             })
-            addPreference(Preference(ctx).apply {
-                key = "collect_launcher_logcat"
+            addPreference(Preference(requireContext()).apply {
                 title = "Logcat"
-                summary = "Collect and share diagnostic logs from this launcher"
+                summary = "View, clear, and save launcher logs"
                 setOnPreferenceClickListener {
-                    collectAndShareLogs()
+                    (parentFragment as? SettingsFragment)?.showPreferencePanel(LogcatViewerFragment())
                     true
                 }
             })
         }
     }
+}
 
-    private fun collectAndShareLogs() {
-        val context = requireContext()
+/**
+ * Log viewer with explicit Clear, Save and Close actions.
+ * The capture is repeated every time this screen is opened; no one-shot cached output is reused.
+ */
+class LogcatViewerFragment : Fragment() {
+    private var logText: android.widget.TextView? = null
+    private var latestLog = ""
+
+    private val saveLog = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                requireContext().contentResolver.openOutputStream(uri)?.bufferedWriter()?.use {
+                    it.write(latestLog)
+                } ?: error("Unable to open destination")
+            }.onFailure {
+                android.widget.Toast.makeText(requireContext(), "Save failed: ${it.message}", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onCreateView(
+        inflater: android.view.LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): android.view.View {
+        val ctx = requireContext()
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+
+        val root = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(16), dp(20), dp(16))
+            setBackgroundColor(android.graphics.Color.rgb(24, 24, 24))
+            isFocusableInTouchMode = true
+        }
+        root.addView(android.widget.TextView(ctx).apply {
+            text = "Logcat"
+            textSize = 22f
+            setTextColor(android.graphics.Color.WHITE)
+        })
+        val output = android.widget.TextView(ctx).apply {
+            textSize = 11f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(android.graphics.Color.rgb(220, 220, 220))
+            setTextIsSelectable(true)
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            text = "Loading logs..."
+        }
+        logText = output
+        root.addView(android.widget.ScrollView(ctx).apply {
+            isFillViewport = true
+            addView(output)
+        }, android.widget.LinearLayout.LayoutParams(-1, 0, 1f))
+
+        val actions = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
+        }
+        actions.addView(android.widget.Button(ctx).apply {
+            text = "Clear"
+            setOnClickListener { clearLogs() }
+        })
+        actions.addView(android.widget.Button(ctx).apply {
+            text = "Save"
+            setOnClickListener {
+                if (latestLog.isNotEmpty()) saveLog.launch("launcher-logcat.txt")
+            }
+        })
+        actions.addView(android.widget.Button(ctx).apply {
+            text = "Close"
+            setOnClickListener { parentFragmentManager.popBackStack() }
+        })
+        root.addView(actions)
+        return root
+    }
+
+    override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        loadLogs()
+    }
+
+    override fun onDestroyView() {
+        logText = null
+        super.onDestroyView()
+    }
+
+    private fun loadLogs() {
+        val context = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
-            val logs = withContext(Dispatchers.IO) {
+            val result = withContext(Dispatchers.IO) {
                 try {
-                    val outputFile = java.io.File(context.cacheDir, "launcher-logcat.txt")
                     val process = ProcessBuilder(
                         "logcat", "-d", "-v", "threadtime",
                         "--pid=${android.os.Process.myPid()}"
-                    ).redirectErrorStream(true).redirectOutput(outputFile).start()
-                    if (!process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                    ).redirectErrorStream(true).start()
+                    val completed = process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+                    if (!completed) {
                         process.destroyForcibly()
                         error("Logcat capture timed out")
                     }
-                    outputFile.takeIf { it.isFile }?.readText()?.takeLast(500_000).orEmpty()
+                    process.inputStream.bufferedReader().use { it.readText().takeLast(1_000_000) }
                 } catch (error: Exception) {
-                    "Unable to collect app logcat: ${error.javaClass.simpleName}: ${error.message}"
+                    "Unable to read launcher logs: ${error.javaClass.simpleName}: ${error.message}"
                 }
             }
             if (!isAdded) return@launch
-            val report = buildString {
-                appendLine("App: ${getString(R.string.app_name)}")
-                appendLine("Version: ${BuildConfig.VERSION_NAME}")
-                appendLine("Package: ${context.packageName}")
+            latestLog = buildString {
+                appendLine("App: ${context.packageName} v${BuildConfig.VERSION_NAME}")
                 appendLine("Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
-                appendLine("Captured: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
                 appendLine("Scope: launcher process only")
                 appendLine()
-                append(logs.ifBlank { "No log entries were returned." })
+                append(result.ifBlank { "No log entries found." })
             }
-            val share = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "${getString(R.string.app_name)} Logcat")
-                putExtra(Intent.EXTRA_TEXT, report)
+            logText?.text = latestLog
+        }
+    }
+
+    private fun clearLogs() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val process = ProcessBuilder("logcat", "-c").redirectErrorStream(true).start()
+                    if (!process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                        process.destroyForcibly()
+                        error("Logcat clear timed out")
+                    }
+                    process.exitValue() == 0
+                } catch (_: Exception) {
+                    false
+                }
             }
-            startActivity(Intent.createChooser(share, "Share Logcat"))
+            if (!isAdded) return@launch
+            latestLog = ""
+            logText?.text = if (result) "Logcat cleared." else "Unable to clear log buffer."
         }
     }
 }
