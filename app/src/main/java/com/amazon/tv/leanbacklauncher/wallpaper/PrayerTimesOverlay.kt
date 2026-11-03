@@ -397,7 +397,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             chip.time.typeface = Typeface.create(
                 "sans-serif-medium", if (active) Typeface.BOLD else Typeface.NORMAL
             )
-            chip.root.setBackgroundResource(if (active) R.drawable.prayer_chip_active_bg else 0)
+            if (active) chip.root.setBackgroundResource(R.drawable.prayer_chip_active_bg)
+            else chip.root.background = null
         }
         next.text = statusText ?: upcoming?.let { (name, millis) ->
             val minutes = ((millis - System.currentTimeMillis()) / 60000L).coerceAtLeast(0)
