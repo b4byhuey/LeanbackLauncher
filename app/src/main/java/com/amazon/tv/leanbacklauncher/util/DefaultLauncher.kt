@@ -82,12 +82,7 @@ object DefaultLauncher {
             )
         }
 
-        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val resolved = context.packageManager.resolveActivity(
-            homeIntent,
-            PackageManager.MATCH_DEFAULT_ONLY
-        )
-        return if (resolved?.activityInfo?.packageName == context.packageName) {
+        return if (isDefault(context)) {
             RootResult(true, context.getString(R.string.default_launcher_root_success))
         } else {
             RootResult(
