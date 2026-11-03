@@ -965,6 +965,12 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             OpenWeatherIcons(this, weatherIcon(code, current.optInt("is_day", 1) == 1), it)
             it.visibility = View.VISIBLE
         }
+        findViewById<TextView?>(R.id.location_name)?.apply {
+            val locationName = json.optString("name").takeIf { it.isNotBlank() && it != "null" }
+                ?: weatherPrefs.getString("launcher_detected_city", null)
+            text = locationName.orEmpty()
+            visibility = if (locationName.isNullOrBlank()) View.GONE else View.VISIBLE
+        }
         findViewById<TextView?>(R.id.curTemp)?.text = temperature(celsius) + unit
         findViewById<TextView?>(R.id.hilotemp)?.text =
             getString(R.string.weather_hilotemp, temperature(low), temperature(high), unit)
