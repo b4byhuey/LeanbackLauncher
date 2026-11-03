@@ -1,14 +1,18 @@
 package com.amazon.tv.leanbacklauncher.util
 
 import android.app.Activity
+import android.content.ComponentName
+import android.content.Context
 import android.app.role.RoleManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import java.util.concurrent.TimeUnit
 import com.amazon.tv.leanbacklauncher.R
 
 /**
@@ -27,6 +31,83 @@ object DefaultLauncher {
         val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         val resolved = activity.packageManager.resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY)
         return resolved?.activityInfo?.packageName == activity.packageName
+    }
+
+
+    data class RootResult(val success: Boolean, val message: String)
+
+    /**
+     * Uses an explicitly approved root shell to request this app as HOME.
+     *
+     * This deliberately does not disable the existing launcher: OEM TV firmware can
+     * have additional HOME handlers or watchdogs, so disabling an unknown package
+     * could leave the device without a usable home screen.
+     */
+    fun forceDefaultWithRoot(context: Context): RootResult {
+        if (isDefault(context)) {
+            return RootResult(true, context.getString(R.string.default_launcher_already))
+        }
+
+        val userId = Process.myUid() / 100000
+        val component = ComponentName(
+            context.packageName,
+            "${context.packageName}.MainActivity"
+        ).flattenToString()
+        val command = "cmd package set-home-activity --user $userId $component"
+
+        val shellOutput = try {
+            val process = ProcessBuilder("su", "-c", command)
+                .redirectErrorStream(true)
+                .start()
+            if (!process.waitFor(20, TimeUnit.SECONDS)) {
+                process.destroyForcibly()
+                process.waitFor(2, TimeUnit.SECONDS)
+                return RootResult(false, context.getString(R.string.default_launcher_root_timeout))
+            }
+            val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+            if (process.exitValue() != 0) {
+                return RootResult(
+                    false,
+                    context.getString(
+                        R.string.default_launcher_root_failed,
+                        output.ifBlank { "exit code ${process.exitValue()}" }
+                    )
+                )
+            }
+            output
+        } catch (e: Exception) {
+            Log.w(TAG, "Root HOME request failed", e)
+            return RootResult(
+                false,
+                context.getString(
+                    R.string.default_launcher_root_failed,
+                    e.message ?: e.javaClass.simpleName
+                )
+            )
+        }
+
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolved = context.packageManager.resolveActivity(
+            homeIntent,
+            PackageManager.MATCH_DEFAULT_ONLY
+        )
+        return if (resolved?.activityInfo?.packageName == context.packageName) {
+            RootResult(true, context.getString(R.string.default_launcher_root_success))
+        } else {
+            RootResult(
+                false,
+                context.getString(
+                    R.string.default_launcher_root_not_verified,
+                    shellOutput.ifBlank { "HOME resolver still points to another launcher" }
+                )
+            )
+        }
+    }
+
+    private fun isDefault(context: Context): Boolean {
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolved = context.packageManager.resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY)
+        return resolved?.activityInfo?.packageName == context.packageName
     }
 
     /**
