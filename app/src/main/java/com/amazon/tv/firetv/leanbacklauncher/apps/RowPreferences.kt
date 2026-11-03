@@ -321,8 +321,8 @@ object RowPreferences {
 
     @JvmStatic
     fun isWeatherEnabled(context: Context): Boolean {
-        val pref = PreferenceManager.getDefaultSharedPreferences(context)
-        return pref.getBoolean(context.getString(R.string.pref_enable_local_weather), true)
+        // Weather is always enabled; lifecycle visibility is managed by MainActivity.
+        return true
     }
 
     @JvmStatic
