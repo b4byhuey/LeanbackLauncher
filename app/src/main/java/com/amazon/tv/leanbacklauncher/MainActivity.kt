@@ -23,6 +23,7 @@ import android.content.pm.PackageManager
 import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.location.Geocoder
 import android.location.Location
 import android.media.tv.TvContract
 import android.os.Build
@@ -321,6 +322,11 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
                     6 -> {
                         activity.addWidget(true)
+                        // addWidget(true) replaces the clock/weather layout. Restore weather only
+                        // after the replacement view has been inflated and attached.
+                        if (activity.weatherInitialized && RowPreferences.isWeatherEnabled(activity)) {
+                            activity.scheduleWeatherUiRestore()
+                        }
                         //if (BuildConfig.DEBUG) Log.d(TAG, "msg(6) addWidget(refresh: true)")
                         return
                     }
@@ -852,12 +858,30 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         val generation = ++weatherGeneration
         lifecycleScope.launch {
             try {
-                val json = withContext(Dispatchers.IO) { OpenMeteoWeather.forecast(latitude, longitude) }
+                val json = withContext(Dispatchers.IO) {
+                    val forecast = OpenMeteoWeather.forecast(latitude, longitude)
+                    val resolvedName = name?.takeIf { it.isNotBlank() } ?: runCatching {
+                        Geocoder(this@MainActivity, Locale.getDefault())
+                            .getFromLocation(latitude, longitude, 1)
+                            ?.firstOrNull()
+                            ?.let { address ->
+                                listOfNotNull(
+                                    address.locality,
+                                    address.subAdminArea,
+                                    address.adminArea
+                                ).map { it.trim() }.filter { it.isNotBlank() }.distinct().joinToString(", ")
+                            }
+                    }.getOrNull()?.takeIf { it.isNotBlank() }
+                    forecast to resolvedName
+                }
                 if (isDestroyed || generation != weatherGeneration) return@launch
-                json.put("latitude", latitude)
-                json.put("longitude", longitude)
-                if (!name.isNullOrBlank()) json.put("name", name)
-                else weatherPrefs.getString("launcher_detected_city", null)?.let { json.put("name", it) }
+                val forecast = json.first
+                val locationName = json.second
+                forecast.put("latitude", latitude)
+                forecast.put("longitude", longitude)
+                locationName?.let { forecast.put("name", it) }
+                    ?: weatherPrefs.getString("launcher_detected_city", null)?.let { forecast.put("name", it) }
+                val json = forecast
                 val raw = json.toString()
                 weatherPrefs.edit().putString(PREF_OPEN_METEO_JSON, raw)
                     .putLong(PREF_OPEN_METEO_TIME, System.currentTimeMillis())
