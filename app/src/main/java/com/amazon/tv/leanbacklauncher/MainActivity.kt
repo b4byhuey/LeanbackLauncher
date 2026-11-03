@@ -1557,6 +1557,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                     clearWidget(appWidgetId)
                     // clock
                     wrap.addView(LayoutInflater.from(this).inflate(R.layout.clock, wrap, false))
+                    findViewById<TextView>(R.id.location_name)?.isSelected = true
                     val typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
                     val clockView: TextView? = findViewById<View>(R.id.clock) as ClockView?
                     clockView?.typeface = typeface
