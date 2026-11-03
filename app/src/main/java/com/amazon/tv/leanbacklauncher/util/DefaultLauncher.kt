@@ -52,25 +52,32 @@ object DefaultLauncher {
         val command = "cmd package set-home-activity --user $userId $component"
 
         val shellOutput = try {
-            val process = ProcessBuilder("su", "-c", command)
-                .redirectErrorStream(true)
-                .start()
-            if (!process.waitFor(20, TimeUnit.SECONDS)) {
-                process.destroyForcibly()
-                process.waitFor(2, TimeUnit.SECONDS)
-                return RootResult(false, context.getString(R.string.default_launcher_root_timeout))
-            }
-            val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
-            if (process.exitValue() != 0) {
-                return RootResult(
-                    false,
-                    context.getString(
-                        R.string.default_launcher_root_failed,
-                        output.ifBlank { "exit code ${process.exitValue()}" }
+            // Redirect output to a file so a full stdout pipe cannot block waitFor().
+            val outputFile = java.io.File.createTempFile("home-root-", ".txt", context.cacheDir)
+            try {
+                val process = ProcessBuilder("su", "-c", command)
+                    .redirectErrorStream(true)
+                    .redirectOutput(outputFile)
+                    .start()
+                if (!process.waitFor(20, TimeUnit.SECONDS)) {
+                    process.destroyForcibly()
+                    process.waitFor(2, TimeUnit.SECONDS)
+                    return RootResult(false, context.getString(R.string.default_launcher_root_timeout))
+                }
+                val output = outputFile.readText().trim()
+                if (process.exitValue() != 0) {
+                    return RootResult(
+                        false,
+                        context.getString(
+                            R.string.default_launcher_root_failed,
+                            output.ifBlank { "exit code ${process.exitValue()}" }
+                        )
                     )
-                )
+                }
+                output
+            } finally {
+                outputFile.delete()
             }
-            output
         } catch (e: Exception) {
             Log.w(TAG, "Root HOME request failed", e)
             return RootResult(
@@ -96,15 +103,26 @@ object DefaultLauncher {
     }
 
     private fun isDefault(context: Context): Boolean {
+        // Check the actual HOME intent resolution first. On some Android TV/OEM builds,
+        // set-home-activity updates the preferred HOME activity before RoleManager reflects it.
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolved = context.packageManager.resolveActivity(
+            home,
+            PackageManager.MATCH_DEFAULT_ONLY
+        )
+        if (resolved?.activityInfo?.packageName == context.packageName) {
+            return true
+        }
+
+        // RoleManager remains a useful fallback on Android 10+ devices where HOME
+        // resolution is mediated by the role implementation.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = context.getSystemService(RoleManager::class.java)
             if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
                 return roleManager.isRoleHeld(RoleManager.ROLE_HOME)
             }
         }
-        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val resolved = context.packageManager.resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY)
-        return resolved?.activityInfo?.packageName == context.packageName
+        return false
     }
 
     /**
