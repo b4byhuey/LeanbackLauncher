@@ -191,32 +191,6 @@ class NotificationCardView @JvmOverloads constructor(
         }
     }
 
-    private fun setNotificationImage(rec: TvRecommendation) {
-        try {
-            val res = context.packageManager.getResourcesForApplication(rec.packageName)
-            var image: Drawable? = null
-            var width = -1
-            var height = -1
-            if (rec.contentImage != null) {
-                image = BitmapDrawable(res, rec.contentImage)
-                width = image.getIntrinsicWidth()
-                height = image.getIntrinsicHeight()
-            }
-            if (rec.width > 0) {
-                width = rec.width
-            }
-            if (rec.height > 0) {
-                height = rec.height
-            }
-            mImageView?.scaleType = ImageView.ScaleType.CENTER_CROP
-            setDimensions(width, height)
-            setMainImage(image)
-            setBadgeImage(ResourcesCompat.getDrawable(res, rec.badgeIcon, null))
-        } catch (e: PackageManager.NameNotFoundException) {
-            e.printStackTrace()
-        }
-    }
-
     private fun setDimensions(imgWidth: Int, imgHeight: Int) {
         var cardWidth: Int
         if (imgWidth <= 0 || imgHeight <= 0) {
