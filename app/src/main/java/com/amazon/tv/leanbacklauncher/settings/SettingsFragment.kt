@@ -496,7 +496,6 @@ class WeatherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
      */
     private val weatherKeys by lazy {
         setOf(
-            getString(R.string.pref_enable_local_weather),
             getString(R.string.pref_use_current_location),
             getString(R.string.pref_user_location),
             getString(R.string.pref_show_location),
