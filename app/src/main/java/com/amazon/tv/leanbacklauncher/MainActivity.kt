@@ -858,7 +858,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         val generation = ++weatherGeneration
         lifecycleScope.launch {
             try {
-                val json = withContext(Dispatchers.IO) {
+                val weatherResult = withContext(Dispatchers.IO) {
                     val forecast = OpenMeteoWeather.forecast(latitude, longitude)
                     val resolvedName = name?.takeIf { it.isNotBlank() } ?: runCatching {
                         Geocoder(this@MainActivity, Locale.getDefault())
@@ -875,8 +875,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                     forecast to resolvedName
                 }
                 if (isDestroyed || generation != weatherGeneration) return@launch
-                val forecast = json.first
-                val locationName = json.second
+                val forecast = weatherResult.first
+                val locationName = weatherResult.second
                 forecast.put("latitude", latitude)
                 forecast.put("longitude", longitude)
                 locationName?.let { forecast.put("name", it) }
