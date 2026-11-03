@@ -1163,6 +1163,12 @@ class VersionPreferenceFragment : LeanbackPreferenceFragmentCompat() {
  * The capture is repeated every time this screen is opened; no one-shot cached output is reused.
  */
 class LogcatViewerFragment : Fragment() {
+    companion object {
+        private const val MAX_LOG_LINES = 5_000
+        private const val MAX_LOG_CHARS = 1_000_000
+        private const val MAX_LOG_LINE_CHARS = 8_000
+    }
+
     private var logText: android.widget.TextView? = null
     private var latestLog = ""
 
@@ -1251,26 +1257,34 @@ class LogcatViewerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 try {
-                    // Redirect output to a file so a full process pipe cannot block logcat
-                    // while this thread is waiting for the process to exit.
-                    val captureFile = File(context.cacheDir, "logcat-capture.tmp")
-                    captureFile.delete()
+                    // Follow Cloudxtreme's approach: read logcat output as it is produced,
+                    // without a PID filter. Keep a rolling window to bound memory usage.
                     val process = ProcessBuilder(
-                        "logcat", "-d", "-v", "threadtime",
-                        "--pid=${android.os.Process.myPid()}"
-                    ).redirectErrorStream(true)
-                        .redirectOutput(captureFile)
-                        .start()
-                    val completed = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)
+                        "logcat", "-d", "-v", "threadtime"
+                    ).redirectErrorStream(true).start()
+                    val lines = java.util.ArrayDeque<String>()
+                    var totalChars = 0
+                    process.inputStream.bufferedReader().use { reader ->
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            val keptLine = line.takeLast(MAX_LOG_LINE_CHARS)
+                            lines.addLast(keptLine)
+                            totalChars += keptLine.length + 1
+                            while (lines.size > MAX_LOG_LINES || totalChars > MAX_LOG_CHARS) {
+                                totalChars -= lines.removeFirst().length + 1
+                            }
+                        }
+                    }
+                    val completed = process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
                     if (!completed) {
                         process.destroyForcibly()
                         process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
-                        error("Logcat capture timed out after 30 seconds")
+                        error("Logcat capture timed out after output was read")
                     }
                     if (process.exitValue() != 0) {
                         error("logcat exited with code ${process.exitValue()}")
                     }
-                    captureFile.readText().takeLast(1_000_000)
+                    lines.joinToString("\\n")
                 } catch (error: Exception) {
                     "Unable to read launcher logs: ${error.javaClass.simpleName}: ${error.message}"
                 }
@@ -1279,7 +1293,7 @@ class LogcatViewerFragment : Fragment() {
             latestLog = buildString {
                 appendLine("App: ${context.packageName} v${BuildConfig.VERSION_NAME}")
                 appendLine("Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
-                appendLine("Scope: launcher process only")
+                appendLine("Scope: device log buffer accessible to this app")
                 appendLine()
                 append(result.ifBlank { "No log entries found." })
             }
