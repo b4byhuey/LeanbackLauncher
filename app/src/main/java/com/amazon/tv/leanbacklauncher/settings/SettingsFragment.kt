@@ -875,7 +875,7 @@ class VideoPlaylistPreferenceFragment : Fragment() {
         }
         column.addView(android.widget.TextView(ctx).apply {
             text = getString(R.string.tv_video_urls)
-            textSize = 24f
+            textSize = 20f
             setTextColor(TEXT_PRIMARY)
         })
         column.addView(android.widget.TextView(ctx).apply {
@@ -925,8 +925,8 @@ class VideoPlaylistPreferenceFragment : Fragment() {
 
         return android.widget.ScrollView(ctx).apply {
             isFillViewport = true
-            // Opaque panel background prevents the launcher screen from showing through.
-            setBackgroundColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.settings_dialog_bg_protection))
+            // Latar buram (launcher tidak tembus) dengan warna yang sama dengan panel pengaturan lain.
+            setBackgroundColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.lb_preference_decor_list_background))
             addView(column)
         }
     }

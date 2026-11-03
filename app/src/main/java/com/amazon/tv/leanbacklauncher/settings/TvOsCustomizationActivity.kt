@@ -128,9 +128,8 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         actionButton(
             root,
             getString(R.string.version),
-            "${getString(R.string.app_name)} v${com.amazon.tv.leanbacklauncher.BuildConfig.VERSION_NAME}",
-            enabled = false
-        ) {}
+            "${getString(R.string.app_name)} v${com.amazon.tv.leanbacklauncher.BuildConfig.VERSION_NAME}"
+        ) { openLauncherSetting("VersionPreferenceFragment") }
         defaultLauncherButton(root)
 
         actionButton(root, getString(R.string.tv_back_launcher), getString(R.string.tv_back_launcher_desc)) { finish() }
