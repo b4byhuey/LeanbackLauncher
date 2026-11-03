@@ -27,11 +27,7 @@ object DefaultLauncher {
     var promptShown = false
 
     /** True bila launcher ini sudah menjadi default HOME. */
-    fun isDefault(activity: Activity): Boolean {
-        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val resolved = activity.packageManager.resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY)
-        return resolved?.activityInfo?.packageName == activity.packageName
-    }
+    fun isDefault(activity: Activity): Boolean = isDefault(activity.applicationContext)
 
 
     data class RootResult(val success: Boolean, val message: String)
@@ -105,6 +101,12 @@ object DefaultLauncher {
     }
 
     private fun isDefault(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = context.getSystemService(RoleManager::class.java)
+            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
+                return roleManager.isRoleHeld(RoleManager.ROLE_HOME)
+            }
+        }
         val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         val resolved = context.packageManager.resolveActivity(home, PackageManager.MATCH_DEFAULT_ONLY)
         return resolved?.activityInfo?.packageName == context.packageName
