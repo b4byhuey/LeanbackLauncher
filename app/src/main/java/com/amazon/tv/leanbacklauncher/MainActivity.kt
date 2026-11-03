@@ -295,6 +295,17 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                             activity.mIdleListeners[i].onIdleStateChange(activity.mIsIdle)
                             i++
                         }
+                        // When the launcher has been idle, return the viewport to Search
+                        // so the header and top of the home screen remain visible instead
+                        // of leaving an app tile row focused near the bottom edge.
+                        if (idle && !activity.isInEditMode) {
+                            val searchIndex = activity.homeAdapter?.getRowIndex(0) ?: -1
+                            if (searchIndex != -1 &&
+                                activity.mListView?.selectedPosition != searchIndex
+                            ) {
+                                activity.resetLauncherState(true)
+                            }
+                        }
                         return
                     }
 
