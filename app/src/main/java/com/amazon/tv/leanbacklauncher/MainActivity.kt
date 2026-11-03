@@ -649,6 +649,10 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         val now = SystemClock.uptimeMillis()
         if (now - mLastWheelNavTime < WHEEL_NAV_INTERVAL_MS) return true
+        // Jangan menumpuk smooth-scroll baru selama scroll sebelumnya belum selesai; notch wheel
+        // yang datang di tengah animasi bikin animasi fokus/scale beberapa row berjalan bersamaan
+        // (tampak seperti baris "dobel"/ghosting). Hanya berlaku untuk wheel mouse, bukan D-pad.
+        if (list.scrollState != RecyclerView.SCROLL_STATE_IDLE) return true
         mLastWheelNavTime = now
 
         val direction = if (vertical < 0f) 1 else -1
@@ -668,6 +672,53 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
     override fun dispatchGenericMotionEvent(ev: android.view.MotionEvent): Boolean {
         return if (handleMouseWheel(ev)) true else super.dispatchGenericMotionEvent(ev)
+    }
+
+    private var mMouseDownX = 0f
+    private var mMouseDownY = 0f
+    private var mMouseDragBlocked = false
+
+    /**
+     * Launcher TV dinavigasi dengan D-pad/wheel, bukan drag. Klik-tahan lalu geser memakai mouse
+     * membuat RecyclerView/HorizontalGridView ikut ter-scroll seperti layar sentuh, sehingga list
+     * dan baris bisa dipindah-pindah dari posisi awalnya. Di sini gerakan drag dari mouse yang
+     * melewati touch slop dibatalkan (child dikirimi ACTION_CANCEL) dan sisa gesturenya ditelan.
+     * Klik biasa (tanpa geser melewati slop) tetap diteruskan seperti biasa. Hanya berlaku untuk
+     * mouse; sentuhan jari/remote tidak berubah.
+     */
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        if (ev.getToolType(0) == android.view.MotionEvent.TOOL_TYPE_MOUSE) {
+            when (ev.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    mMouseDownX = ev.rawX
+                    mMouseDownY = ev.rawY
+                    mMouseDragBlocked = false
+                }
+
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    if (mMouseDragBlocked) return true
+                    val dx = ev.rawX - mMouseDownX
+                    val dy = ev.rawY - mMouseDownY
+                    val slop = android.view.ViewConfiguration.get(this).scaledTouchSlop
+                    if (dx * dx + dy * dy > slop * slop) {
+                        mMouseDragBlocked = true
+                        val cancel = android.view.MotionEvent.obtain(ev)
+                        cancel.action = android.view.MotionEvent.ACTION_CANCEL
+                        super.dispatchTouchEvent(cancel)
+                        cancel.recycle()
+                        return true
+                    }
+                }
+
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    if (mMouseDragBlocked) {
+                        mMouseDragBlocked = false
+                        return true
+                    }
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     @Deprecated("Deprecated in Java")
