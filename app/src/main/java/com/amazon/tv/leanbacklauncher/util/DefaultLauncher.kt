@@ -82,7 +82,22 @@ object DefaultLauncher {
             )
         }
 
-        return if (isDefault(context)) {
+        // The cmd package command may succeed but RoleManager/PackageManager might not
+        // immediately reflect the change. Retry a few times with a short delay.
+        var verified = false
+        repeat(5) {
+            if (isDefault(context)) {
+                verified = true
+                break
+            }
+            try {
+                Thread.sleep(300)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                break
+            }
+        }
+        return if (verified) {
             RootResult(true, context.getString(R.string.default_launcher_root_success))
         } else {
             RootResult(
