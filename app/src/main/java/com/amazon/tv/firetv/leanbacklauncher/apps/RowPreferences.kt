@@ -349,15 +349,6 @@ object RowPreferences {
         return pref.getString(context.getString(R.string.pref_user_location), "")
     }
 
-    @JvmStatic
-    fun getWeatherApiKey(context: Context): String {
-        val pref = PreferenceManager.getDefaultSharedPreferences(context)
-        return pref.getString(
-            context.getString(R.string.pref_weather_apikey),
-            "bd5e378503939ddaee76f12ad7a97608"
-        ).takeIf { it?.isNotBlank() == true } ?: "bd5e378503939ddaee76f12ad7a97608" // ex. b7a56bb43570189115cb8b2d98cdde5b
-    }
-
     fun fixRowPrefs() {
         val context = LauncherApp.context
         val pref = PreferenceManager.getDefaultSharedPreferences(context)
