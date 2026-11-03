@@ -348,6 +348,13 @@ or recommendations will not work properly."</string>
     <string name="default_launcher_already">This launcher is already the default</string>
     <string name="default_launcher_already_desc">Already the default launcher</string>
     <string name="default_launcher_manual">This device has no default launcher screen. Open Settings &gt; Apps/Device and choose this launcher as Home.</string>
+
+    <string name="default_launcher_root_action">Force default launcher (root)</string>
+    <string name="default_launcher_root_action_desc">Use granted root access to set this app as HOME. Does not disable the stock launcher.</string>
+    <string name="default_launcher_root_success">Default HOME launcher was set successfully.</string>
+    <string name="default_launcher_root_timeout">Root command timed out. Check the root manager prompt and try again.</string>
+    <string name="default_launcher_root_failed">Unable to set default HOME launcher: %1$s</string>
+    <string name="default_launcher_root_not_verified">The command completed, but Android did not report this app as HOME: %1$s</string>
     <string name="tv_choose_video">Choose local video playlist</string>
     <string name="tv_choose_video_desc">Select multiple MP4 or other supported video files from storage</string>
     <string name="tv_video_urls">Use video URLs</string>

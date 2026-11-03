@@ -275,6 +275,13 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="default_launcher_already">Launcher ini sudah menjadi default</string>
     <string name="default_launcher_already_desc">Sudah menjadi default launcher</string>
     <string name="default_launcher_manual">Perangkat ini tidak punya layar pilihan default launcher. Buka Pengaturan &gt; Aplikasi/Perangkat lalu pilih launcher ini sebagai Home.</string>
+
+    <string name="default_launcher_root_action">Paksa jadi launcher default (root)</string>
+    <string name="default_launcher_root_action_desc">Gunakan akses root yang diberikan untuk menjadikan aplikasi ini HOME. Launcher bawaan tidak dinonaktifkan.</string>
+    <string name="default_launcher_root_success">Launcher HOME default berhasil diatur.</string>
+    <string name="default_launcher_root_timeout">Perintah root kehabisan waktu. Periksa dialog aplikasi pengelola root lalu coba lagi.</string>
+    <string name="default_launcher_root_failed">Gagal mengatur launcher HOME default: %1$s</string>
+    <string name="default_launcher_root_not_verified">Perintah selesai, tetapi Android belum melaporkan aplikasi ini sebagai HOME: %1$s</string>
     <string name="tv_choose_video">Pilih playlist video lokal</string>
     <string name="tv_choose_video_desc">Pilih beberapa file MP4 atau format video lain yang didukung dari penyimpanan</string>
     <string name="tv_video_urls">Gunakan URL video</string>

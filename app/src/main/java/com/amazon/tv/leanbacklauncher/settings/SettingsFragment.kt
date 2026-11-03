@@ -980,6 +980,31 @@ class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
         }.also { screen.addPreference(it) }
 
         screen.addPreference(Preference(ctx).apply {
+            key = "default_launcher_root_action"
+            title = getString(R.string.default_launcher_root_action)
+            summary = getString(R.string.default_launcher_root_action_desc)
+            isPersistent = false
+            setOnPreferenceClickListener { preference ->
+                preference.isEnabled = false
+                val appContext = requireContext().applicationContext
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        DefaultLauncher.forceDefaultWithRoot(appContext)
+                    }
+                    if (!isAdded) return@launch
+                    preference.isEnabled = true
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        result.message,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                    refreshStatus()
+                }
+                true
+            }
+        })
+
+        screen.addPreference(Preference(ctx).apply {
             key = "default_launcher_later"
             title = getString(R.string.default_launcher_later)
             isPersistent = false
