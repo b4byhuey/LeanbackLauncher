@@ -482,6 +482,14 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                                 })
                             }
                             addWidget(false)
+                            // The header row can be re-attached after scrolling; addWidget() then
+                            // inflates a fresh clock layout whose weather views start empty/GONE.
+                            // Repaint them from the cached forecast (no network request).
+                            if (child is SearchOrbView && weatherInitialized &&
+                                RowPreferences.isWeatherEnabled(this@MainActivity)
+                            ) {
+                                scheduleWeatherUiRestore()
+                            }
                         }
 
                         1, 2 -> {
