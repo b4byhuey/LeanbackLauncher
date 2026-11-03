@@ -209,8 +209,6 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="category_label_music">Musik</string>
     <string name="category_label_videos">Video</string>
     <string name="edit_row_title">Edit Baris Beranda</string>
-    <string name="enable_local_weather_title">Aktifkan Cuaca Lokal</string>
-    <string name="enable_local_weather_description">Tampilkan cuaca saat ini</string>
     <string name="favorites_row_title">Tampilkan Baris Favorit</string>
     <string name="games_row_title">Tampilkan Baris Game</string>
     <string name="hidden_applications_desc">Aplikasi yang dipilih disembunyikan dari layar beranda</string>
@@ -253,13 +251,11 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="videos_row_title">Tampilkan Baris Video</string>
     <string name="wallpaper_title">Wallpaper Bawaan</string>
     <string name="wallpaper_choose">Letakkan gambar wallpaper di folder root penyimpanan, lalu pilih di sini</string>
-    <string name="weather_apikey_title">Kunci API OpenWeatherMap</string>
 	<string name="weather_prayer_settings_title">Pengaturan Waktu Sholat</string>
     <string name="weather_prayer_settings_desc">Atur lokasi bersama, cuaca lokal, dan metode perhitungan waktu sholat</string>
 	<string name="weather_hilotemp">%1$s–%2$s %3$s</string>
 	<string name="weather_pressure">%1$s %2$s</string>
     <string name="weather_pressure_hp">hPa</string>
-    <string name="weather_pressure_mm">mmHg</string>
     <string name="weather_speed_m">m/s</string>
     <string name="weather_speed_i">mph</string>
     <string name="weather_wind">Angin • %3$s %1$s %2$s</string>
