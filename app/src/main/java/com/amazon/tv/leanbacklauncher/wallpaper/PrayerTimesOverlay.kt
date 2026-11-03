@@ -386,7 +386,8 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         ).apply {
             timeZone = prayerTimeZone
         }.format(Date())
-        city.text = infoText ?: locationName?.let { "$dateText · $it" } ?: dateText
+        // Nama lokasi ditampilkan di header di atas jam; baris ini khusus tanggal/status.
+        city.text = infoText ?: dateText
         for ((name, chip) in chips) {
             val active = upcoming?.first == name
             chip.name.text = labelFor(name)
