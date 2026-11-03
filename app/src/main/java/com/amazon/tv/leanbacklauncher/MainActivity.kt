@@ -1247,7 +1247,15 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             if (!weatherInitialized) {
                 scheduleWeatherInitialization()
             } else {
-                scheduleWeatherUiRestore()
+                // Recreate the launcher's clock/weather header after returning from
+                // another Activity. updateWeatherDetails() then paints it from cache;
+                // a network refresh is still only requested when the cache has expired.
+                if (mAppWidgetHostView == null) addWidget(true)
+                window.decorView.post {
+                    if (!isDestroyed && RowPreferences.isWeatherEnabled(this)) {
+                        scheduleWeatherUiRestore()
+                    }
+                }
                 if (weatherCacheExpired()) refreshWeather(true)
             }
         } else {
@@ -1331,6 +1339,10 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     override fun onPause() {
+        // Suspend only the weather UI while another Activity/app is in front.
+        // Keep the preference and cached forecast intact for a fast restore.
+        weatherHandler.removeCallbacks(weatherUiRestore)
+        weatherViewGone()
         wallpaperView?.onHostPause()
         super.onPause()
         defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
