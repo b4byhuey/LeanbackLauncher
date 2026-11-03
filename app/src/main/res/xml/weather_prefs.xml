@@ -21,7 +21,7 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="@string/pref_show_location"
             android:title="@string/show_location_title"
             android:summary="@string/show_location_description" />
@@ -33,7 +33,7 @@
         android:title="@string/weather_settings_title">
 
         <SwitchPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="@string/pref_enable_local_weather"
             android:title="@string/enable_local_weather_title"
             android:summary="@string/enable_local_weather_description" />

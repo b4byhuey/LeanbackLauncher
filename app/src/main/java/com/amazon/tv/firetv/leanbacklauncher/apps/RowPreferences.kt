@@ -322,7 +322,7 @@ object RowPreferences {
     @JvmStatic
     fun isWeatherEnabled(context: Context): Boolean {
         val pref = PreferenceManager.getDefaultSharedPreferences(context)
-        return pref.getBoolean(context.getString(R.string.pref_enable_local_weather), false)
+        return pref.getBoolean(context.getString(R.string.pref_enable_local_weather), true)
     }
 
     @JvmStatic
@@ -334,7 +334,7 @@ object RowPreferences {
     @JvmStatic
     fun showLocation(context: Context): Boolean {
         val pref = PreferenceManager.getDefaultSharedPreferences(context)
-        return pref.getBoolean(context.getString(R.string.pref_show_location), false)
+        return pref.getBoolean(context.getString(R.string.pref_show_location), true)
     }
 
     @JvmStatic

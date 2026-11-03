@@ -199,15 +199,21 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
         main.removeCallbacks(refresh)
         val automatic = RowPreferences.isUseLocationEnabled(context)
+        val weather = if (automatic) readWeather() else null
+        val latitude = weather?.optDouble("latitude", Double.NaN)
+            ?.takeIf { it.isFinite() && it in -90.0..90.0 }
+        val longitude = weather?.optDouble("longitude", Double.NaN)
+            ?.takeIf { it.isFinite() && it in -180.0..180.0 }
+        val hasCoordinates = latitude != null && longitude != null
         val location = if (automatic) {
-            readWeather()?.optString("name")?.takeIf { it.isNotBlank() }
+            weather?.optString("name")?.takeIf { it.isNotBlank() && it != "null" }
                 ?: PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(KEY_DETECTED_CITY, null)?.takeIf { it.isNotBlank() }
         } else {
             RowPreferences.getUserLocation(context)?.takeIf { it.isNotBlank() }
         }
 
-        if (location == null) {
+        if (location == null && !hasCoordinates) {
             locationName = null
             infoText = context.getString(if (automatic) R.string.prayer_detecting else R.string.prayer_city_not_set)
             timings = null
@@ -217,7 +223,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             return
         }
 
-        locationName = location
+        locationName = location ?: context.getString(R.string.use_current_location_title)
         infoText = null
 
         // Reuse the last successful response when this view is recreated or reattached.
@@ -233,7 +239,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
         val myRequest = ++requestId
         ensureExecutor().execute {
-            val result = try { fetchTimings(location) } catch (error: Exception) {
+            val result = try { fetchTimings(location, latitude, longitude) } catch (error: Exception) {
                 android.util.Log.w(TAG, "Unable to load prayer times", error)
                 null
             }
@@ -316,7 +322,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
         val timeZoneId: String?
     )
 
-    private fun fetchTimings(location: String): PrayerResponse {
+    private fun fetchTimings(location: String?, latitude: Double?, longitude: Double?): PrayerResponse {
         val encoded = URLEncoder.encode(location, "UTF-8")
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val method = preferences.getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
@@ -338,8 +344,14 @@ class PrayerTimesOverlay @JvmOverloads constructor(
             "&methodSettings=${URLEncoder.encode("$fajr,$maghrib,$isha", "UTF-8")}"
         } else ""
 
-        val requestUrl = "https://api.aladhan.com/v1/timingsByAddress?address=$encoded" +
-            "&method=$method&tune=$tune$customSettings"
+        val requestUrl = if (latitude != null && longitude != null) {
+            val date = SimpleDateFormat("dd-MM-yyyy", Locale.US).format(Date())
+            "https://api.aladhan.com/v1/timings/$date?latitude=$latitude&longitude=$longitude" +
+                "&method=$method&tune=$tune$customSettings"
+        } else {
+            "https://api.aladhan.com/v1/timingsByAddress?address=$encoded" +
+                "&method=$method&tune=$tune$customSettings"
+        }
         val connection = (URL(requestUrl)
             .openConnection() as HttpURLConnection).apply {
             connectTimeout = 7000
@@ -411,8 +423,12 @@ class PrayerTimesOverlay @JvmOverloads constructor(
 
     private fun currentConfigKey(): String {
         val automatic = RowPreferences.isUseLocationEnabled(context)
+        val weather = if (automatic) readWeather() else null
         val location = if (automatic) {
-            readWeather()?.optString("name")?.takeIf { it.isNotBlank() }
+            val lat = weather?.optDouble("latitude", Double.NaN)
+            val lon = weather?.optDouble("longitude", Double.NaN)
+            if (lat != null && lon != null && lat.isFinite() && lon.isFinite()) "$lat,$lon"
+            else weather?.optString("name")?.takeIf { it.isNotBlank() }
                 ?: preferences.getString(KEY_DETECTED_CITY, "")
         } else {
             RowPreferences.getUserLocation(context)

@@ -15,6 +15,8 @@ internal object OpenMeteoWeather {
             "&daily=temperature_2m_max,temperature_2m_min&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto&forecast_days=1"
         return request(URL(endpoint)).also {
             if (!it.has("current") || !it.has("daily")) error("Incomplete Open-Meteo response")
+            it.put("latitude", latitude)
+            it.put("longitude", longitude)
         }
     }
 

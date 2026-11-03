@@ -87,7 +87,6 @@ import com.amazon.tv.leanbacklauncher.settings.LegacyHomeScreenSettingsActivity
 import com.amazon.tv.leanbacklauncher.settings.SettingsActivity
 import com.amazon.tv.leanbacklauncher.util.OpenWeatherIcons
 import com.amazon.tv.leanbacklauncher.util.Partner
-import com.amazon.tv.leanbacklauncher.util.Permission
 import com.amazon.tv.leanbacklauncher.util.TvSearchIconLoader
 import com.amazon.tv.leanbacklauncher.util.TvSearchSuggestionsLoader
 import com.amazon.tv.leanbacklauncher.util.Util
@@ -392,9 +391,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         if (Build.VERSION.SDK_INT != Build.VERSION_CODES.O) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
-        // network monitor (request from HomeScreenAdapter)
-        Permission.isLocationPermissionGranted(this)
-
         // FIXME: focus issues
         // mAccessibilityManager = getSystemService(ACCESSIBILITY_SERVICE) as AccessibilityManager
         editModeView = findViewById<EditModeView?>(R.id.edit_mode_view)?.apply {
@@ -542,13 +538,15 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         // Weather data also powers the native launcher header, independently of the legacy widget.
         // LocalWeather supplies coordinates only; all forecast data comes from Open-Meteo.
         localWeather = LocalWeather(this@MainActivity, "")
-        initializeWeather()
+        // Let the launcher finish its first layout pass before starting location/network work.
+        scheduleWeatherInitialization()
     }
 
     public override fun onDestroy() {
         if (BuildConfig.DEBUG) Log.d(TAG, "onDestroy()")
         mHandler.removeMessages(3)
         weatherHandler.removeCallbacksAndMessages(null)
+        weatherInitScheduled = false
         weatherGeneration++
         defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
         super.onDestroy()
@@ -734,7 +732,26 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private val weatherPrefs by lazy { androidx.preference.PreferenceManager.getDefaultSharedPreferences(applicationContext) }
     private val weatherHandler = Handler(Looper.getMainLooper())
     private var weatherLoading = false
+    private var weatherInitialized = false
+    private var weatherInitScheduled = false
     private var weatherGeneration = 0
+    private val weatherInitialize = Runnable {
+        weatherInitScheduled = false
+        if (!isDestroyed && !weatherInitialized) {
+            weatherInitialized = true
+            initializeWeather()
+        }
+    }
+
+    private fun scheduleWeatherInitialization() {
+        if (weatherInitialized || weatherInitScheduled || isFinishing || isDestroyed) return
+        weatherInitScheduled = true
+        window.decorView.post {
+            if (weatherInitScheduled && !isDestroyed) {
+                weatherHandler.postDelayed(weatherInitialize, 350L)
+            }
+        }
+    }
     private var weatherSignature = ""
     private val weatherRefresh = Runnable { refreshWeather(true) }
 
@@ -837,6 +854,8 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             try {
                 val json = withContext(Dispatchers.IO) { OpenMeteoWeather.forecast(latitude, longitude) }
                 if (isDestroyed || generation != weatherGeneration) return@launch
+                json.put("latitude", latitude)
+                json.put("longitude", longitude)
                 if (!name.isNullOrBlank()) json.put("name", name)
                 else weatherPrefs.getString("launcher_detected_city", null)?.let { json.put("name", it) }
                 val raw = json.toString()
@@ -880,7 +899,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             if (cached != null && weatherView != null) {
                 updateWeatherDetails(cached)
                 Log.d(TAG, "Weather UI restored after widget inflation")
-            } else if (weatherUiRestoreAttempts++ < 12) {
+            } else if (weatherUiRestoreAttempts++ < 30) {
                 weatherHandler.postDelayed(this, 500L)
             } else {
                 Log.w(TAG, "Weather UI view was not inflated; retaining cached forecast")
@@ -1195,8 +1214,12 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         super.onResume()
         if (RowPreferences.isWeatherEnabled(this)) {
-            scheduleWeatherUiRestore()
-            if (weatherCacheExpired()) refreshWeather(true)
+            if (!weatherInitialized) {
+                scheduleWeatherInitialization()
+            } else {
+                scheduleWeatherUiRestore()
+                if (weatherCacheExpired()) refreshWeather(true)
+            }
         } else {
             weatherViewGone()
         }
