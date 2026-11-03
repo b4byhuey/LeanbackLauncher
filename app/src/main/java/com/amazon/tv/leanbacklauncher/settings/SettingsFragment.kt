@@ -1258,9 +1258,10 @@ class LogcatViewerFragment : Fragment() {
             val result = withContext(Dispatchers.IO) {
                 try {
                     // Follow Cloudxtreme's approach: read logcat output as it is produced,
-                    // without a PID filter. Keep a rolling window to bound memory usage.
+                    // filtered to this launcher process. Keep a rolling window to bound memory usage.
                     val process = ProcessBuilder(
-                        "logcat", "-d", "-v", "threadtime"
+                        "logcat", "-d", "-v", "threadtime",
+                        "--pid=${android.os.Process.myPid()}"
                     ).redirectErrorStream(true).start()
                     val lines = java.util.ArrayDeque<String>()
                     var totalChars = 0
@@ -1293,7 +1294,7 @@ class LogcatViewerFragment : Fragment() {
             latestLog = buildString {
                 appendLine("App: ${context.packageName} v${BuildConfig.VERSION_NAME}")
                 appendLine("Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
-                appendLine("Scope: device log buffer accessible to this app")
+                appendLine("Scope: launcher process only (PID ${android.os.Process.myPid()})")
                 appendLine()
                 append(result.ifBlank { "No log entries found." })
             }
