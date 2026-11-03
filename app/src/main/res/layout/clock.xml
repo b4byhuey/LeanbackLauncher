@@ -59,6 +59,20 @@
             </FrameLayout>
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/location_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/clock_text_color"
+            android:textSize="12sp" />
+
         <View
             android:layout_width="0dp"
             android:layout_height="1dp"
