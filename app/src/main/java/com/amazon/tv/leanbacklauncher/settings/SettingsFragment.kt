@@ -1285,7 +1285,7 @@ class LogcatViewerFragment : Fragment() {
                     if (process.exitValue() != 0) {
                         error("logcat exited with code ${process.exitValue()}")
                     }
-                    lines.joinToString("\\n")
+                    lines.joinToString("\n")
                 } catch (error: Exception) {
                     "Unable to read launcher logs: ${error.javaClass.simpleName}: ${error.message}"
                 }
