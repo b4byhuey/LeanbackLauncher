@@ -1,7 +1,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:key="weather_prefs"
-    android:title="@string/weather_prayer_settings_title">
+    android:title="@string/prayer_settings_title">
 
     <PreferenceCategory
         android:key="location_settings"

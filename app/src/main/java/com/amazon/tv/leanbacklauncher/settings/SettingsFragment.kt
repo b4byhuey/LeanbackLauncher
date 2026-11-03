@@ -614,7 +614,7 @@ internal object PrayerMethodRepository {
 /** Prayer calculation controls reuse the location configured in Weather Preferences. */
 private fun addPrayerControls(fragment: PreferenceFragmentCompat, root: PreferenceScreen) {
     val ctx = fragment.requireContext()
-    val prayerCategory = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.prayer_settings_title) }
+    val prayerCategory = PreferenceCategory(ctx).apply { title = fragment.getString(R.string.weather_prayer_settings_title) }
     root.addPreference(prayerCategory)
     val method = ListPreference(ctx).apply {
         key = "prayer_method"
