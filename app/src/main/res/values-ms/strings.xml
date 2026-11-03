@@ -189,8 +189,6 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="category_label_music">Muzik</string>
     <string name="category_label_videos">Video</string>
     <string name="edit_row_title">Edit Baris Skrin Utama</string>
-    <string name="enable_local_weather_title">Dayakan Cuaca Setempat</string>
-    <string name="enable_local_weather_description">Paparkan cuaca semasa</string>
     <string name="favorites_row_title">Paparkan Baris Kegemaran</string>
     <string name="games_row_title">Paparkan Baris Permainan</string>
     <string name="hidden_applications_desc">Aplikasi yang dipilih disembunyikan daripada skrin utama</string>
@@ -233,13 +231,11 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="videos_row_title">Paparkan Baris Video</string>
     <string name="wallpaper_title">Kertas Dinding Lalai</string>
     <string name="wallpaper_choose">Letakkan imej kertas dinding dalam folder akar storan, kemudian pilih di sini</string>
-    <string name="weather_apikey_title">Kunci API OpenWeatherMap</string>
 	<string name="weather_prayer_settings_title">Tetapan Waktu Solat</string>
     <string name="weather_prayer_settings_desc">Tetapkan lokasi bersama, cuaca setempat dan kaedah pengiraan waktu solat</string>
 	<string name="weather_hilotemp">%1$s–%2$s %3$s</string>
 	<string name="weather_pressure">%1$s %2$s</string>
     <string name="weather_pressure_hp">hPa</string>
-    <string name="weather_pressure_mm">mmHg</string>
     <string name="weather_speed_m">m/s</string>
     <string name="weather_speed_i">mph</string>
     <string name="weather_wind">Angin • %3$s %1$s %2$s</string>
