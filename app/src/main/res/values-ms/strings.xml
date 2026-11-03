@@ -258,4 +258,10 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="default_launcher_already">Pelancar ini sudah menjadi lalai</string>
     <string name="default_launcher_already_desc">Sudah menjadi pelancar lalai</string>
     <string name="default_launcher_manual">Peranti ini tiada skrin pilihan pelancar lalai. Buka Tetapan &gt; Apl/Peranti dan pilih pelancar ini sebagai Home.</string>
+    <string name="default_launcher_root_action">Paksa pelancar lalai (root)</string>
+    <string name="default_launcher_root_action_desc">Gunakan akses root yang diberikan untuk menetapkan aplikasi ini sebagai HOME. Pelancar asal tidak akan dilumpuhkan.</string>
+    <string name="default_launcher_root_success">Pelancar HOME lalai berjaya ditetapkan.</string>
+    <string name="default_launcher_root_timeout">Perintah root tamat masa. Semak permintaan kebenaran dalam pengurus root dan cuba lagi.</string>
+    <string name="default_launcher_root_failed">Tidak dapat menetapkan pelancar HOME lalai: %1$s</string>
+    <string name="default_launcher_root_not_verified">Perintah selesai, tetapi Android tidak mengesahkan aplikasi ini sebagai HOME: %1$s</string>
 </resources>
