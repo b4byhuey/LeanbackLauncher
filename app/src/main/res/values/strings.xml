@@ -314,7 +314,7 @@ or recommendations will not work properly."</string>
     <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>
     <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
-    <string name="prayer_settings_title">Prayer Time Settings</string>
+    <string name="prayer_settings_title">Weather &amp; Prayer Time Settings</string>
     <string name="prayer_settings_desc">Enable weather, set your location and units, choose a calculation method, and adjust each prayer time</string>
     <string name="prayer_method_category">Calculation method</string>
     <string name="prayer_method_title">Calculation method</string>
