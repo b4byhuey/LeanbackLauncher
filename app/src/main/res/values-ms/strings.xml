@@ -153,7 +153,7 @@ Pergi ke Tetapan untuk mendayakannya"</string>
     <string name="channels_sources_desc">Pilih aplikasi yang salurannya dipaparkan pada skrin utama</string>
     <string name="channels_sources_empty">Tiada aplikasi yang berkongsi saluran</string>
     <string name="channels_sources_no_permission">Kebenaran untuk membaca saluran TV belum diberikan, jadi saluran daripada aplikasi lain mungkin tidak dipaparkan.</string>
-    <string name="prayer_settings_title">Tetapan Cuaca &amp; Waktu Solat</string>
+    <string name="prayer_settings_title">Tetapan Waktu Solat</string>
     <string name="prayer_settings_desc">Aktifkan cuaca, tetapkan lokasi dan unit, pilih kaedah pengiraan, serta laraskan waktu setiap solat</string>
     <string name="prayer_method_category">Kaedah pengiraan</string>
     <string name="prayer_method_title">Kaedah pengiraan</string>
