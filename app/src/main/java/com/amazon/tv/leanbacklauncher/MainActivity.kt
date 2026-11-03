@@ -750,7 +750,15 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             return
         }
         val cached = readWeatherCache()
-        if (cached != null) updateWeatherDetails(cached) else weatherViewGone()
+        if (cached != null) {
+            Log.i(TAG, "Weather cache restored")
+            updateWeatherDetails(cached)
+            // Search/clock widget is inflated lazily after MainActivity.onCreate().
+            scheduleWeatherUiRestore()
+        } else {
+            Log.i(TAG, "No usable weather cache; requesting forecast")
+            weatherViewGone()
+        }
         scheduleWeatherRefresh()
         if (cached == null || weatherCacheExpired()) refreshWeather(true)
     }
@@ -841,6 +849,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                     weatherPrefs.edit().putString("launcher_detected_city", it).apply()
                 }
                 updateWeatherDetails(json)
+                scheduleWeatherUiRestore()
                 findViewById<com.amazon.tv.leanbacklauncher.wallpaper.PrayerTimesOverlay>(R.id.prayer_times_overlay)
                     ?.refreshForWeatherUpdate()
                 weatherLoading = false
@@ -860,6 +869,29 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         val elapsed = (System.currentTimeMillis() - saved).coerceAtLeast(0L)
         val delay = if (saved == 0L) maxCacheAge else (maxCacheAge - elapsed).coerceAtLeast(60_000L)
         weatherHandler.postDelayed(weatherRefresh, delay)
+    }
+
+    private var weatherUiRestoreAttempts = 0
+    private val weatherUiRestore = object : Runnable {
+        override fun run() {
+            if (isDestroyed || !RowPreferences.isWeatherEnabled(this@MainActivity)) return
+            val cached = readWeatherCache()
+            val weatherView = findViewById<ViewGroup?>(R.id.weather)
+            if (cached != null && weatherView != null) {
+                updateWeatherDetails(cached)
+                Log.d(TAG, "Weather UI restored after widget inflation")
+            } else if (weatherUiRestoreAttempts++ < 12) {
+                weatherHandler.postDelayed(this, 500L)
+            } else {
+                Log.w(TAG, "Weather UI view was not inflated; retaining cached forecast")
+            }
+        }
+    }
+
+    private fun scheduleWeatherUiRestore() {
+        weatherHandler.removeCallbacks(weatherUiRestore)
+        weatherUiRestoreAttempts = 0
+        weatherHandler.post(weatherUiRestore)
     }
 
     private fun weatherViewGone() {
@@ -1162,7 +1194,12 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         var forceResort = true
 
         super.onResume()
-        if (RowPreferences.isWeatherEnabled(this) && weatherCacheExpired()) refreshWeather(true)
+        if (RowPreferences.isWeatherEnabled(this)) {
+            scheduleWeatherUiRestore()
+            if (weatherCacheExpired()) refreshWeather(true)
+        } else {
+            weatherViewGone()
+        }
 
         val shyChanged = setShyMode(!isBackgroundVisibleBehind, true)
 

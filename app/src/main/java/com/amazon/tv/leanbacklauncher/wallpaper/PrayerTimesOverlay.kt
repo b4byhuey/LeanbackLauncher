@@ -470,9 +470,17 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     }
 
     private fun readWeather(): JSONObject? = try {
-        val file = java.io.File(context.cacheDir, "weather.json")
-        if (file.exists()) JSONObject(file.readText()) else null
-    } catch (_: Exception) { null }
+        // Durable forecast cache first; cacheDir/weather.json is only a legacy fallback.
+        val cached = preferences.getString("open_meteo_weather_json", null)
+        if (!cached.isNullOrBlank()) JSONObject(cached)
+        else {
+            val file = java.io.File(context.cacheDir, "weather.json")
+            if (file.exists()) JSONObject(file.readText()) else null
+        }
+    } catch (error: Exception) {
+        android.util.Log.w(TAG, "Unable to restore weather location for prayer times", error)
+        null
+    }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
