@@ -323,7 +323,7 @@ class PrayerTimesOverlay @JvmOverloads constructor(
     )
 
     private fun fetchTimings(location: String?, latitude: Double?, longitude: Double?): PrayerResponse {
-        val encoded = URLEncoder.encode(location, "UTF-8")
+        val encoded = URLEncoder.encode(location.orEmpty(), "UTF-8")
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val method = preferences.getString(KEY_METHOD, DEFAULT_METHOD) ?: DEFAULT_METHOD
         val tune = listOf(
