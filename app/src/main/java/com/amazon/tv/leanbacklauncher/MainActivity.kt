@@ -1350,10 +1350,10 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     override fun onPause() {
-        // Suspend only the weather UI while another Activity/app is in front.
-        // Keep the preference and cached forecast intact for a fast restore.
+        // Pause background UI work, but keep the weather header visibility intact.
+        // The Activity may pause briefly during launcher transitions; hiding the views
+        // here leaves them gone until a later resume/rebuild even though the cache is valid.
         weatherHandler.removeCallbacks(weatherUiRestore)
-        weatherViewGone()
         wallpaperView?.onHostPause()
         super.onPause()
         defaultLauncherHandler.removeCallbacks(defaultLauncherPrompt)
