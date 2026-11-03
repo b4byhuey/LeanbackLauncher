@@ -100,9 +100,11 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
      * Semua layar pengaturan tampil di panel samping yang sama. Hanya fragment GuidedStep
      * (layar Legacy layar penuh) yang tetap memakai container immersive.
      */
-    private fun showInPanel(f: Fragment) {
+    fun showPreferencePanel(f: Fragment) {
         if (f is GuidedStepSupportFragment) startImmersiveFragment(f) else startPreferenceFragment(f)
     }
+
+    private fun showInPanel(f: Fragment) = showPreferencePanel(f)
 
     override fun onPreferenceStartScreen(
         caller: PreferenceFragmentCompat?,
@@ -146,7 +148,13 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
         }
 
         findPreference<Preference>("version")?.apply {
-            this.summary = "${getString(R.string.app_name)} v" + BuildConfig.VERSION_NAME
+            summary = "${getString(R.string.app_name)} v" + BuildConfig.VERSION_NAME
+            isSelectable = true
+            setOnPreferenceClickListener {
+                (parentFragment as? SettingsFragment)?.showPreferencePanel(VersionPreferenceFragment())
+                    ?: return@setOnPreferenceClickListener false
+                true
+            }
         }
 
         findPreference<Preference>("set_default_launcher")?.apply {
