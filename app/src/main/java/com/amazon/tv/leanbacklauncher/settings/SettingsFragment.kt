@@ -1251,16 +1251,26 @@ class LogcatViewerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 try {
+                    // Redirect output to a file so a full process pipe cannot block logcat
+                    // while this thread is waiting for the process to exit.
+                    val captureFile = File(context.cacheDir, "logcat-capture.tmp")
+                    captureFile.delete()
                     val process = ProcessBuilder(
                         "logcat", "-d", "-v", "threadtime",
                         "--pid=${android.os.Process.myPid()}"
-                    ).redirectErrorStream(true).start()
-                    val completed = process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+                    ).redirectErrorStream(true)
+                        .redirectOutput(captureFile)
+                        .start()
+                    val completed = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)
                     if (!completed) {
                         process.destroyForcibly()
-                        error("Logcat capture timed out")
+                        process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
+                        error("Logcat capture timed out after 30 seconds")
                     }
-                    process.inputStream.bufferedReader().use { it.readText().takeLast(10_000_000) }
+                    if (process.exitValue() != 0) {
+                        error("logcat exited with code ${process.exitValue()}")
+                    }
+                    captureFile.readText().takeLast(1_000_000)
                 } catch (error: Exception) {
                     "Unable to read launcher logs: ${error.javaClass.simpleName}: ${error.message}"
                 }
