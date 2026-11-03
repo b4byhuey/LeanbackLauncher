@@ -956,7 +956,6 @@ class VideoPlaylistPreferenceFragment : Fragment() {
 class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     private var status: Preference? = null
     private var action: Preference? = null
-    private var rootAction: Preference? = null
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val ctx = preferenceManager.context
@@ -980,7 +979,7 @@ class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
             }
         }.also { screen.addPreference(it) }
 
-        rootAction = Preference(ctx).apply {
+        screen.addPreference(Preference(ctx).apply {
             key = "default_launcher_root_action"
             title = getString(R.string.default_launcher_root_action)
             summary = getString(R.string.default_launcher_root_action_desc)
@@ -1003,7 +1002,7 @@ class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
                 }
                 true
             }
-        }.also { screen.addPreference(it) }
+        })
 
         screen.addPreference(Preference(ctx).apply {
             key = "default_launcher_later"
