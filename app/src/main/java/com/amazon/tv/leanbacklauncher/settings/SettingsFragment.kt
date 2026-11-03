@@ -956,6 +956,7 @@ class VideoPlaylistPreferenceFragment : Fragment() {
 class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     private var status: Preference? = null
     private var action: Preference? = null
+    private var rootAction: Preference? = null
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val ctx = preferenceManager.context
@@ -975,6 +976,31 @@ class DefaultLauncherPreferenceFragment : LeanbackPreferenceFragmentCompat() {
             isPersistent = false
             setOnPreferenceClickListener {
                 DefaultLauncher.request(requireActivity())
+                true
+            }
+        }.also { screen.addPreference(it) }
+
+        rootAction = Preference(ctx).apply {
+            key = "default_launcher_root_action"
+            title = getString(R.string.default_launcher_root_action)
+            summary = getString(R.string.default_launcher_root_action_desc)
+            isPersistent = false
+            setOnPreferenceClickListener { preference ->
+                preference.isEnabled = false
+                val appContext = requireContext().applicationContext
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        DefaultLauncher.forceDefaultWithRoot(appContext)
+                    }
+                    if (!isAdded) return@launch
+                    preference.isEnabled = true
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        result.message,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                    refreshStatus()
+                }
                 true
             }
         }.also { screen.addPreference(it) }
