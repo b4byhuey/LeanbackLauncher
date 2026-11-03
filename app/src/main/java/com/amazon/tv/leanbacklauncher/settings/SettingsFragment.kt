@@ -689,7 +689,7 @@ class PrayerPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         val ctx = preferenceManager.context
         root = preferenceManager.createPreferenceScreen(ctx).also {
-            it.title = getString(R.string.prayer_settings_title)
+            it.title = getString(R.string.weather_prayer_settings_title)
         }
         preferenceScreen = root
         val methodCategory = PreferenceCategory(ctx).apply {
