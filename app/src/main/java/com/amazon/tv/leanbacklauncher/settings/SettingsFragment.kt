@@ -1260,7 +1260,7 @@ class LogcatViewerFragment : Fragment() {
                         process.destroyForcibly()
                         error("Logcat capture timed out")
                     }
-                    process.inputStream.bufferedReader().use { it.readText().takeLast(1_000_000) }
+                    process.inputStream.bufferedReader().use { it.readText().takeLast(10_000_000) }
                 } catch (error: Exception) {
                     "Unable to read launcher logs: ${error.javaClass.simpleName}: ${error.message}"
                 }
