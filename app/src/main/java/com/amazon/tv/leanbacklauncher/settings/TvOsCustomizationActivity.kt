@@ -166,32 +166,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         Toast.makeText(this, getString(R.string.tv_wallpaper_saved), Toast.LENGTH_SHORT).show()
     }
 
-    private fun showVideoUrlPlaylistDialog() {
-        val input = EditText(this).apply {
-            hint = getString(R.string.tv_video_urls_hint)
-            minLines = 3
-            maxLines = 8
-            setText(prefs.getString(KEY_VIDEO_PLAYLIST, "")?.let { raw ->
-                try { val a = org.json.JSONArray(raw); (0 until a.length()).joinToString("\n") { a.getString(it) } } catch (_: Exception) { "" }
-            } ?: "")
-            setPadding(dp(18), dp(12), dp(18), dp(12))
-        }
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.tv_video_urls)
-            .setMessage(R.string.tv_video_urls_desc)
-            .setView(input)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.tv_save_video_playlist) { _, _ ->
-                val urls = input.text.toString().lines().map { it.trim() }.filter { it.isNotEmpty() }
-                if (urls.isEmpty() || urls.any { !it.startsWith("https://", true) && !it.startsWith("http://", true) }) {
-                    Toast.makeText(this, getString(R.string.tv_video_urls_invalid), Toast.LENGTH_LONG).show()
-                } else {
-                    saveVideoPlaylist(urls.map(Uri::parse))
-                }
-            }
-            .show()
-    }
-
     private fun saveVideoPlaylist(uris: List<Uri>) {
         val json = org.json.JSONArray().apply { uris.forEach { put(it.toString()) } }.toString()
         prefs.edit().putString(KEY_VIDEO_PLAYLIST, json).remove(KEY_WALLPAPER_URI)
@@ -211,19 +185,6 @@ class TvOsCustomizationActivity : AppCompatActivity() {
             else -> return
         }
         startActivity(intent)
-    }
-
-    /** Pilih bahasa launcher: Default (English), Indonesia, Malaysia. */
-    private fun showLanguageDialog() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(R.string.app_language_title)
-            .setSingleChoiceItems(LauncherLanguage.labels(this), LauncherLanguage.currentIndex()) { dialog, which ->
-                dialog.dismiss()
-                SettingsFragment.needRestartHome = true
-                refreshLauncher()
-                LauncherLanguage.apply(which)
-            }
-            .show()
     }
 
     private var defaultLauncherSubtitle: TextView? = null
