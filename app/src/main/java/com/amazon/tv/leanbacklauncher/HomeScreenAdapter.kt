@@ -598,6 +598,11 @@ class HomeScreenAdapter(
         mChannelsAdapter?.onStopUi()
     }
 
+    /** Reload channel data after the EPG permission result returns. */
+    fun refreshChannels() {
+        mChannelsAdapter?.refresh()
+    }
+
     val isUiVisible: Boolean
         get() = uiVisible
 
