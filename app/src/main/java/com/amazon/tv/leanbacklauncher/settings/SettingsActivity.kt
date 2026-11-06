@@ -13,6 +13,11 @@ class SettingsActivity : FragmentActivity(),
         setContentView(R.layout.settings)
     }
 
+    companion object {
+        /** Nama kelas fragment pengaturan yang langsung dibuka (lihat SettingsFragment). */
+        const val EXTRA_FRAGMENT = "launcher_settings_fragment"
+    }
+
     // https://developer.android.com/guide/topics/ui/settings/organize-your-settings
     override fun onPreferenceStartFragment(
         caller: PreferenceFragmentCompat,
@@ -25,6 +30,7 @@ class SettingsActivity : FragmentActivity(),
             pref.fragment
         )
         fragment.arguments = args
+        @Suppress("DEPRECATION")
         fragment.setTargetFragment(caller, 0)
         // Replace the existing Fragment with the new Fragment
         supportFragmentManager.beginTransaction()

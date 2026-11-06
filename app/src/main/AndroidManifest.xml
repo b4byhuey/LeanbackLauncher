@@ -11,9 +11,6 @@
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission
-        android:name="android.permission.ACCESS_NOTIFICATIONS"
-        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission
         android:name="android.permission.BIND_APPWIDGET"
@@ -47,12 +44,9 @@
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="com.amazon.tv.leanbacklauncher.recommendations.permission.RECOMMENDATIONS" />
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
     <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
-
-    <permission android:name="com.amazon.tv.leanbacklauncher.permission.MIGRATE_RECOMMENDATIONS_DATA" />
 
     <application
         android:name="com.amazon.tv.leanbacklauncher.LauncherApp"
@@ -90,6 +84,7 @@
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="fireos.intent.category.MAIN_HOME" />
             </intent-filter>
         </activity>
@@ -106,6 +101,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="com.amazon.tv.leanbacklauncher.settings.TvOsCustomizationActivity"
+            android:label="TV Home Customization"
+            android:screenOrientation="landscape"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <activity
             android:name="com.amazon.tv.leanbacklauncher.settings.SettingsActivity"
@@ -127,22 +129,6 @@
             android:launchMode="singleInstance"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
-
-        <service
-            android:name="com.amazon.tv.leanbacklauncher.recommendations.NotificationsServiceV4"
-            android:label="@string/notif_service_name"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name="com.amazon.tv.leanbacklauncher.recommendations.RecommendationsService"
-            android:label="@string/recm_service_name" />
-
-        <service android:name="com.amazon.tv.firetv.tvrecommendations.NotificationListenerMonitor" />
 
         <receiver android:name="com.amazon.tv.leanbacklauncher.MediaButtonBroadcastReceiver"
             android:exported="true">
@@ -170,12 +156,6 @@
             android:exported="false"
             android:theme="@style/Theme.Leanback.GuidedStep" />
 
-        <provider
-            android:name="com.amazon.tv.leanbacklauncher.migration.DbMigrationContentProvider"
-            android:authorities="com.amazon.tv.tvrecommendations.migration"
-            android:exported="true"
-            android:permission="com.amazon.tv.leanbacklauncher.permission.MIGRATE_RECOMMENDATIONS_DATA" />
-
         <receiver android:name="com.amazon.tv.leanbacklauncher.wallpaper.WallpaperInstaller$WallpaperChangedReceiver"
             android:exported="true">
             <intent-filter>
@@ -192,5 +172,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
     </application>
 </manifest>

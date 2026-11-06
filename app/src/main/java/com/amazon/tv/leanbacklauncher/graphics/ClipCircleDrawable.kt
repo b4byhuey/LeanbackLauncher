@@ -19,6 +19,7 @@ class ClipCircleDrawable(private val mColor: Int) : Drawable() {
 
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(cf: ColorFilter?) {}
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int {
         return PixelFormat.TRANSLUCENT
     }

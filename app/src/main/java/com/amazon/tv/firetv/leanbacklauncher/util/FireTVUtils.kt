@@ -54,16 +54,6 @@ object FireTVUtils {
         }
     }
 
-    @JvmStatic
-    fun isAmazonNotificationsEnabled(context: Context): Boolean {
-        return try {
-            val packageManager = context.packageManager
-            packageManager.getApplicationInfo("com.amazon.device.sale.service", 0).enabled
-        } catch (unused: PackageManager.NameNotFoundException) {
-            false
-        }
-    }
-
     fun isAmazonLauncherEnabled(context: Context): Boolean {
         return try {
             val packageManager = context.packageManager
@@ -76,20 +66,12 @@ object FireTVUtils {
     @JvmStatic
     fun openAppInPlayStore(context: Context, packageName: String?) {
         try {
-            startActivity(
-                context,
-                Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")),
-                null
-            )
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
         } catch (anfe: ActivityNotFoundException) {
-            startActivity(
-                context,
-                Intent(
+            context.startActivity(Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
-                ),
-                null
-            )
+                ))
         }
     }
 

@@ -17,13 +17,13 @@ android {
     }
     defaultConfig {
         applicationId "com.amazon.tv.leanbacklauncher"
-        minSdkVersion 22
+        minSdkVersion 23
         //noinspection ExpiredTargetSdkVersion,OldTargetApi
         targetSdkVersion 29
         versionCode 63
         versionName "1.63"
         vectorDrawables.useSupportLibrary = true
-        resourceConfigurations += ['en', 'ru', 'uk', 'it', 'fr', 'es', 'de', 'pl', 'zh-rCN']
+        resourceConfigurations += ['en', 'in', 'ms']
         setProperty("archivesBaseName", "LeanbackOnFire_v" + versionName)
     }
     packagingOptions {
@@ -56,6 +56,10 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     // androidx
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    // Media3 powers local and network video wallpapers, including HLS playlists.
+    implementation 'androidx.media3:media3-exoplayer:1.6.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.6.1'
+    implementation 'androidx.media3:media3-ui:1.6.1'
     implementation 'androidx.core:core-ktx:1.16.0'
     implementation "androidx.leanback:leanback:$leanback_version"
     implementation "androidx.leanback:leanback-preference:$leanback_version"

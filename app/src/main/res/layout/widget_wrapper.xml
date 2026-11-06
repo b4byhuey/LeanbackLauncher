@@ -4,7 +4,7 @@
     android:layout_width="@dimen/widget_width"
     android:layout_height="@dimen/widget_height"
     android:layout_gravity="end|center|top"
-    android:layout_marginTop="@dimen/vertical_safety_spacing"
+    android:layout_marginTop="@dimen/widget_margin_top"
     android:layout_marginEnd="@dimen/widget_end_spacing"
     android:focusable="false"
     android:gravity="end|center|top"

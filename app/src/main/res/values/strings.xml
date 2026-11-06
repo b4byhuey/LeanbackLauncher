@@ -52,7 +52,6 @@
     <string name="app_info_unhide_app">Unhide in Launcher</string>
     <string name="app_label">Home Screen</string>
     <string name="app_name">LeanbackOnFire</string>
-    <string name="app_releases">All versions available at</string>
     <string name="apps_order_pref_label">Sort automatically by recent usage</string>
     <string name="banners_prefs_title">Banners Appearance</string>
     <string name="banners_prefs_desc">Apps banners options</string>
@@ -91,8 +90,6 @@
     <string name="edit_finish_button_text">Done</string>
     <string name="edit_row_title">Edit Home Rows</string>
     <string name="edit_uninstall_focused_text">Uninstall</string>
-    <string name="enable_local_weather_title">Enable Local Weather</string>
-    <string name="enable_local_weather_description">Show current weather</string>
     <string name="failed_launch">"Can't open this right now"</string>
     <string name="favorites_row_title">Show Favorites Row</string>
     <string name="file_no_access">File not accessible!</string>
@@ -167,17 +164,7 @@
     <string name="max_videos_rows_title">Max Videos Rows</string>
     <string name="mic_search_accessibility_hint">Select to speak your search query</string>
     <string name="music_row_title">Show Music Row</string>
-    <string name="notif_service_name">Notifications Service</string>
-    <string name="notification_card_view_description_default">No title</string>
-    <string name="notification_card_view_description_label_content">%1$s %2$s</string>
-    <string name="notification_card_view_description_title_content">%1$s %2$s</string>
-    <string name="notification_card_view_description_title_label_content">%1$s %2$s %3$s</string>
-    <string name="notification_card_view_description_title_label">%1$s %2$s</string>
-    <string name="notification_text">Keeping Launcher In Memory</string>
     <string name="notifications">Notifications</string>
-    <string name="now_playing_card_paused">Paused</string>
-    <string name="now_playing_card_playing">Now Playing</string>
-    <string name="now_playing_card_stopped">Stopped</string>
     <string name="orb_search_action">Search Action</string>
     <string name="pref_banner_corner_radius" translatable="false">banner_corner_radius</string>
     <string name="pref_banner_focus_frame_color" translatable="false">banner_focus_frame_color</string>
@@ -186,15 +173,12 @@
     <string name="pref_enable_favorites_row" translatable="false">enable_favorites_row</string>
     <string name="pref_enable_games_row" translatable="false">enable_games_row</string>
     <string name="pref_enable_inputs_row" translatable="false">enable_inputs_row</string>
-    <string name="pref_enable_local_weather" translatable="false">enable_local_weather</string>
     <string name="pref_enable_music_row" translatable="false">enable_music_row</string>
-    <string name="pref_enable_recommendations_row" translatable="false">enable_recommendations_row</string>
     <string name="pref_enable_videos_row" translatable="false">enable_videos_row</string>
     <string name="pref_imp_weather" translatable="false">imp_weather</string>
     <string name="pref_show_location" translatable="false">show_location</string>
     <string name="pref_use_current_location" translatable="false">use_current_location</string>
     <string name="pref_user_location" translatable="false">user_location</string>
-    <string name="pref_weather_apikey" translatable="false">weather_apikey</string>
     <string name="pref_max_apps_rows" translatable="false">max_apps_rows</string>
     <string name="pref_max_apps" translatable="false">max_apps</string>
     <string name="pref_max_favorites_rows" translatable="false">max_favorites_rows</string>
@@ -204,27 +188,8 @@
     <string name="primes_marker" translatable="false">PrImEs</string>
     <string name="primes_version" translatable="false">174122153</string>
     <string name="progress_percent">%1$d%%</string>
-    <string name="rec_soures_empty">No recommendations sources</string>
     <string name="recency_order_action_description">Apps and games ordered based on recent usage</string>
     <string name="recency_order_action_title">Recency order</string>
-    <string name="recm_service_name">Recommendations Service</string>
-    <string name="recommendation_blacklist_action_title">Recommendations Sources</string>
-    <string name="recommendation_blacklist_content_description">Selected sources may display recommendations on the home screen. To hide these, turn off recommendations from specific sources.</string>
-    <string name="recommendation_blacklist_content_title">Recommendations row</string>
-    <string name="recommendation_row_empty_message_no_connection">No internet connection at this time</string>
-    <string name="recommendation_row_empty_message_no_recs">No recommendations available at this time</string>
-    <string name="recommendation_row_empty_message_recs_disabled">"Some recommendations are hidden
-To enable, go to Settings"</string>
-    <string name="recommendation_row_preparing_message">Preparing Recommendations</string>
-    <string name="recs_row_title">Recommendations Row</string>
-    <string name="recs_warning">"Requires permission:
-android.permission.WRITE_SECURE_SETTINGS
-Apply this command over adb:
-pm grant com.amazon.tv.leanbacklauncher android.permission.WRITE_SECURE_SETTINGS"</string>
-    <string name="recs_warning_sale">"WARNING!
-You need to disable package:
-com.amazon.device.sale.service
-or recommendations will not work properly."</string>
     <string name="regular_font" translatable="false">sans-serif</string>
     <string name="reset_wallpaper_action_title">Reset Wallpaper</string>
     <string name="reset_wallpaper_action_desc">Use default image</string>
@@ -234,6 +199,8 @@ or recommendations will not work properly."</string>
     <string name="select_app_customize_rows_title">Customize Home rows</string>
     <string name="select_app_order_action_fixed">Custom order</string>
     <string name="select_app_order_action_recency">Recency order</string>
+    <string name="select_app_order_action_description_fixed">Use a fixed, manually arranged app order</string>
+    <string name="select_app_order_action_description_recency">Sort apps by most recently used</string>
     <string name="select_app_order_action_title">Organize apps and games</string>
     <string name="select_app_order_content_title">Organize apps and games</string>
     <string name="select_wallpaper_action_desc">Select desired background image</string>
@@ -255,7 +222,6 @@ or recommendations will not work properly."</string>
     <string name="unknown_title">Unknown</string>
     <string name="update_app_found">%s update available</string>
     <string name="update_changes">Changes</string>
-    <string name="update_check">Check Updates on Startup</string>
     <string name="update_desc">Check for new launcher version</string>
     <string name="update_in_progress">Checking for updates…</string>
     <string name="update_install">Install update</string>
@@ -277,17 +243,94 @@ or recommendations will not work properly."</string>
     <string name="videos_row_title">Show Videos Row</string>
     <string name="wallpaper_title">Default Wallpaper</string>
     <string name="wallpaper_choose">Put wallpaper image to storage directory root and select here</string>
-    <string name="weather_apikey_title">OpenWeatherMap API Key</string>
     <string name="weather_hilotemp">%1$s–%2$s %3$s</string>
-    <string name="weather_home_title">Weather Preferences</string>
-    <string name="weather_home_description">Local weather and forecast on Home screen</string>
-    <string name="weather_humidity">hum.%1$d%%</string>
-    <string name="weather_max">↑</string>
-    <string name="weather_min">↓</string>
-    <string name="weather_pressure">%1$s %2$s</string>
+	<string name="weather_prayer_settings_title">Prayer Settings</string>
+    <string name="weather_prayer_settings_desc">Shared location, local weather, and prayer-time calculation settings</string>
+	<string name="weather_humidity">Humidity • %1$d%%</string>
+	<string name="weather_pressure">%1$s %2$s</string>
     <string name="weather_pressure_hp">hPa</string>
-    <string name="weather_pressure_mm">mmHg</string>
     <string name="weather_speed_m">m/s</string>
     <string name="weather_speed_i">mph</string>
-    <string name="weather_wind">wind %3$s %1$s %2$s</string>
+    <string name="weather_wind">Wind • %3$s %1$s %2$s</string>
+    <string name="tv_customization_eyebrow">HOME EXPERIENCE</string>
+    <string name="tv_customization_title">Customize your TV</string>
+    <string name="tv_customization_subtitle">Wallpaper, motion, language, weather and daily prayer times</string>
+    <string name="tv_section_wallpaper">WALLPAPER</string>
+    <string name="tv_choose_gallery">Choose photo from gallery</string>
+    <string name="tv_choose_gallery_desc">Select an image and keep it as the launcher background</string>
+    <string name="tv_default_wallpaper">Use default wallpaper</string>
+    <string name="tv_default_wallpaper_desc">Remove the selected photo or video playlist</string>
+    <string name="tv_default_wallpaper_saved">Default wallpaper restored</string>
+    <string name="tv_animated_ambience">Animated tvOS ambience</string>
+    <string name="tv_animated_ambience_desc">Use a slow-moving blue, teal and violet background</string>
+    <string name="tv_animated_enabled">Animated background enabled</string>
+	<string name="tv_section_prayer">WEATHER &amp; PRAYER TIMES</string>
+	<string name="tv_back_launcher">Back to launcher</string>
+    <string name="tv_back_launcher_desc">Return to the home screen</string>
+    <string name="tv_wallpaper_saved">Wallpaper saved</string>
+	<string name="prayer_loading">Loading prayer times…</string>
+    <string name="prayer_next">Next: %1$s in %2$02d:%3$02d</string>
+    <string name="prayer_unavailable">Prayer times unavailable\nCheck internet or saved city</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="weather_error">Weather error: %1$s</string>
+    <string name="prayer_detecting">Detecting location…</string>
+    <string name="prayer_city_not_set">Set a city in settings</string>
+    <string name="category_label_channels">Channels</string>
+    <string name="channels_sources_title">Channel sources</string>
+    <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
+    <string name="channels_sources_empty">No apps are sharing channels</string>
+    <string name="channels_sources_no_permission">Permission to read TV channels is not granted, so other apps\' channels may not be visible.</string>
+    <string name="prayer_settings_title">Weather &amp; Prayer Time Settings</string>
+    <string name="prayer_settings_desc">Enable weather, set your location and units, choose a calculation method, and adjust each prayer time</string>
+    <string name="prayer_method_category">Calculation method</string>
+    <string name="prayer_method_title">Calculation method</string>
+    <string name="prayer_method_desc">Select a method provided by AlAdhan</string>
+    <string name="prayer_method_custom">Custom method</string>
+    <string name="prayer_method_kemenag_fallback">KEMENAG (Indonesia)</string>
+    <string name="prayer_custom_fajr">Custom Fajr angle (degrees)</string>
+    <string name="prayer_custom_maghrib">Custom Maghrib angle or minutes after sunset</string>
+    <string name="prayer_custom_isha">Custom Isha angle or minutes after Maghrib</string>
+    <string name="prayer_offset_category">Prayer time adjustments</string>
+    <string name="prayer_offset_desc">Minutes to add or subtract (−180 to 180)</string>
+    <string name="prayer_offset_fajr">Fajr adjustment (minutes)</string>
+    <string name="prayer_offset_dhuhr">Dhuhr adjustment (minutes)</string>
+    <string name="prayer_offset_asr">Asr adjustment (minutes)</string>
+    <string name="prayer_offset_maghrib">Maghrib adjustment (minutes)</string>
+    <string name="prayer_offset_isha">Isha adjustment (minutes)</string>
+    <string name="prayer_settings_loading">Loading methods…</string>
+    <string name="tv_section_launcher">LAUNCHER</string>
+    <string name="app_language_title">Language</string>
+	<string name="location_settings_title">Location Settings</string>
+    <string name="weather_settings_title">Weather Settings</string>
+    <string name="app_language_desc">Launcher language</string>
+    <string name="app_language_opt_default" translatable="false">Default (English)</string>
+    <string name="app_language_opt_indonesia" translatable="false">Indonesia</string>
+    <string name="app_language_opt_malaysia" translatable="false">Malaysia</string>
+    <string name="default_launcher_title">Set as default launcher?</string>
+    <string name="default_launcher_message">Make this launcher your default home screen so the Home button always opens it.</string>
+    <string name="default_launcher_action">Set as default launcher</string>
+    <string name="default_launcher_action_desc">Open the system dialog to choose this launcher as Home</string>
+    <string name="default_launcher_later">Later</string>
+    <string name="default_launcher_already">This launcher is already the default</string>
+    <string name="default_launcher_already_desc">Already the default launcher</string>
+    <string name="default_launcher_manual">This device has no default launcher screen. Open Settings &gt; Apps/Device and choose this launcher as Home.</string>
+
+    <string name="default_launcher_root_action">Force default launcher (root)</string>
+    <string name="default_launcher_root_action_desc">Use granted root access to set this app as HOME. Does not disable the stock launcher.</string>
+    <string name="default_launcher_root_success">Default HOME launcher was set successfully.</string>
+    <string name="default_launcher_root_timeout">Root command timed out. Check the root manager prompt and try again.</string>
+    <string name="default_launcher_root_failed">Unable to set default HOME launcher: %1$s</string>
+    <string name="default_launcher_root_not_verified">The command completed, but Android did not report this app as HOME: %1$s</string>
+    <string name="tv_choose_video">Choose local video playlist</string>
+    <string name="tv_choose_video_desc">Select multiple MP4 or other supported video files from storage</string>
+    <string name="tv_video_urls">Use video URLs</string>
+    <string name="tv_video_urls_desc">Add direct HTTP/HTTPS video links, one URL per line. MP4 and HLS (.m3u8) are supported.</string>
+    <string name="tv_video_urls_hint">https://example.com/video1.mp4&#10;https://example.com/video2.m3u8</string>
+    <string name="tv_video_playlist_saved">Video playlist saved (%1$d items)</string>
+    <string name="tv_video_urls_invalid">Enter one or more valid HTTP or HTTPS video URLs.</string>
+    <string name="tv_save_video_playlist">Save playlist</string>
 </resources>

@@ -5,11 +5,6 @@
     <PreferenceCategory>
 
         <SwitchPreference
-            android:key="@string/pref_enable_recommendations_row"
-            android:title="@string/recs_row_title"
-            android:defaultValue="false" />
-
-        <SwitchPreference
             android:key="@string/pref_enable_inputs_row"
             android:title="@string/inputs_row_title"
             android:defaultValue="false" />

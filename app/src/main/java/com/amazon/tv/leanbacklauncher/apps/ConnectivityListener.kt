@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.amazon.tv.leanbacklauncher.apps
 
 import android.Manifest
@@ -18,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import com.amazon.tv.leanbacklauncher.BuildConfig
 import java.lang.ref.WeakReference
 
+@Suppress("DEPRECATION")
 class ConnectivityListener(private val mContext: Context, listener: Listener) {
     private val mConnectivityManager: ConnectivityManager =
         mContext.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -126,6 +129,7 @@ class ConnectivityListener(private val mContext: Context, listener: Listener) {
         private val mListener: WeakReference<ConnectivityListener?> =
             WeakReference<ConnectivityListener?>(listener)
 
+        @Deprecated("Deprecated by Android")
         override fun onSignalStrengthsChanged(signalStrength: SignalStrength) {
             super.onSignalStrengthsChanged(signalStrength)
             val listener = mListener.get()

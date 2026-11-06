@@ -17,7 +17,6 @@ import com.amazon.tv.leanbacklauncher.animation.FadeAnimator
 import com.amazon.tv.leanbacklauncher.animation.ParticipatesInScrollAnimation
 import com.amazon.tv.leanbacklauncher.animation.ViewDimmer
 import com.amazon.tv.leanbacklauncher.animation.ViewDimmer.DimState
-import com.amazon.tv.leanbacklauncher.notifications.HomeScreenView
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -59,7 +58,7 @@ class ActiveFrame @JvmOverloads constructor(
         mAnimDuration = resources.getInteger(R.integer.item_scale_anim_duration)
         mBottomPadding = resources.getDimensionPixelSize(R.dimen.group_vertical_spacing)
         mRowPadding = resources.getDimension(R.dimen.row_padding)
-        mCardSpacing = resources.getDimension(R.dimen.card_spacing)
+        mCardSpacing = resources.getDimension(R.dimen.inter_card_spacing) // sama dengan setItemSpacing() di HomeScreenAdapter
         mDownscaleFactor = resources.getFraction(R.fraction.inactive_banner_scale_down_amount, 1, 1)
         if (mDownscaleFactor < 0.0f || mDownscaleFactor >= 1.0f) {
             mDownscaleFactor = 0.0f
@@ -93,9 +92,6 @@ class ActiveFrame @JvmOverloads constructor(
             val view = getChildAt(i)
             if (view is ActiveItemsRowView) {
                 mRow = view
-                break
-            } else if (view is HomeScreenView) {
-                mRow = view.notificationRow
                 break
             } else {
                 i++

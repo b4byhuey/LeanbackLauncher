@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="channels_sources_programs">
+        <item quantity="other">%d item</item>
+    </plurals>
+</resources>

@@ -139,7 +139,7 @@ class LegacyBannersFragment : GuidedStepSupportFragment() {
                 setFrameColor(activity, value)
                 refreshHome(activity)
             }
-            ACTION_BACK -> fragmentManager!!.popBackStack()
+            ACTION_BACK -> parentFragmentManager!!.popBackStack()
             else -> {
             }
         }

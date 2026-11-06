@@ -5,7 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.view.View
 import android.view.View.OnFocusChangeListener
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import androidx.annotation.Keep
 import com.amazon.tv.leanbacklauncher.R
 import com.amazon.tv.leanbacklauncher.capabilities.LauncherConfiguration
@@ -104,7 +104,7 @@ open class ViewFocusAnimator(view: View) : OnFocusChangeListener {
         mSelectedZDelta = res.getDimensionPixelOffset(R.dimen.selected_item_z_delta).toFloat()
         mFocusAnimation = ObjectAnimator.ofFloat(this, "focusProgress", 0.0f)
         mFocusAnimation.duration = res.getInteger(R.integer.item_scale_anim_duration).toLong()
-        mFocusAnimation.interpolator = AccelerateDecelerateInterpolator()
+        mFocusAnimation.interpolator = DecelerateInterpolator(1.5f)
         var supported = true
         val launcherConfiguration = LauncherConfiguration.getInstance()
         if (launcherConfiguration == null || !launcherConfiguration.isCardElevationEnabled) {

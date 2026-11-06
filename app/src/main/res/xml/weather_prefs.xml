@@ -1,18 +1,14 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:key="weather_prefs"
-    android:title="@string/weather_home_title">
-    <PreferenceCategory>
+    android:title="@string/prayer_settings_title">
 
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="@string/pref_enable_local_weather"
-            android:title="@string/enable_local_weather_title"
-            android:summary="@string/enable_local_weather_description" />
+    <PreferenceCategory
+        android:key="location_settings"
+        android:title="@string/location_settings_title">
 
         <SwitchPreference
             android:defaultValue="true"
-            android:dependency="@string/pref_enable_local_weather"
             android:disableDependentsState="true"
             android:key="@string/pref_use_current_location"
             android:title="@string/use_current_location_title"
@@ -25,24 +21,28 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreference
-            android:defaultValue="false"
-            android:dependency="@string/pref_enable_local_weather"
+            android:defaultValue="true"
             android:key="@string/pref_show_location"
             android:title="@string/show_location_title"
             android:summary="@string/show_location_description" />
 
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="weather_settings"
+        android:title="@string/weather_settings_title">
+
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pref_enable_local_weather"
             android:key="@string/pref_imp_weather"
             android:title="@string/imp_weather_title"
             android:summary="@string/imp_weather_description" />
 
-        <EditTextPreference
-            android:dependency="@string/pref_enable_local_weather"
-            android:key="@string/pref_weather_apikey"
-            android:title="@string/weather_apikey_title"
-            app:useSimpleSummaryProvider="true" />
+        <Preference
+            android:key="open_meteo_attribution"
+            android:title="Weather data by Open-Meteo.com"
+            android:summary="Forecast data provided under CC BY 4.0."
+            android:selectable="false" />
 
     </PreferenceCategory>
 </PreferenceScreen>
