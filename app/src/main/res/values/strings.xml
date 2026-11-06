@@ -164,7 +164,17 @@
     <string name="max_videos_rows_title">Max Videos Rows</string>
     <string name="mic_search_accessibility_hint">Select to speak your search query</string>
     <string name="music_row_title">Show Music Row</string>
+    <string name="notif_service_name">Notifications Service</string>
+    <string name="notification_card_view_description_default">No title</string>
+    <string name="notification_card_view_description_label_content">%1$s %2$s</string>
+    <string name="notification_card_view_description_title_content">%1$s %2$s</string>
+    <string name="notification_card_view_description_title_label_content">%1$s %2$s %3$s</string>
+    <string name="notification_card_view_description_title_label">%1$s %2$s</string>
+    <string name="notification_text">Keeping Launcher In Memory</string>
     <string name="notifications">Notifications</string>
+    <string name="now_playing_card_paused">Paused</string>
+    <string name="now_playing_card_playing">Now Playing</string>
+    <string name="now_playing_card_stopped">Stopped</string>
     <string name="orb_search_action">Search Action</string>
     <string name="pref_banner_corner_radius" translatable="false">banner_corner_radius</string>
     <string name="pref_banner_focus_frame_color" translatable="false">banner_focus_frame_color</string>
@@ -174,6 +184,7 @@
     <string name="pref_enable_games_row" translatable="false">enable_games_row</string>
     <string name="pref_enable_inputs_row" translatable="false">enable_inputs_row</string>
     <string name="pref_enable_music_row" translatable="false">enable_music_row</string>
+    <string name="pref_enable_recommendations_row" translatable="false">enable_recommendations_row</string>
     <string name="pref_enable_videos_row" translatable="false">enable_videos_row</string>
     <string name="pref_imp_weather" translatable="false">imp_weather</string>
     <string name="pref_show_location" translatable="false">show_location</string>
@@ -188,8 +199,27 @@
     <string name="primes_marker" translatable="false">PrImEs</string>
     <string name="primes_version" translatable="false">174122153</string>
     <string name="progress_percent">%1$d%%</string>
+    <string name="rec_soures_empty">No recommendations sources</string>
     <string name="recency_order_action_description">Apps and games ordered based on recent usage</string>
     <string name="recency_order_action_title">Recency order</string>
+    <string name="recm_service_name">Recommendations Service</string>
+    <string name="recommendation_blacklist_action_title">Recommendations Sources</string>
+    <string name="recommendation_blacklist_content_description">Selected sources may display recommendations on the home screen. To hide these, turn off recommendations from specific sources.</string>
+    <string name="recommendation_blacklist_content_title">Recommendations row</string>
+    <string name="recommendation_row_empty_message_no_connection">No internet connection at this time</string>
+    <string name="recommendation_row_empty_message_no_recs">No recommendations available at this time</string>
+    <string name="recommendation_row_empty_message_recs_disabled">"Some recommendations are hidden
+To enable, go to Settings"</string>
+    <string name="recommendation_row_preparing_message">Preparing Recommendations</string>
+    <string name="recs_row_title">Recommendations Row</string>
+    <string name="recs_warning">"Requires permission:
+android.permission.WRITE_SECURE_SETTINGS
+Apply this command over adb:
+pm grant com.amazon.tv.leanbacklauncher android.permission.WRITE_SECURE_SETTINGS"</string>
+    <string name="recs_warning_sale">"WARNING!
+You need to disable package:
+com.amazon.device.sale.service
+or recommendations will not work properly."</string>
     <string name="regular_font" translatable="false">sans-serif</string>
     <string name="reset_wallpaper_action_title">Reset Wallpaper</string>
     <string name="reset_wallpaper_action_desc">Use default image</string>
@@ -279,7 +309,7 @@
     <string name="weather_error">Weather error: %1$s</string>
     <string name="prayer_detecting">Detecting location…</string>
     <string name="prayer_city_not_set">Set a city in settings</string>
-    <string name="category_label_channels">Channels</string>
+    <string name="category_label_channels">Recommended</string>
     <string name="channels_sources_title">Channel sources</string>
     <string name="channels_sources_desc">Choose apps whose channels appear on the home screen</string>
     <string name="channels_sources_empty">No apps are sharing channels</string>

@@ -1,8 +1,10 @@
 package com.amazon.tv.leanbacklauncher.settings
 
 import android.app.Activity
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidanceStylist.Guidance
@@ -10,6 +12,7 @@ import androidx.leanback.widget.GuidedAction
 import com.amazon.tv.firetv.leanbacklauncher.apps.AppCategory
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.areFavoritesEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.areInputsEnabled
+import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.areRecommendationsEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getAppsColumns
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getEnabledCategories
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getFavoriteRowMax
@@ -20,8 +23,10 @@ import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setFavoritesEna
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setGamesEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setInputsEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setMusicEnabled
+import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setRecommendationsEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setRowMax
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.setVideosEnabled
+import com.amazon.tv.firetv.leanbacklauncher.util.FireTVUtils.isAmazonNotificationsEnabled
 import com.amazon.tv.leanbacklauncher.R
 import com.amazon.tv.leanbacklauncher.util.Util.refreshHome
 import java.util.*
@@ -139,6 +144,16 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
                 1
             }
             setAppsColumns(activity, value)
+        } else if (id == ACTION_ID_RECOMMENDATIONS.toLong()) { // RECOMMENDATIONS
+            enabled = areRecommendationsEnabled(activity)
+            setRecommendationsEnabled(activity, !enabled)
+            if (!enabled && isAmazonNotificationsEnabled(activity)) {
+                Toast.makeText(
+                    activity,
+                    activity.getString(R.string.recs_warning_sale),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         } else if (id == ACTION_ID_INPUTS.toLong()) { // INPUTS
             enabled = areInputsEnabled(activity)
             setInputsEnabled(activity, !enabled)
@@ -155,6 +170,19 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
         var index = 0
         var state: Boolean
 
+        // RECOMMENDATIONS
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            state = areRecommendationsEnabled(activity)
+            desc =
+                if (state) getString(R.string.v7_preference_on) else getString(R.string.v7_preference_off)
+            actions.add(
+                GuidedAction.Builder(activity)
+                    .id(ACTION_ID_RECOMMENDATIONS.toLong())
+                    .title(R.string.recs_row_title)
+                    .description(desc)
+                    .build()
+            )
+        }
         // INPUTS
         state = areInputsEnabled(activity)
         desc =
@@ -288,6 +316,7 @@ class LegacyAppRowPreferenceFragment : GuidedStepSupportFragment() {
         //        private const val ACTION_ID_APPS = 50
         private const val ACTION_ID_APPS_COL = 51
         private const val ACTION_ID_APPS_MAX = 52
+        private const val ACTION_ID_RECOMMENDATIONS = 100
         private const val ACTION_ID_INPUTS = 200
         private var startup = 0
     }

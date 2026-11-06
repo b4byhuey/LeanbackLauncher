@@ -2,6 +2,8 @@ package com.amazon.tv.leanbacklauncher
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.amazon.tv.leanbacklauncher.notifications.RecImageKey
+import com.amazon.tv.leanbacklauncher.notifications.RecImageLoaderFactory
 import com.bumptech.glide.Glide
 import com.bumptech.glide.GlideBuilder
 import com.bumptech.glide.Registry
@@ -35,6 +37,7 @@ class LauncherGlideModule : AppGlideModule() {
     }
 
     override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
+        registry.append(RecImageKey::class.java, Bitmap::class.java, RecImageLoaderFactory(context))
         registry.append(
             Bitmap::class.java,
             Bitmap::class.java,

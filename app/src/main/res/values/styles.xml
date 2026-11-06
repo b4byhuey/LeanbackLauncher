@@ -222,6 +222,29 @@
         <item name="android:switchTextOn">@string/v7_preference_on</item>
         <item name="android:switchTextOff">@string/v7_preference_off</item>
     </style>
+    <style name="LeanbackRecommendationCard">
+        <item name="background">@drawable/rec_card_background</item>
+        <item name="maxWidth">@dimen/notif_card_img_max_width</item>
+        <item name="cardFont">@string/font</item>
+        <item name="minWidth">@dimen/notif_card_img_min_width</item>
+        <item name="imageHeight">@dimen/notif_card_img_height</item>
+        <item name="progressBarHeight">@dimen/progress_bar_height</item>
+        <item name="infoAreaPaddingStart">@dimen/notif_card_info_start_margin</item>
+        <item name="infoAreaPaddingTop">@dimen/notif_card_info_margin_top</item>
+        <item name="infoAreaPaddingEnd">@dimen/notif_card_info_badge_end_margin</item>
+        <item name="infoAreaPaddingBottom">@dimen/notif_card_info_margin_bottom</item>
+        <item name="infoAreaCollapsedHeight">@dimen/notif_card_info_height</item>
+        <item name="infoAreaDefaultColor">@color/notif_background_color</item>
+        <item name="sourceNameTextSize">@dimen/notif_card_source_text_size</item>
+        <item name="sourceNameTextColor">@color/notif_source_text_color</item>
+        <item name="gapBetweenSourceNameAndBadge">@dimen/notif_card_info_badge_start_margin</item>
+        <item name="badgeSize">@dimen/notif_card_extra_badge_size</item>
+        <item name="badgeMarginBottom">@dimen/notif_card_info_badge_bottom_margin</item>
+        <item name="titleTextSize">@dimen/notif_card_title_text_size</item>
+        <item name="titleTextColor">@color/notif_title_text_color</item>
+        <item name="contentTextSize">@dimen/notif_card_content_text_size</item>
+        <item name="contentTextColor">@color/notif_content_text_color</item>
+    </style>
     <style name="Preference">
         <item name="layout">@layout/preference</item>
     </style>

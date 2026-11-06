@@ -76,6 +76,14 @@
     <color name="lb_tv_white">#ffcccccc</color>
     <color name="lb_view_dim_mask_color">#ff000000</color>
     <color name="leanback_now_playing_bar_color">#ffeeeeee</color>
+    <color name="notif_background_color">#ff37474f</color>
+    <color name="notif_content_text_color">#99eeeeee</color>
+    <color name="notif_progress_background_color">#ff666666</color>
+    <color name="notif_progress_bar_color">#ff17ffff</color>
+    <color name="notif_progress_secondary_color">#ff176666</color>
+    <color name="notif_row_empty_msg_text_color">#80eeeeee</color>
+    <color name="notif_source_text_color">#99eeeeee</color>
+    <color name="notif_title_text_color">#ffeeeeee</color>
     <color name="preference_item_banner_background">#ff455a64</color>
     <color name="progress_bar_background_color">#ffcccccc</color>
     <color name="progress_bar_color">#ff17ffff</color>

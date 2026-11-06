@@ -10,9 +10,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.amazon.tv.leanbacklauncher.R;
+import com.amazon.tv.leanbacklauncher.notifications.HomeScreenView;
 
 public final class LauncherLaunchAnimator extends ForwardingAnimatorSet {
-    public LauncherLaunchAnimator(ViewGroup root, View cause, Rect epicenter, ImageView circleLayerView, int color, View[] headers) {
+    public LauncherLaunchAnimator(ViewGroup root, View cause, Rect epicenter, ImageView circleLayerView, int color, View[] headers, HomeScreenView homeScreenView) {
         Resources res = root.getResources();
         int fadeDuration = res.getInteger(R.integer.app_launch_animation_header_fade_out_duration);
         int fadeDelay = res.getInteger(R.integer.app_launch_animation_header_fade_out_delay);
@@ -24,6 +25,12 @@ public final class LauncherLaunchAnimator extends ForwardingAnimatorSet {
         anim.setStartDelay(res.getInteger(R.integer.app_launch_animation_target_fade_delay));
         builder.with(anim);
         builder.with(new MassSlideAnimator.Builder(root).setEpicenter(epicenter).setExclude(cause).setFade(false).build());
+        if (!(homeScreenView == null || homeScreenView.isRowViewVisible())) {
+            anim = new FadeAnimator(homeScreenView, FadeAnimator.Direction.FADE_OUT);
+            anim.setDuration(fadeDuration);
+            anim.setStartDelay(fadeDelay);
+            builder.with(anim);
+        }
         for (View header : headers) {
             anim = new FadeAnimator(header, FadeAnimator.Direction.FADE_OUT);
             anim.setDuration(fadeDuration);

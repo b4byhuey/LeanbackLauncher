@@ -5,6 +5,14 @@ public class HighEndLauncherConfiguration extends LauncherConfiguration {
         return true;
     }
 
+    public boolean isRichRecommendationViewEnabled() {
+        return true;
+    }
+
+    public boolean isLegacyRecommendationLayoutEnabled() {
+        return false;
+    }
+
     public boolean isRoundCornersEnabled() {
         return true;
     }

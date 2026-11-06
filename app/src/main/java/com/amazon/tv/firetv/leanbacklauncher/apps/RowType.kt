@@ -5,6 +5,8 @@ import java.util.*
 
 enum class RowType(val code: Int) {
     SEARCH(0),
+    NOTIFICATIONS(1),
+    PARTNER(2),
     APPS(3),
     GAMES(4),
     SETTINGS(5),
@@ -12,6 +14,7 @@ enum class RowType(val code: Int) {
     FAVORITES(7),
     MUSIC(8),
     VIDEO(9),
+    ACTUAL_NOTIFICATIONS(10),
     CHANNELS(11);
 
     companion object {

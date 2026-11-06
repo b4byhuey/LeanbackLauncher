@@ -112,6 +112,13 @@ class TvOsCustomizationActivity : AppCompatActivity() {
         actionButton(root, getString(R.string.hidden_applications_title), getString(R.string.hidden_applications_desc)) {
             openLauncherSetting("HiddenPreferenceFragment")
         }
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+            actionButton(
+                root,
+                getString(R.string.recommendation_blacklist_action_title),
+                getString(R.string.recommendation_blacklist_content_description)
+            ) { openLauncherSetting("RecommendationsPreferenceFragment") }
+        }
         actionButton(root, getString(R.string.channels_sources_title), getString(R.string.channels_sources_desc)) {
             openLauncherSetting("ChannelsPreferenceFragment")
         }

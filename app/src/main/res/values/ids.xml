@@ -108,6 +108,9 @@
     <item type="id" name="header" />
     <item type="id" name="list" />
     <item type="id" name="notification_view" />
+    <item type="id" name="home_screen_messaging" />
+    <item type="id" name="notification_preparing" />
+    <item type="id" name="notification_timeout" />
     <item type="id" name="search_view" />
     <item type="id" name="search_orb" />
     <item type="id" name="orbs_container" />
@@ -266,8 +269,11 @@
     <item type="id" name="card" />
     <item type="id" name="action0" />
     <item type="id" name="cancel_action" />
+    <item type="id" name="now_playing_card_preparing" />
     <item type="id" name="empty_state_spinner" />
+    <item type="id" name="now_playing_card_timeout" />
     <item type="id" name="sad_cloud" />
+    <item type="id" name="text_error_message" />
     <item type="id" name="status_bar_latest_event_content" />
     <item type="id" name="media_actions" />
     <item type="id" name="action_divider" />
