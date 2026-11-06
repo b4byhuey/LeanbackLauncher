@@ -26,7 +26,7 @@
             android:gravity="start|center"
             android:includeFontPadding="false"
             android:textColor="@color/banner_label_text_color"
-            android:textSize="@dimen/notif_card_content_text_size"
+            android:textSize="@dimen/install_state_overlay_text_size"
             android:singleLine="true" />
 
         <TextView
@@ -42,7 +42,7 @@
             android:gravity="end|center"
             android:includeFontPadding="false"
             android:textColor="@color/banner_label_text_color"
-            android:textSize="@dimen/notif_card_content_text_size"
+            android:textSize="@dimen/install_state_overlay_text_size"
             android:singleLine="true" />
     </LinearLayout>
 

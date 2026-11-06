@@ -22,12 +22,6 @@
             app:fragment="com.amazon.tv.leanbacklauncher.settings.HiddenPreferenceFragment" />
 
         <Preference
-            android:key="rec_sources"
-            android:summary="@string/recommendation_blacklist_content_description"
-            android:title="@string/recommendation_blacklist_action_title"
-            app:fragment="com.amazon.tv.leanbacklauncher.settings.RecommendationsPreferenceFragment" />
-
-        <Preference
             android:key="channel_sources"
             android:summary="@string/channels_sources_desc"
             android:title="@string/channels_sources_title"

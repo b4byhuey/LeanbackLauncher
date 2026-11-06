@@ -1,21 +1,13 @@
 package com.amazon.tv.firetv.leanbacklauncher.apps
 
-import android.app.NotificationManager
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import com.amazon.tv.leanbacklauncher.BuildConfig
 import com.amazon.tv.leanbacklauncher.LauncherApp
 import com.amazon.tv.leanbacklauncher.R
-import com.amazon.tv.leanbacklauncher.recommendations.NotificationsServiceV4
 
 object RowPreferences {
 //    private val TAG by lazy { if (BuildConfig.DEBUG) ("[*]" + javaClass.simpleName).take(21) else javaClass.simpleName }
@@ -43,53 +35,6 @@ object RowPreferences {
     fun setInputsEnabled(context: Context, value: Boolean): Boolean {
         val pref = PreferenceManager.getDefaultSharedPreferences(context)
         pref.edit().putBoolean(context.getString(R.string.pref_enable_inputs_row), value).apply()
-        return true
-    }
-
-    @JvmStatic
-    fun areRecommendationsEnabled(context: Context): Boolean {
-        val pref = PreferenceManager.getDefaultSharedPreferences(context)
-        return pref.getBoolean(
-            context.getString(R.string.pref_enable_recommendations_row),
-            false
-        )
-    }
-
-    @JvmStatic
-    fun setRecommendationsEnabled(context: Context, value: Boolean): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 || context.packageManager.checkPermission(
-                "android.permission.WRITE_SECURE_SETTINGS",
-                context.packageName
-            ) != PackageManager.PERMISSION_DENIED
-        ) {
-            val pref = PreferenceManager.getDefaultSharedPreferences(context)
-            pref.edit()
-                .putBoolean(context.getString(R.string.pref_enable_recommendations_row), value)
-                .apply()
-        } else {
-            Toast.makeText(context, context.getString(R.string.recs_warning), Toast.LENGTH_LONG)
-                .show()
-        }
-        // request notifications access
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            val manager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (!manager.isNotificationListenerAccessGranted(
-                    ComponentName(
-                        context,
-                        NotificationsServiceV4::class.java
-                    )
-                )
-            ) { // ComponentName
-                // Open the permission page
-                try {
-                    val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    // ignored
-                }
-            }
-        }
         return true
     }
 
