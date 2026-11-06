@@ -5,10 +5,6 @@ public abstract class LauncherConfiguration {
 
     public abstract boolean isCardElevationEnabled();
 
-    public abstract boolean isLegacyRecommendationLayoutEnabled();
-
-    public abstract boolean isRichRecommendationViewEnabled();
-
     public abstract boolean isRoundCornersEnabled();
 
     public static LauncherConfiguration getInstance() {

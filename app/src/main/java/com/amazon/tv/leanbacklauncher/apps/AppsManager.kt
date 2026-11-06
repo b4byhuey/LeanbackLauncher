@@ -6,14 +6,13 @@ import androidx.preference.PreferenceManager
 import com.amazon.tv.firetv.leanbacklauncher.apps.AppCategory
 import com.amazon.tv.leanbacklauncher.HomeScreenRow
 import com.amazon.tv.leanbacklauncher.apps.MarketUpdateReceiver.Companion.broadcastPermission
-import com.amazon.tv.leanbacklauncher.notifications.BlacklistListener
 import com.amazon.tv.leanbacklauncher.util.Partner
 import com.amazon.tv.leanbacklauncher.util.Util
 import java.io.PrintWriter
 import java.util.*
 
 class AppsManager private constructor(private val mContext: Context) :
-    InstallingLaunchPointListener, PackageChangedReceiver.Listener, BlacklistListener {
+    InstallingLaunchPointListener, PackageChangedReceiver.Listener {
     private val mAppsRanker: AppsRanker = AppsRanker.getInstance(mContext)
     private val mExternalAppsUpdateReceiver: BroadcastReceiver
     private val mLaunchPointList: LaunchPointList = LaunchPointList(mContext)
@@ -110,14 +109,6 @@ class AppsManager private constructor(private val mContext: Context) :
         mLaunchPointList.removeInstallingLaunchPoint(lp, success)
     }
 
-    fun addToPartnerExclusionList(pkgName: String?): Boolean {
-        return mLaunchPointList.addToBlacklist(pkgName)
-    }
-
-    fun removeFromPartnerExclusionList(pkgName: String?): Boolean {
-        return mLaunchPointList.removeFromBlacklist(pkgName)
-    }
-
     fun refreshLaunchPointList() {
         mLaunchPointList.refreshLaunchPointList()
     }
@@ -182,14 +173,6 @@ class AppsManager private constructor(private val mContext: Context) :
     override fun onPackageReplaced(packageName: String?) {
         Partner.resetIfNecessary(mContext, packageName)
         addOrUpdatePackage(packageName)
-    }
-
-    override fun onPackageBlacklisted(pkgName: String?) {
-        addToPartnerExclusionList(pkgName)
-    }
-
-    override fun onPackageUnblacklisted(pkgName: String?) {
-        removeFromPartnerExclusionList(pkgName)
     }
 
     private fun checkForSearchChanges(packageName: String?) {

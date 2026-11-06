@@ -100,15 +100,6 @@
     <string name="lb_search_bar_hint_with_title_speech">Ucapkan untuk menelusuri %1$s</string>
     <string name="lb_time_separator">.</string>
     <string name="mic_search_accessibility_hint">Pilih untuk mengucapkan kueri penelusuran</string>
-    <string name="notif_service_name">Layanan Notifikasi</string>
-    <string name="notification_card_view_description_default">Tanpa judul</string>
-    <string name="notification_card_view_description_label_content">"%1$s  %2$s"</string>
-    <string name="notification_card_view_description_title_content">"%1$s  %2$s"</string>
-    <string name="notification_card_view_description_title_label">"%1$s  %2$s"</string>
-    <string name="notification_card_view_description_title_label_content">"%1$s  %2$s %3$s"</string>
-    <string name="now_playing_card_paused">Dijeda</string>
-    <string name="now_playing_card_playing">Sedang Diputar</string>
-    <string name="now_playing_card_stopped">Dihentikan</string>
     <string name="orb_search_action">Tindakan Penelusuran</string>
     <string name="prayer_asr">Ashar</string>
     <string name="prayer_dhuhr">Dzuhur</string>
@@ -121,15 +112,6 @@
     <string name="progress_percent">%1$d%%</string>
     <string name="recency_order_action_description">Aplikasi dan game diurutkan berdasarkan penggunaan baru-baru ini</string>
     <string name="recency_order_action_title">Urutan keterkinian</string>
-    <string name="recm_service_name">Layanan Rekomendasi</string>
-    <string name="recommendation_blacklist_action_title">Baris saran</string>
-    <string name="recommendation_blacklist_content_description">Sumber yang dipilih dapat menampilkan saran di layar utama. Untuk menyembunyikannya, nonaktifkan saran dari sumber tertentu.</string>
-    <string name="recommendation_blacklist_content_title">Baris saran</string>
-    <string name="recommendation_row_empty_message_no_connection">Saat ini tidak ada sambungan internet</string>
-    <string name="recommendation_row_empty_message_no_recs">Saat ini tidak ada saran yang tersedia</string>
-    <string name="recommendation_row_empty_message_recs_disabled">"Beberapa saran disembunyikan
-Untuk mengaktifkan, buka Setelan"</string>
-    <string name="recommendation_row_preparing_message">Menyiapkan Saran</string>
     <string name="restore_pending">Pemulihan tertunda...</string>
     <string name="search_hint_text">Telusuri film, TV, dan lainnya</string>
     <string name="search_menu_title">Telusuri</string>
@@ -167,7 +149,7 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="weather_error">Kesalahan cuaca: %1$s</string>
     <string name="prayer_detecting">Mendeteksi lokasi…</string>
     <string name="prayer_city_not_set">Atur kota di pengaturan</string>
-    <string name="category_label_channels">Rekomendasi</string>
+    <string name="category_label_channels">Saluran</string>
     <string name="channels_sources_title">Sumber channel</string>
     <string name="channels_sources_desc">Pilih aplikasi yang channel-nya tampil di layar utama</string>
     <string name="channels_sources_empty">Tidak ada aplikasi yang membagikan channel</string>
@@ -228,10 +210,6 @@ Untuk mengaktifkan, buka Setelan"</string>
     <string name="max_videos_rows_title">Maksimal Baris Video</string>
     <string name="music_row_title">Tampilkan Baris Musik</string>
     <string name="notifications">Notifikasi</string>
-    <string name="rec_soures_empty">Tidak ada sumber rekomendasi</string>
-    <string name="recs_row_title">Baris Rekomendasi</string>
-    <string name="recs_warning">Memerlukan izin:\nandroid.permission.WRITE_SECURE_SETTINGS\nJalankan perintah ini melalui ADB:\npm grant com.amazon.tv.leanbacklauncher android.permission.WRITE_SECURE_SETTINGS</string>
-    <string name="recs_warning_sale">PERINGATAN!\nAnda harus menonaktifkan paket:\ncom.amazon.device.sale.service\nagar rekomendasi berfungsi dengan benar.</string>
     <string name="reset_wallpaper_action_title">Atur Ulang Wallpaper</string>
     <string name="reset_wallpaper_action_desc">Gunakan gambar bawaan</string>
     <string name="select_app_customize_rows_title">Atur Baris Beranda</string>

@@ -1,9 +1,5 @@
 package com.amazon.tv.leanbacklauncher
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.text.TextUtils
@@ -19,7 +15,6 @@ import com.amazon.tv.firetv.leanbacklauncher.apps.AppCategory
 import com.amazon.tv.firetv.leanbacklauncher.apps.FavoritesAdapter
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.areFavoritesEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.areInputsEnabled
-import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.areRecommendationsEnabled
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getAppsColumns
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getBannersSize
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences.getEnabledCategories
@@ -32,9 +27,7 @@ import com.amazon.tv.leanbacklauncher.HomeScrollManager.HomeScrollFractionListen
 import com.amazon.tv.leanbacklauncher.apps.*
 import com.amazon.tv.leanbacklauncher.channels.ChannelsAdapter
 import com.amazon.tv.leanbacklauncher.apps.AppsManager.Companion.getInstance
-import com.amazon.tv.leanbacklauncher.apps.ConnectivityListener.Companion.readConnectivity
 import com.amazon.tv.leanbacklauncher.inputs.InputsAdapter
-import com.amazon.tv.leanbacklauncher.notifications.*
 import com.amazon.tv.leanbacklauncher.util.Preconditions
 import com.amazon.tv.leanbacklauncher.widget.EditModeView
 import java.io.PrintWriter
@@ -44,7 +37,6 @@ import kotlin.math.abs
 class HomeScreenAdapter(
     context: MainActivity,
     scrollMgr: HomeScrollManager,
-    notificationsAdapter: NotificationsAdapter?,
     editModeView: EditModeView
 ) : RecyclerView.Adapter<HomeViewHolder?>(), RowChangeListener, ConnectivityListener.Listener,
     OnEditModeChangedListener {
@@ -54,29 +46,22 @@ class HomeScreenAdapter(
     private val mAppsManager: AppsManager? = getInstance(context)
     private var mAssistantIcon: Drawable? = null
     private var mChannelsAdapter: ChannelsAdapter? = null
-    private var mAssistantSuggestions: Array<String>? = emptyArray()
     private val mConnectivityListener: ConnectivityListener?
     private var mEditListener: OnEditModeChangedListener? = null
     private val mEditModeView: EditModeView
     private val mHeaders: SparseArray<View?> = SparseArray<View?>(7)
-    private var mHomeScreenMessaging: HomeScreenMessaging? = null
     private val mInflater: LayoutInflater = LayoutInflater.from(context)
     private var mInputsAdapter: InputsAdapter? = null
     private val mMainActivity: MainActivity = Preconditions.checkNotNull(context)
-    private val mPartnerAdapter: PartnerAdapter?
-    private var mReceiver: BroadcastReceiver? = null
-    val recommendationsAdapter: NotificationsAdapter? = notificationsAdapter
     private val mScrollManager: HomeScrollManager = Preconditions.checkNotNull(scrollMgr)
     private var mSearch: SearchOrbView? = null
     private val mSettingsAdapter: SettingsAdapter
     private val mVisRowsList: ArrayList<HomeScreenRow> = ArrayList<HomeScreenRow>(7)
-    private val mNotificationsAdapter: RecyclerView.Adapter<*>? = null
 
     init {
         mConnectivityListener = ConnectivityListener(context, this)
         mSettingsAdapter = SettingsAdapter(mMainActivity, mConnectivityListener)
         mEditModeView = editModeView
-        mPartnerAdapter = null
         setHasStableIds(true)
         buildRowList()
         mAppsManager?.refreshLaunchPointList()
@@ -94,10 +79,6 @@ class HomeScreenAdapter(
     }
 
     fun unregisterReceivers() {
-        mReceiver?.let {
-            mMainActivity.unregisterReceiver(it)
-            mReceiver = null
-        }
         mConnectivityListener?.stop()
         mAppsManager?.unregisterUpdateReceivers()
         mInputsAdapter?.unregisterReceivers()
@@ -143,7 +124,6 @@ class HomeScreenAdapter(
 
     override fun onConnectivityChange() {
         mSettingsAdapter.onConnectivityChange()
-        mHomeScreenMessaging?.onConnectivityChange(readConnectivity(mMainActivity))
 
     }
 
@@ -165,17 +145,6 @@ class HomeScreenAdapter(
             R.dimen.home_scroll_size_search,
             false
         )
-        if (areRecommendationsEnabled(mMainActivity)) {
-            buildRow(
-                RowType.NOTIFICATIONS,
-                position++,
-                null,
-                null,
-                null,
-                R.dimen.home_scroll_size_notifications,
-                false
-            )
-        }
         // baris channel / watch next (tersembunyi bila tidak ada aplikasi yang diaktifkan)
         buildRow(
             RowType.CHANNELS,
@@ -259,7 +228,6 @@ class HomeScreenAdapter(
             R.dimen.home_scroll_size_settings,
             false
         )
-        // TODO Notifications view... buildRow(RowType.ACTUAL_NOTIFICATIONS, position++, null, null, null, R.dimen.home_scroll_size_notifications, false);
 
         val comp = ListComparator()
         Collections.sort(mAllRowsList, comp)
@@ -285,7 +253,7 @@ class HomeScreenAdapter(
     private fun addRowEntry(row: HomeScreenRow) {
         mAllRowsList.add(row)
         row.setChangeListener(this)
-        if (row.type !== RowType.NOTIFICATIONS && row.type !== RowType.ACTUAL_NOTIFICATIONS && row.type !== RowType.SEARCH && row.type !== RowType.CHANNELS) {
+        if (row.type !== RowType.SEARCH && row.type !== RowType.CHANNELS) {
             mAppsManager?.addAppRow(row)
         }
         if (row.isVisible) {
@@ -362,7 +330,6 @@ class HomeScreenAdapter(
                         if (it.isKatnissPackagePresent) {
                             it.showSearch()
                             it.updateAssistantIcon(mAssistantIcon)
-                            it.updateSearchSuggestions(mAssistantSuggestions)
                         } else {
                             if (it.isAssistPackagePresent)
                                 it.showSearch()
@@ -371,22 +338,7 @@ class HomeScreenAdapter(
                         }
                     }
                 }
-                RowType.NOTIFICATIONS, RowType.ACTUAL_NOTIFICATIONS -> {
-                    view = mInflater.inflate(R.layout.home_notification_row, parent, false)
-                    val notifList: NotificationRowView? = view.findViewById(R.id.list)
-                    val homeScreenView: HomeScreenView? =
-                        view.findViewById(R.id.home_screen_messaging)
-                    if (!(notifList == null || homeScreenView == null)) {
-                        row.adapter?.let { adapter ->
-                            initNotificationsRows(
-                                notifList,
-                                adapter,
-                                homeScreenView.homeScreenMessaging
-                            )
-                        }
-                    }
-                }
-                RowType.PARTNER, RowType.SETTINGS, RowType.INPUTS, RowType.CHANNELS -> {
+                RowType.SETTINGS, RowType.INPUTS, RowType.CHANNELS -> {
                     view = mInflater.inflate(R.layout.home_active_items_row, parent, false)
                     mHeaders.put(row.type.code, view.findViewById(R.id.header))
                     if (view is ActiveFrame) {
@@ -444,31 +396,6 @@ class HomeScreenAdapter(
         mEditListener = listener
     }
 
-    private fun initNotificationsRows(
-        list: NotificationRowView,
-        adapter: RecyclerView.Adapter<*>,
-        homeScreenMessaging: HomeScreenMessaging
-    ) {
-        list.setHasFixedSize(true)
-        list.adapter = adapter
-        mHomeScreenMessaging = homeScreenMessaging
-        list.setItemSpacing(mMainActivity.resources.getDimensionPixelOffset(R.dimen.inter_card_spacing))
-        val filter = IntentFilter()
-        filter.addAction("android.intent.action.USER_PRESENT")
-        if (mReceiver == null) {
-            mReceiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context, intent: Intent) {
-                    if (intent.action == "android.intent.action.USER_PRESENT" && adapter is NotificationsServiceAdapter<*>) {
-                        adapter.reregisterListener()
-                        mMainActivity.unregisterReceiver(this)
-                        mReceiver = null
-                    }
-                }
-            }
-            mMainActivity.registerReceiver(mReceiver, filter)
-        }
-    }
-
     private fun initAppRow(group: ActiveFrame?, row: HomeScreenRow?) {
         if (group != null) {
             val res = mMainActivity.resources
@@ -523,7 +450,7 @@ class HomeScreenAdapter(
             val lost = (maxCols * (base + 1)) - curApps
             if (lost < base + 1) base += 1
             when (row.type) {
-                RowType.INPUTS, RowType.PARTNER -> {
+                RowType.INPUTS -> {
                 }
                 RowType.FAVORITES -> {
                     userMax = getFavoriteRowMax(mMainActivity)
@@ -602,9 +529,6 @@ class HomeScreenAdapter(
     private fun initAdapter(type: RowType): RecyclerView.Adapter<*>? {
         val enabledCategories = getEnabledCategories(mMainActivity)
         return when (type) {
-            RowType.NOTIFICATIONS -> recommendationsAdapter
-            RowType.ACTUAL_NOTIFICATIONS -> mNotificationsAdapter
-            RowType.PARTNER -> mPartnerAdapter
             RowType.FAVORITES -> FavoritesAdapter(mMainActivity, null)
             RowType.APPS -> {
                 val categories: MutableSet<AppCategory> = HashSet()
@@ -658,38 +582,24 @@ class HomeScreenAdapter(
         } else 0
     }
 
-    fun onReconnectToRecommendationsService() {
-        recommendationsAdapter?.reregisterListener()
-    }
-
-    fun onInitUi() {
-        recommendationsAdapter?.onInitUi()
-        mPartnerAdapter?.onInitUi()
-    }
-
-    fun refreshChannels() {
-        mChannelsAdapter?.refresh()
-    }
+    private var uiVisible = false
 
     fun onUiVisible() {
+        uiVisible = true
         mChannelsAdapter?.onUiVisible()
-        recommendationsAdapter?.onUiVisible()
-        mPartnerAdapter?.onUiVisible()
     }
 
     fun onUiInvisible() {
-        recommendationsAdapter?.onUiInvisible()
-        mPartnerAdapter?.onUiInvisible()
+        uiVisible = false
     }
 
     fun onStopUi() {
+        uiVisible = false
         mChannelsAdapter?.onStopUi()
-        recommendationsAdapter?.onStopUi()
-        mPartnerAdapter?.onStopUi()
     }
 
     val isUiVisible: Boolean
-        get() = recommendationsAdapter!!.isUiVisible
+        get() = uiVisible
 
     override fun onViewDetachedFromWindow(holder: HomeViewHolder) {
         super.onViewDetachedFromWindow(holder)
@@ -769,8 +679,6 @@ class HomeScreenAdapter(
         var prefix = prefix
         writer.println(prefix + "HomeScreenAdapter")
         prefix = "$prefix  "
-        recommendationsAdapter?.dump(prefix, writer)
-        mPartnerAdapter?.dump(prefix, writer)
     }
 
     fun onSearchIconUpdate(assistantIcon: Drawable?) {
@@ -778,9 +686,5 @@ class HomeScreenAdapter(
         mSearch?.updateAssistantIcon(mAssistantIcon)
     }
 
-    fun onSuggestionsUpdate(suggestions: Array<String>?) {
-        mAssistantSuggestions = suggestions
-        mSearch?.updateSearchSuggestions(mAssistantSuggestions)
-    }
 
 }

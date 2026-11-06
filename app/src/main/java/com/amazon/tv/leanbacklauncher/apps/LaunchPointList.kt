@@ -30,10 +30,8 @@ class LaunchPointList(ctx: Context) {
     private var mIsReady = false
     private val mListeners: MutableList<Listener>
     private val mLock: Any
-    private val mNonUpdatableBlacklist: HashMap<String?, Int>
     private var mSettingsLaunchPoints: ArrayList<LaunchPoint> = arrayListOf()
     private var mShouldNotify = false
-    private val mUpdatableBlacklist: HashMap<String?, Int>
     private var rawFilter: RawFilter
     private var prefUtil: SharedPreferencesUtil? = null
 
@@ -53,8 +51,6 @@ class LaunchPointList(ctx: Context) {
         mListeners = LinkedList()
         mAllLaunchPoints = LinkedList()
         mInstallingLaunchPoints = LinkedList()
-        mUpdatableBlacklist = HashMap()
-        mNonUpdatableBlacklist = HashMap()
         mLock = Any()
         mContext = ctx
         rawFilter = object : RawFilter() {
@@ -101,22 +97,15 @@ class LaunchPointList(ctx: Context) {
         var mLaunchPoint: LaunchPoint? = null
         var mPkgName: String? = null
         var mSuccess: Boolean
-        var mUpdatable: Boolean
 
         constructor(action: Int, pkgName: String?) {
             mSuccess = false
-            mUpdatable = true
             mAction = action
             mPkgName = pkgName
         }
 
-        constructor(action: Int, pkgName: String?, updatable: Boolean) : this(action, pkgName) {
-            mUpdatable = updatable
-        }
-
         constructor(action: Int, launchPoint: LaunchPoint?) {
             mSuccess = false
-            mUpdatable = true
             mAction = action
             mLaunchPoint = launchPoint
         }
@@ -128,44 +117,6 @@ class LaunchPointList(ctx: Context) {
             mSuccess = success
         }
 
-//        @SuppressLint("PrivateResource")
-//        fun apply() {
-//            when (mAction) {
-//                0 -> {
-//                    addOrUpdatePackage(mPkgName)
-//                    removePackage(mPkgName)
-//                    addToBlacklist(mPkgName, mUpdatable)
-//                    this@LaunchPointList.removeFromBlacklist(mPkgName, mUpdatable)
-//                    addOrUpdateInstallingLaunchPoint(mLaunchPoint)
-//                    removeInstallingLaunchPoint(mLaunchPoint, mSuccess)
-//                }
-//                1 -> {
-//                    removePackage(mPkgName)
-//                    addToBlacklist(mPkgName, mUpdatable)
-//                    this@LaunchPointList.removeFromBlacklist(mPkgName, mUpdatable)
-//                    addOrUpdateInstallingLaunchPoint(mLaunchPoint)
-//                    removeInstallingLaunchPoint(mLaunchPoint, mSuccess)
-//                }
-//                2 -> {
-//                    addToBlacklist(mPkgName, mUpdatable)
-//                    this@LaunchPointList.removeFromBlacklist(mPkgName, mUpdatable)
-//                    addOrUpdateInstallingLaunchPoint(mLaunchPoint)
-//                    removeInstallingLaunchPoint(mLaunchPoint, mSuccess)
-//                }
-//                3 -> {
-//                    this@LaunchPointList.removeFromBlacklist(mPkgName, mUpdatable)
-//                    addOrUpdateInstallingLaunchPoint(mLaunchPoint)
-//                    removeInstallingLaunchPoint(mLaunchPoint, mSuccess)
-//                }
-//                4 -> {
-//                    addOrUpdateInstallingLaunchPoint(mLaunchPoint)
-//                    removeInstallingLaunchPoint(mLaunchPoint, mSuccess)
-//                }
-//                5 -> removeInstallingLaunchPoint(mLaunchPoint, mSuccess)
-//                else -> {
-//                }
-//            }
-//        }
     }
 
     private inner class CreateLaunchPointListTask(private val mFilterChannelsActivities: Boolean) :
@@ -342,7 +293,7 @@ class LaunchPointList(ctx: Context) {
                             }
                             mAllLaunchPoints.removeAll(filter)
                             mAllLaunchPoints.addAll(launchPoints)
-                            if (!isBlacklisted(pkgName) && mShouldNotify) {
+                            if (!isHiddenPackage(pkgName) && mShouldNotify) {
                                 for (cl in mListeners) {
                                     cl.onLaunchPointsAddedOrUpdated(launchPoints)
                                 }
@@ -379,7 +330,7 @@ class LaunchPointList(ctx: Context) {
                             pkgName,
                             true
                         )
-                        if (!(removedLaunchPoints.isEmpty() || isBlacklisted(pkgName))) {
+                        if (!(removedLaunchPoints.isEmpty() || isHiddenPackage(pkgName))) {
                             if (mShouldNotify) {
                                 for (cl in mListeners) {
                                     cl.onLaunchPointsRemoved(removedLaunchPoints)
@@ -396,110 +347,6 @@ class LaunchPointList(ctx: Context) {
                 }
                 mCachedActions.add(CachedAction(1, pkgName))
             }
-        }
-    }
-
-    @JvmOverloads
-    fun addToBlacklist(pkgName: String?, updatable: Boolean = true): Boolean {
-        if (pkgName.isNullOrEmpty()) {
-            return false
-        }
-        synchronized(mCachedActions) {
-            if (mIsReady) {
-                var added = false
-                synchronized(mLock) {
-                    val blacklist = if (updatable) mUpdatableBlacklist else mNonUpdatableBlacklist
-                    var occurrences = blacklist[pkgName]
-                    val otherOccurrences =
-                        (if (updatable) mNonUpdatableBlacklist else mUpdatableBlacklist)[pkgName]
-                    if (occurrences == null || occurrences <= 0) {
-                        occurrences = 0
-                        if (otherOccurrences == null || otherOccurrences <= 0) {
-                            added = true
-                            val blacklistedLaunchPoints = ArrayList<LaunchPoint>()
-                            getLaunchPointsByPackage(
-                                mInstallingLaunchPoints,
-                                blacklistedLaunchPoints,
-                                pkgName,
-                                false
-                            )
-                            getLaunchPointsByPackage(
-                                mAllLaunchPoints,
-                                blacklistedLaunchPoints,
-                                pkgName,
-                                false
-                            )
-                            if (blacklistedLaunchPoints.isNotEmpty() && mShouldNotify) {
-                                for (cl in mListeners) {
-                                    cl.onLaunchPointsRemoved(blacklistedLaunchPoints)
-                                }
-                            }
-                        }
-                    }
-                    occurrences += 1
-                    blacklist.put(pkgName, occurrences)
-                }
-                return added
-            }
-            mCachedActions.add(CachedAction(2, pkgName, updatable))
-            return false
-        }
-    }
-
-    fun removeFromBlacklist(pkgName: String?): Boolean {
-        return removeFromBlacklist(pkgName, force = false, updatable = true)
-    }
-
-    fun removeFromBlacklist(pkgName: String?, updatable: Boolean): Boolean {
-        return removeFromBlacklist(pkgName, false, updatable)
-    }
-
-    private fun removeFromBlacklist(pkgName: String?, force: Boolean, updatable: Boolean): Boolean {
-        if (pkgName.isNullOrEmpty()) {
-            return false
-        }
-        synchronized(mCachedActions) {
-            if (mIsReady) {
-                var removed = false
-                synchronized(mLock) {
-                    val blacklist = if (updatable) mUpdatableBlacklist else mNonUpdatableBlacklist
-                    var occurrences = blacklist[pkgName]
-                    val otherOccurrences =
-                        (if (updatable) mNonUpdatableBlacklist else mUpdatableBlacklist)[pkgName]
-                    if (occurrences != null) {
-                        occurrences -= 1
-                        if (occurrences <= 0 || force) {
-                            blacklist.remove(pkgName)
-                            if (otherOccurrences == null) {
-                                removed = true
-                                val blacklistedLaunchPoints = ArrayList<LaunchPoint>()
-                                getLaunchPointsByPackage(
-                                    mInstallingLaunchPoints,
-                                    blacklistedLaunchPoints,
-                                    pkgName,
-                                    false
-                                )
-                                getLaunchPointsByPackage(
-                                    mAllLaunchPoints,
-                                    blacklistedLaunchPoints,
-                                    pkgName,
-                                    false
-                                )
-                                if (blacklistedLaunchPoints.isNotEmpty() && mShouldNotify) {
-                                    for (cl in mListeners) {
-                                        cl.onLaunchPointsAddedOrUpdated(blacklistedLaunchPoints)
-                                    }
-                                }
-                            }
-                        } else {
-                            blacklist[pkgName] = occurrences
-                        }
-                    }
-                }
-                return removed
-            }
-            mCachedActions.add(CachedAction(3, pkgName, updatable))
-            return false
         }
     }
 
@@ -524,7 +371,7 @@ class LaunchPointList(ctx: Context) {
                             launchPoints.add(launchPoint)
                         }
                         mInstallingLaunchPoints.addAll(launchPoints)
-                        if (!isBlacklisted(pkgName) && mShouldNotify) {
+                        if (!isHiddenPackage(pkgName) && mShouldNotify) {
                             for (cl in mListeners) {
                                 cl.onLaunchPointsAddedOrUpdated(launchPoints)
                             }
@@ -579,7 +426,7 @@ class LaunchPointList(ctx: Context) {
             val allLaunchPoints = arrayListOf<LaunchPoint>()
             if (mAllLaunchPoints.size > 0) {
                 for (lp in mAllLaunchPoints) {
-                    if (!isBlacklisted(lp.packageName)) {
+                    if (!isHiddenPackage(lp.packageName)) {
                         allLaunchPoints.add(lp)
                     }
                 }
@@ -606,25 +453,25 @@ class LaunchPointList(ctx: Context) {
     ) {
         when (category) {
             AppCategory.VIDEO -> for (lp in parentList) {
-                if (!isFavorited(lp.packageName) && !isBlacklisted(lp.packageName) && lp.appCategory == AppCategory.VIDEO) {
+                if (!isFavorited(lp.packageName) && !isHiddenPackage(lp.packageName) && lp.appCategory == AppCategory.VIDEO) {
                     childList.add(lp)
                 }
             }
 
             AppCategory.MUSIC -> for (lp in parentList) {
-                if (!isFavorited(lp.packageName) && !isBlacklisted(lp.packageName) && lp.appCategory == AppCategory.MUSIC) {
+                if (!isFavorited(lp.packageName) && !isHiddenPackage(lp.packageName) && lp.appCategory == AppCategory.MUSIC) {
                     childList.add(lp)
                 }
             }
 
             AppCategory.GAME -> for (lp in parentList) {
-                if (!isFavorited(lp.packageName) && !isBlacklisted(lp.packageName) && lp.isGame) {
+                if (!isFavorited(lp.packageName) && !isHiddenPackage(lp.packageName) && lp.isGame) {
                     childList.add(lp)
                 }
             }
 
             AppCategory.OTHER -> for (lp in parentList) {
-                if (!isFavorited(lp.packageName) && !isBlacklisted(lp.packageName) && lp.appCategory == AppCategory.OTHER) {
+                if (!isFavorited(lp.packageName) && !isHiddenPackage(lp.packageName) && lp.appCategory == AppCategory.OTHER) {
                     childList.add(lp)
                 }
             }
@@ -786,20 +633,6 @@ class LaunchPointList(ctx: Context) {
 //            }
 //        }
 
-        // NOTIFICATIONS // 3
-        if (FireTVUtils.isAmazonNotificationsEnabled(mContext)) {
-            lp = LaunchPoint(
-                mContext,
-                mContext.getString(R.string.notifications),
-                ContextCompat.getDrawable(mContext, R.drawable.ic_settings_notification),
-                FireTVUtils.notificationCenterIntent,
-                Color.BLACK
-            )
-            lp.addLaunchIntentFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            lp.settingsType = SettingsType.NOTIFICATIONS.code
-            lp.priority = -3
-            settingsItems.add(lp)
-        }
         // SYS SETTINGS // 1
         if (FireTVUtils.isAmazonLauncherEnabled(mContext) and !Util.isPackageEnabled(
                 mContext,
@@ -901,10 +734,6 @@ class LaunchPointList(ctx: Context) {
         return prefUtil!!.isFavorite(pkgName) && prefUtil!!.areFavoritesEnabled()
     }
 
-    private fun isBlacklisted(pkgName: String?): Boolean {
-        return prefUtil!!.isHidden(pkgName) || mUpdatableBlacklist.containsKey(pkgName) || mNonUpdatableBlacklist.containsKey(
-            pkgName
-        )
-    }
+    private fun isHiddenPackage(pkgName: String?): Boolean = prefUtil!!.isHidden(pkgName)
 
 }

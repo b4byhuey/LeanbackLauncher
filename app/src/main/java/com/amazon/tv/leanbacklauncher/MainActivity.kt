@@ -32,7 +32,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.os.SystemClock
-import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
 import android.view.KeyEvent
@@ -48,9 +47,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.net.toUri
-import androidx.core.text.isDigitsOnly
 import androidx.core.view.isNotEmpty
 import androidx.leanback.widget.BaseGridView
 import androidx.leanback.widget.OnChildViewHolderSelectedListener
@@ -60,36 +57,25 @@ import androidx.recyclerview.widget.RecyclerView
 import com.amazon.tv.firetv.leanbacklauncher.apps.AppInfoActivity
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowType
-import com.amazon.tv.firetv.tvrecommendations.NotificationListenerMonitor
 import com.amazon.tv.leanbacklauncher.SearchOrbView.SearchLaunchListener
 import com.amazon.tv.leanbacklauncher.animation.AnimatorLifecycle
 import com.amazon.tv.leanbacklauncher.animation.AnimatorLifecycle.OnAnimationFinishedListener
 import com.amazon.tv.leanbacklauncher.animation.EditModeMassFadeAnimator
 import com.amazon.tv.leanbacklauncher.animation.EditModeMassFadeAnimator.EditMode
-import com.amazon.tv.leanbacklauncher.animation.ForwardingAnimatorSet
 import com.amazon.tv.leanbacklauncher.animation.LauncherDismissAnimator
 import com.amazon.tv.leanbacklauncher.animation.LauncherLaunchAnimator
 import com.amazon.tv.leanbacklauncher.animation.LauncherPauseAnimator
 import com.amazon.tv.leanbacklauncher.animation.LauncherReturnAnimator
 import com.amazon.tv.leanbacklauncher.animation.MassSlideAnimator
-import com.amazon.tv.leanbacklauncher.animation.NotificationLaunchAnimator
 import com.amazon.tv.leanbacklauncher.animation.ParticipatesInLaunchAnimation
 import com.amazon.tv.leanbacklauncher.apps.AppsManager.Companion.getInstance
 import com.amazon.tv.leanbacklauncher.apps.BannerView
 import com.amazon.tv.leanbacklauncher.apps.OnEditModeChangedListener
 import com.amazon.tv.leanbacklauncher.clock.ClockView
 import com.amazon.tv.leanbacklauncher.logging.LeanbackLauncherEventLogger
-import com.amazon.tv.leanbacklauncher.notifications.HomeScreenView
-import com.amazon.tv.leanbacklauncher.notifications.NotificationCardView
-import com.amazon.tv.leanbacklauncher.notifications.NotificationRowView
-import com.amazon.tv.leanbacklauncher.notifications.NotificationRowView.NotificationRowListener
-import com.amazon.tv.leanbacklauncher.notifications.NotificationsAdapter
-import com.amazon.tv.leanbacklauncher.settings.LegacyHomeScreenSettingsActivity
-import com.amazon.tv.leanbacklauncher.settings.SettingsActivity
 import com.amazon.tv.leanbacklauncher.util.OpenWeatherIcons
 import com.amazon.tv.leanbacklauncher.util.Partner
 import com.amazon.tv.leanbacklauncher.util.TvSearchIconLoader
-import com.amazon.tv.leanbacklauncher.util.TvSearchSuggestionsLoader
 import com.amazon.tv.leanbacklauncher.util.Util
 import com.amazon.tv.leanbacklauncher.wallpaper.LauncherWallpaper
 import com.amazon.tv.leanbacklauncher.wallpaper.WallpaperInstaller
@@ -106,7 +92,6 @@ import java.io.FileDescriptor
 import java.io.PrintWriter
 import java.lang.String.format
 import java.lang.ref.WeakReference
-import java.net.URL
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
@@ -175,8 +160,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     private val defaultLauncherHandler = Handler(Looper.getMainLooper())
     private val defaultLauncherPrompt = Runnable { showDefaultLauncherDialog() }
     private val mIdleListeners = mutableListOf<IdleListener>()
-    private val mNotifListener = NotificationListenerImpl()
-    private val mPackageReplacedReceiver = PackageReplacedReceiver()
     private val mHomeRefreshReceiver = HomeRefreshReceiver()
 
     // Views
@@ -185,14 +168,11 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     var wallpaperView: LauncherWallpaper? = null
         private set
     private var mListView: VerticalGridView? = null
-    private var mHomeScreenView: HomeScreenView? = null
-    private var mNotificationsView: NotificationRowView? = null
     private var mAppWidgetHostView: AppWidgetHostView? = null
 
     // Adapters
     var homeAdapter: HomeScreenAdapter? = null
         private set
-    private var mRecommendationsAdapter: NotificationsAdapter? = null
 
     // Services
     private var mAppWidgetHost: AppWidgetHost? = null
@@ -205,7 +185,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     // State variables
     var isInEditMode = false
         private set
-    private var mDelayFirstRecommendationsVisible = true
     private var mFadeDismissAndSummonAnimations = false
     private var mIsIdle = false
     private var mKeepUiReset = false
@@ -242,36 +221,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
     }
 
     // Inner classes for better organization
-    private inner class NotificationListenerImpl : NotificationRowListener {
-        private var mHandler: Handler? = null
-        private val mSelectFirstRecommendationRunnable = Runnable {
-            mNotificationsView?.takeIf { (it.adapter?.itemCount ?: 0) > 0 }
-                ?.setSelectedPositionSmooth(FIRST_POSITION)
-        }
-
-        override fun onBackgroundImageChanged(imageUri: String?, signature: String?) {
-            wallpaperView?.onBackgroundImageChanged(imageUri, signature)
-        }
-
-        override fun onSelectedRecommendationChanged(position: Int) {
-            if (mKeepUiReset && mAccessibilityManager?.isEnabled != true && position > FIRST_POSITION) {
-                mHandler = mHandler ?: Handler(Looper.getMainLooper())
-                mHandler?.post(mSelectFirstRecommendationRunnable)
-            }
-        }
-    }
-
-    private inner class PackageReplacedReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.data?.toString()?.takeIf {
-                it.contains("${context?.packageName}.recommendations")
-            }?.let {
-                Log.d(TAG, "Recommendations Service updated, reconnecting.")
-                homeAdapter?.onReconnectToRecommendationsService()
-            }
-        }
-    }
-
     private inner class HomeRefreshReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.getBooleanExtra("RefreshHome", false) == true) {
@@ -322,18 +271,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                         return
                     }
 
-                    4 -> {
-                        activity.onNotificationRowStateUpdate(msg.arg1)
-                        //if (BuildConfig.DEBUG) Log.d(TAG, "msg(4) onNotificationRowStateUpdate(${msg.arg1})")
-                        return
-                    }
-
-                    5 -> {
-                        activity.homeAdapter?.onUiVisible()
-                        //if (BuildConfig.DEBUG) Log.d(TAG, "msg(5) onUiVisible()")
-                        return
-                    }
-
                     6 -> {
                         activity.addWidget(true)
                         // addWidget(true) replaces the clock/weather layout. Restore weather only
@@ -372,30 +309,12 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             }
         }
 
-    private val mSearchSuggestionsCallbacks: LoaderManager.LoaderCallbacks<Array<String>> =
-        object : LoaderManager.LoaderCallbacks<Array<String>> {
-            override fun onCreateLoader(id: Int, args: Bundle?): Loader<Array<String>> {
-                return TvSearchSuggestionsLoader(this@MainActivity.applicationContext)
-            }
-
-            override fun onLoadFinished(loader: Loader<Array<String>>, data: Array<String>?) {
-                homeAdapter?.onSuggestionsUpdate(data)
-            }
-
-            override fun onLoaderReset(loader: Loader<Array<String>>) {
-                homeAdapter?.onSuggestionsUpdate(emptyArray())
-            }
-        }
-
     @SuppressLint("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.amazon.tv.leanbacklauncher.settings.LauncherLanguage.ensureSupported()
         mContentResolver = contentResolver
 
-        if (mRecommendationsAdapter == null) {
-            mRecommendationsAdapter = NotificationsAdapter(this)
-        }
         val appContext = applicationContext
         setContentView(R.layout.activity_main)
 
@@ -441,7 +360,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             homeAdapter = HomeScreenAdapter(
                 this@MainActivity,
                 mScrollManager!!,
-                mRecommendationsAdapter,
                 editModeView!!
             ).apply {
                 setOnEditModeChangedListener(this@MainActivity)
@@ -449,14 +367,10 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             setItemViewCacheSize(homeAdapter!!.itemCount)
             adapter = homeAdapter
 
-            // Keep the launcher at the top on first launch; selecting Notifications
-            // makes the recommendations/suggestions row pull the viewport downward.
+            // Keep the launcher at the top on first launch.
             val searchIndex = homeAdapter?.getRowIndex(0) // RowType.SEARCH
             if (searchIndex != null && searchIndex != -1) {
                 selectedPosition = searchIndex
-            }
-            val rAdapter = homeAdapter?.recommendationsAdapter?.apply {
-                addIdleListener(this)
             }
             setAnimateChildLayout(false)
             setOnChildViewHolderSelectedListener(object : OnChildViewHolderSelectedListener() {
@@ -494,28 +408,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                                 scheduleWeatherUiRestore()
                             }
                         }
-
-                        1, 2 -> {
-                            mHomeScreenView = child.findViewById(R.id.home_screen_messaging)
-                            mHomeScreenView?.let {
-                                val homeScreenMessaging = it.homeScreenMessaging
-                                if (tag == 1) {
-                                    rAdapter?.setNotificationRowViewFlipper(homeScreenMessaging)
-                                    mNotificationsView = it.notificationRow
-                                    mNotificationsView?.setListener(mNotifListener)
-                                }
-                                homeScreenMessaging.setListener { state ->
-                                    mHandler.sendMessageDelayed(
-                                        mHandler.obtainMessage(4, state, 0),
-                                        500
-                                    )
-                                    if (state == 0 && mDelayFirstRecommendationsVisible) {
-                                        mDelayFirstRecommendationsVisible = false
-                                        mHandler.sendEmptyMessageDelayed(5, 1500)
-                                    }
-                                }
-                            }
-                        }
                     }
                     if (child is IdleListener && !mIdleListeners.contains(child)) {
                         addIdleListener(child as IdleListener)
@@ -540,25 +432,12 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         mFadeDismissAndSummonAnimations = resources.getBoolean(R.bool.app_launch_animation_fade)
         mKeepUiReset = true
-        homeAdapter?.onInitUi()
         mEventLogger = LeanbackLauncherEventLogger.getInstance(appContext)
 
-        // register package change receiver
-        val filter = IntentFilter().apply {
-            addAction("android.intent.action.PACKAGE_REPLACED")
-            addAction("android.intent.action.PACKAGE_ADDED")
-            addDataScheme("package")
-        }
-        registerReceiver(mPackageReplacedReceiver, filter)
         // regiser RefreshHome broadcast ACTION com.amazon.tv.leanbacklauncher.MainActivity
         registerReceiver(mHomeRefreshReceiver, IntentFilter(this.javaClass.name))
 
         loaderManager.initLoader(0, null, mSearchIconCallbacks)
-        loaderManager.initLoader(1, null, mSearchSuggestionsCallbacks)
-
-        // start notification listener monitor
-        if (RowPreferences.areRecommendationsEnabled(this) && LauncherApp.inForeground)
-            startService(Intent(this, NotificationListenerMonitor::class.java))
 
         // fix int options migrate
         RowPreferences.fixRowPrefs()
@@ -584,7 +463,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
         wallpaperView?.releaseVideoPlayer()
         getInstance(applicationContext)?.onDestroy()
-        unregisterReceiver(mPackageReplacedReceiver)
         unregisterReceiver(mHomeRefreshReceiver)
     }
 
@@ -1157,10 +1035,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         }
         if (changeWallpaper && wallpaperView?.shynessMode != shy) {
             wallpaperView?.shynessMode = mShyMode
-            if (mShyMode && mNotificationsView != null) {
-                //if (BuildConfig.DEBUG) Log.d(TAG, "setShyMode(shy:$shy,changeWallpaper:$changeWallpaper) refreshSelectedBackground() [mShyMode=$mShyMode]")
-                mNotificationsView?.refreshSelectedBackground()
-            }
         }
         return changed
     }
@@ -1341,8 +1215,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                     LauncherReturnAnimator(
                         mListView,
                         mLaunchAnimation.lastKnownEpicenter,
-                        homeAdapter!!.rowHeaders,
-                        mHomeScreenView
+                        homeAdapter!!.rowHeaders
                     ), mRefreshHomeAdapter, 32.toByte()
                 )
             }
@@ -1387,9 +1260,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         wallpaperView?.onHostResume()
         if (shyChanged) {
             wallpaperView?.resetBackground()
-        }
-        if (mShyMode) {
-            mNotificationsView?.refreshSelectedBackground()
         }
         if (!mHandler.hasMessages(6)) {
             mHandler.sendEmptyMessage(6)
@@ -1441,7 +1311,7 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
 
         overridePendingTransition(R.anim.home_fade_in_top, R.anim.home_fade_out_bottom)
 
-        if (!(homeAdapter == null || homeAdapter!!.isUiVisible || mDelayFirstRecommendationsVisible)) {
+        if (homeAdapter?.isUiVisible != true) {
             homeAdapter?.onUiVisible()
         }
     }
@@ -1482,7 +1352,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
         mPauseAnimation.start()
         if (homeAdapter != null && homeAdapter!!.isUiVisible) {
             homeAdapter?.onUiInvisible()
-            mDelayFirstRecommendationsVisible = false
         }
     }
 
@@ -1543,26 +1412,6 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
             }
             return 0 // position
         }
-
-    private fun onNotificationRowStateUpdate(state: Int) {
-        //if (BuildConfig.DEBUG) Log.d(TAG, "onNotificationRowStateUpdate(state: " + state + "), active row position: " + mList!!.selectedPosition)
-        if (state == 1 || state == 2) {
-            if (!mUserInteracted) {
-                val searchIndex = homeAdapter!!.getRowIndex(0)
-                if (searchIndex != -1) {
-                    // focus on Search in case no recs yet
-                    mListView?.selectedPosition = searchIndex
-                    mListView?.getChildAt(searchIndex)?.requestFocus()
-                    //if (BuildConfig.DEBUG) Log.d(TAG, "select search row and requestFocus()")
-                }
-            }
-        } else if (state == 0 && mListView!!.selectedPosition == homeAdapter!!.getRowIndex(1) && mNotificationsView!!.isNotEmpty()) {
-            // focus on Recomendations
-            mNotificationsView?.selectedPosition = 0
-            mNotificationsView?.getChildAt(0)?.requestFocus()
-            //if (BuildConfig.DEBUG) Log.d(TAG, "select recs row and focus on 1st")
-        }
-    }
 
     override fun onSearchRequested(): Boolean {
         setShyMode(shy = true, changeWallpaper = true)
@@ -1799,27 +1648,14 @@ class MainActivity : AppCompatActivity(), OnEditModeChangedListener,
                 onCompleteCallback.run()
                 return
             }
-            val animation: ForwardingAnimatorSet = if (view is NotificationCardView) {
-                NotificationLaunchAnimator(
-                    mListView,
-                    view,
-                    mLaunchAnimation.lastKnownEpicenter,
-                    findViewById<View>(R.id.click_circle_layer) as ImageView,
-                    color,
-                    homeAdapter!!.rowHeaders,
-                    mHomeScreenView
-                )
-            } else {
-                LauncherLaunchAnimator(
-                    mListView,
-                    view,
-                    mLaunchAnimation.lastKnownEpicenter,
-                    findViewById<View>(R.id.click_circle_layer) as ImageView,
-                    color,
-                    homeAdapter!!.rowHeaders,
-                    mHomeScreenView
-                )
-            }
+            val animation = LauncherLaunchAnimator(
+                mListView,
+                view,
+                mLaunchAnimation.lastKnownEpicenter,
+                findViewById<View>(R.id.click_circle_layer) as ImageView,
+                color,
+                homeAdapter!!.rowHeaders
+            )
             mLaunchAnimation.init(animation, onCompleteCallback, 0.toByte())
             mLaunchAnimation.start()
         }

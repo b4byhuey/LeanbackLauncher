@@ -17,7 +17,6 @@ import com.amazon.tv.leanbacklauncher.animation.FadeAnimator
 import com.amazon.tv.leanbacklauncher.animation.ParticipatesInScrollAnimation
 import com.amazon.tv.leanbacklauncher.animation.ViewDimmer
 import com.amazon.tv.leanbacklauncher.animation.ViewDimmer.DimState
-import com.amazon.tv.leanbacklauncher.notifications.HomeScreenView
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -93,9 +92,6 @@ class ActiveFrame @JvmOverloads constructor(
             val view = getChildAt(i)
             if (view is ActiveItemsRowView) {
                 mRow = view
-                break
-            } else if (view is HomeScreenView) {
-                mRow = view.notificationRow
                 break
             } else {
                 i++

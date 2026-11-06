@@ -578,15 +578,6 @@ class SearchOrbView(context: Context, attrs: AttributeSet?) : FrameLayout(contex
 
     override fun setActivated(active: Boolean) {}
 
-    fun updateSearchSuggestions(suggestions: Array<String>?) {
-        mCurrentIndex = 0
-        mTextToShow = if (suggestions.isNullOrEmpty()) {
-            mDefaultTextToShow
-        } else {
-            suggestions
-        }
-    }
-
     fun updateAssistantIcon(icon: Drawable?) {
         mAssistantIcon = icon
         initializeSearchOrbs()

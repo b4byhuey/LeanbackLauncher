@@ -19,7 +19,6 @@ import androidx.leanback.preference.LeanbackSettingsFragmentCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import com.amazon.tv.firetv.leanbacklauncher.apps.RowPreferences
-import com.amazon.tv.firetv.leanbacklauncher.util.FireTVUtils
 import com.amazon.tv.firetv.leanbacklauncher.util.SharedPreferencesUtil
 import com.amazon.tv.leanbacklauncher.BuildConfig
 import com.amazon.tv.leanbacklauncher.LauncherApp
@@ -56,7 +55,6 @@ class SettingsFragment : LeanbackSettingsFragmentCompat() {
             PKG + "LanguagePreferenceFragment",
             PKG + "VideoPlaylistPreferenceFragment",
             PKG + "DefaultLauncherPreferenceFragment",
-            PKG + "RecommendationsPreferenceFragment",
             PKG + "ChannelsPreferenceFragment",
             PKG + "WeatherPreferenceFragment",
             PKG + "PrayerPreferenceFragment",
@@ -163,10 +161,6 @@ class LauncherSettingsFragment : LeanbackPreferenceFragmentCompat() {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ps = findPreference<PreferenceScreen>("root_prefs")
-            ps?.removePreferenceRecursively("rec_sources")
-        }
     }
 }
 
@@ -202,24 +196,9 @@ class AppRowsPreferenceFragment : LeanbackPreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         // Load the prefs from an XML resource
         setPreferencesFromResource(R.xml.rows_prefs, rootKey)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ps = findPreference<PreferenceScreen>("rows_prefs")
-            ps?.removePreferenceRecursively(getString(R.string.pref_enable_recommendations_row))
-        }
     }
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        val ctx = requireContext()
-        if (preference?.key == getString(R.string.pref_enable_recommendations_row)) {
-            val enabled = (preference as SwitchPreference).isChecked
-            RowPreferences.setRecommendationsEnabled(ctx, enabled)
-            if (enabled && FireTVUtils.isAmazonNotificationsEnabled(ctx)) {
-                LauncherApp.toast(getString(R.string.recs_warning_sale))
-            }
-            // refresh home broadcast
-            SettingsFragment.needRestartHome = true
-            return true
-        }
         // refresh home broadcast
         SettingsFragment.needRestartHome = true
         return super.onPreferenceTreeClick(preference)
@@ -335,7 +314,6 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
     }
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        val ctx = requireContext()
         val fm = parentFragmentManager
 
         when (preference?.key) {
@@ -358,7 +336,7 @@ class FileListFragment : LeanbackPreferenceFragmentCompat() {
                 val name = preference.title
                 val file = File(rootPath, name.toString())
                 if (file.canRead())
-                    setWallpaper(ctx, file.path.toString())
+                    setWallpaper(requireContext(), file.path.toString())
                 else
                     LauncherApp.toast(getString(R.string.file_no_access))
                 dirName?.let { rootPath = rootPath?.removeSuffix(it) }
@@ -931,21 +909,20 @@ class VideoPlaylistPreferenceFragment : Fragment() {
     }
 
     private fun save() {
-        val ctx = requireContext()
         val urls = input?.text?.toString().orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
         if (urls.isEmpty() || urls.any { !it.startsWith("https://", true) && !it.startsWith("http://", true) }) {
-            android.widget.Toast.makeText(ctx, R.string.tv_video_urls_invalid, android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(requireContext(), R.string.tv_video_urls_invalid, android.widget.Toast.LENGTH_LONG).show()
             return
         }
         val json = org.json.JSONArray().apply { urls.forEach { put(it) } }.toString()
-        PreferenceManager.getDefaultSharedPreferences(ctx).edit()
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
             .putString(KEY, json)
             .remove(TvOsCustomizationActivity.KEY_WALLPAPER_URI)
             .remove("wallpaper_image")
             .putBoolean("launcher_live_background", false)
             .apply()
         SettingsFragment.needRestartHome = true
-        android.widget.Toast.makeText(ctx, getString(R.string.tv_video_playlist_saved, urls.size), android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(requireContext(), getString(R.string.tv_video_playlist_saved, urls.size), android.widget.Toast.LENGTH_SHORT).show()
         activity?.finish()
     }
 }
@@ -1104,52 +1081,6 @@ class HiddenPreferenceFragment : LeanbackPreferenceFragmentCompat() {
             } catch (_: PackageManager.NameNotFoundException) {
                 // Aplikasi sudah dihapus: lewati.
             }
-        }
-    }
-}
-
-/**
- * Sumber rekomendasi (Android di bawah 8) sebagai panel samping, sama seperti pengaturan lain.
- * Centang = rekomendasi dari aplikasi itu ditampilkan; hapus centang untuk memblokirnya.
- */
-class RecommendationsPreferenceFragment : LeanbackPreferenceFragmentCompat(),
-    RecommendationsPreferenceManager.LoadRecommendationPackagesCallback {
-    private var manager: RecommendationsPreferenceManager? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        manager = RecommendationsPreferenceManager(requireContext())
-    }
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        val screen = preferenceManager.createPreferenceScreen(preferenceManager.context)
-        screen.title = getString(R.string.recommendation_blacklist_content_title)
-        preferenceScreen = screen
-    }
-
-    override fun onResume() {
-        super.onResume()
-        manager?.loadRecommendationsPackages(this)
-    }
-
-    override fun onRecommendationPackagesLoaded(info: List<RecommendationsPreferenceManager.PackageInfo>?) {
-        if (!isAdded) return
-        val screen = preferenceScreen ?: return
-        val ctx = preferenceManager.context
-        screen.removeAll()
-        info?.forEach { pkg ->
-            val packageName = pkg.packageName ?: return@forEach
-            screen.addPreference(CheckBoxPreference(ctx).apply {
-                key = "rec_source_$packageName"
-                title = pkg.appTitle ?: packageName
-                icon = pkg.icon
-                isPersistent = false
-                isChecked = !pkg.blacklisted
-                setOnPreferenceChangeListener { _, newValue ->
-                    manager?.savePackageBlacklisted(packageName, newValue != true)
-                    true
-                }
-            })
         }
     }
 }
